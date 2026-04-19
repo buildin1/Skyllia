@@ -1,7 +1,7 @@
 package fr.euphyllia.skyllia.api.skyblock;
 
 import fr.euphyllia.skyllia.api.skyblock.model.RoleType;
-import org.jspecify.annotations.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
 
