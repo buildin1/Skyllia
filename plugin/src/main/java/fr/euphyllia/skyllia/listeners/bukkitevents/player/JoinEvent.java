@@ -78,10 +78,8 @@ public class JoinEvent implements Listener {
         UUID uuid = player.getUniqueId();
 
         for (RemovalCause cause : RemovalCause.values()) {
-            boolean exist = api.getSkyblockManager().checkClearMemberExist(uuid, cause);
-            if (!exist) continue;
-
-            api.getSkyblockManager().deleteClearMember(uuid, cause);
+            boolean deleted = api.getSkyblockManager().deleteClearMember(uuid, cause);
+            if (!deleted) continue;
 
             player.getScheduler().execute(api.getPlugin(), () -> {
                 clearPlayerData(player, cause);
