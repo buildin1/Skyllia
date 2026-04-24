@@ -3,6 +3,8 @@ package fr.euphyllia.skyllia.cache.island;
 import fr.euphyllia.skyllia.Skyllia;
 import fr.euphyllia.skyllia.commands.common.subcommands.CreateSubCommand;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -10,12 +12,12 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class IslandCreationQueue {
 
     private static final Queue<IslandCreationRequest> creationQueue = new ConcurrentLinkedQueue<>();
-    private static final AtomicBoolean isProcessing = new AtomicBoolean(false);
+    private static final Logger logger = LogManager.getLogger(IslandCreationQueue.class);
+    private static boolean isProcessing = false;
 
     public static synchronized void queuePlayer(Player player, String[] args) {
         UUID uuid = player.getUniqueId();
@@ -37,16 +39,16 @@ public class IslandCreationQueue {
     }
 
     private static synchronized void processNext() {
-        if (isProcessing.get() || creationQueue.isEmpty()) return;
+        if (isProcessing || creationQueue.isEmpty()) return;
 
         removeOfflinePlayers();
 
         if (creationQueue.isEmpty()) return;
 
-        isProcessing.set(true);
+        isProcessing = true;
         IslandCreationRequest request = creationQueue.poll();
         if (request == null) {
-            isProcessing.set(false);
+            isProcessing = false;
             return;
         }
 
@@ -54,16 +56,23 @@ public class IslandCreationQueue {
         broadcastPositions();
 
         if (player == null || !player.isOnline()) {
-            isProcessing.set(false);
+            isProcessing = false;
             processNext();
             return;
         }
 
         new CreateSubCommand().runCreateIsland(Skyllia.getInstance(), player, request.args())
                 .whenComplete((result, throwable) -> {
-                    isProcessing.set(false);
-                    IslandCreationQueue.processNext();
+                    if (throwable != null) {
+                        logger.error("Island creation failed for {}", request.uuid(), throwable);
+                    }
+                    IslandCreationQueue.resetAndProcessNext();
                 });
+    }
+
+    private static synchronized void resetAndProcessNext() {
+        isProcessing = false;
+        processNext();
     }
 
     public static synchronized boolean isQueued(UUID uuid) {
