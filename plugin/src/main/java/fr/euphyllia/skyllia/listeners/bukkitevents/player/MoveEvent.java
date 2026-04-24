@@ -75,7 +75,7 @@ public class MoveEvent implements Listener {
         if (!ConfigLoader.general.isRestrictPlayerMovement()) return;
 
         final Player player = event.getPlayer();
-        if (player.hasPermission("skyllia.island.outside.bypass")) return;
+        if (player.hasPermission("skyllia.island.border.bypass")) return;
 
         final Location to = event.getTo();
         if (to == null || to.getWorld() == null) return;
