@@ -15,13 +15,13 @@ import java.util.concurrent.TimeUnit;
 
 public class SkyblockCache {
 
-    private static final long TTL_STATE_SEC = 5;
-    private static final long TTL_MEMBERS_SEC = 5;
-    private static final long TTL_WARPS_SEC = 5;
-    private static final long TTL_ISLAND_SEC = 60;
-    private static final long TTL_PLAYER_LINK_SEC = 10;
-    private static final long TTL_ROLE_SEC = 5;
-    private static final long TTL_NAME_ROLE_SEC = 5;
+    private static final long TTL_STATE_SEC = 60;
+    private static final long TTL_MEMBERS_SEC = 120;
+    private static final long TTL_WARPS_SEC = 120;
+    private static final long TTL_ISLAND_SEC = 300;
+    private static final long TTL_PLAYER_LINK_SEC = 60;
+    private static final long TTL_ROLE_SEC = 120;
+    private static final long TTL_NAME_ROLE_SEC = 120;
 
     private final ConcurrentHashMap<UUID, ExpiringValue<Island>> islandById = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, ExpiringValue<UUID>> islandIdByPlayer = new ConcurrentHashMap<>();
