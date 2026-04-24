@@ -94,7 +94,7 @@ public class SkylliaExpansion extends PlaceholderExpansion {
         UUID playerId = player.getUniqueId();
 
         Island island = SkylliaAPI.getIslandByPlayerId(playerId);
-        if (island == null) return null;
+        if (island == null) return "";
 
         String lowerPlaceholder = placeholder.toLowerCase();
 
