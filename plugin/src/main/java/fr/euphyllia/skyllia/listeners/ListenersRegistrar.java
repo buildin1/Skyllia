@@ -5,11 +5,10 @@ import fr.euphyllia.skyllia.api.InterneAPI;
 import fr.euphyllia.skyllia.api.SkylliaAPI;
 import fr.euphyllia.skyllia.listeners.bukkitevents.blocks.GrowEvent;
 import fr.euphyllia.skyllia.listeners.bukkitevents.blocks.PistonEvent;
-import fr.euphyllia.skyllia.listeners.bukkitevents.folia.PortalAlternativeFoliaEvent;
-import fr.euphyllia.skyllia.listeners.bukkitevents.paper.PortalAlternativePaperEvent;
 import fr.euphyllia.skyllia.listeners.bukkitevents.player.JoinEvent;
 import fr.euphyllia.skyllia.listeners.bukkitevents.player.MoveEvent;
 import fr.euphyllia.skyllia.listeners.bukkitevents.player.WorldBorderAddEvent;
+import fr.euphyllia.skyllia.listeners.bukkitevents.portal.PortalOverrideListener;
 import fr.euphyllia.skyllia.listeners.permissions.block.*;
 import fr.euphyllia.skyllia.listeners.permissions.decor.DecorHangingBreakPermissions;
 import fr.euphyllia.skyllia.listeners.permissions.decor.DecorHangingPlacePermissions;
@@ -71,12 +70,9 @@ public class ListenersRegistrar {
         registerEvent(pluginManager, new PistonEvent(interneAPI));
         registerEvent(pluginManager, new GrowEvent(interneAPI));
         registerEvent(pluginManager, new MoveEvent());
-
-        // Folia/Paper specifics
-        if (SkylliaAPI.isFolia()) {
-            registerEvent(pluginManager, new PortalAlternativeFoliaEvent(interneAPI));
-        }
-        registerEvent(pluginManager, new PortalAlternativePaperEvent());
+        PortalOverrideListener portalListener = new PortalOverrideListener();
+        registerEvent(pluginManager, portalListener);
+        portalListener.startCleanupTask(); // 启动全局清理
 
         // Skyblock Events
         registerEvent(pluginManager, new SkyblockEvent(interneAPI));

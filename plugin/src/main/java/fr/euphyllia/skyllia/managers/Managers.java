@@ -1,6 +1,7 @@
 package fr.euphyllia.skyllia.managers;
 
 import fr.euphyllia.skyllia.api.InterneAPI;
+import fr.euphyllia.skyllia.api.permissions.TrustService;   // 导入移动后的 TrustService
 import fr.euphyllia.skyllia.api.permissions.*;
 import fr.euphyllia.skyllia.api.permissions.modules.FlagModuleManager;
 import fr.euphyllia.skyllia.api.permissions.modules.PermissionModuleManager;
@@ -19,7 +20,6 @@ public class Managers {
     private final IslandFlagRegistry flagRegistry;
     private final FlagModuleManager flagModuleManager;
 
-
     public Managers(InterneAPI interneAPI) {
         this.api = interneAPI;
         this.worldsManager = new WorldsManager(this.api);
@@ -33,7 +33,10 @@ public class Managers {
 
         this.permissionRegistry = new PermissionRegistry(indexStore);
         this.permissionModuleManager = new PermissionModuleManager(api.getPlugin(), this.permissionRegistry);
-        this.permissionsManagers = new PermissionsManagers();
+
+        // 使用 InterneAPI 中已有的 TrustService 实例
+        TrustService trustService = api.getTrustService();
+        this.permissionsManagers = new PermissionsManagers(trustService);
 
         this.flagRegistry = new IslandFlagRegistry(indexStore);
         this.flagModuleManager = new FlagModuleManager(api.getPlugin(), this.flagRegistry);
