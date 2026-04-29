@@ -91,7 +91,7 @@ public class WorldsManager {
                     )
             );
 
-            worldCreator.keepSpawnLoaded(TriState.TRUE); // Toujours chargé le monde ! Prévenir du crash avec le PlayerRespawnLogic
+            // Toujours chargé le monde ! Prévenir du crash avec le PlayerRespawnLogic
 
             World w;
             WorldFeedback.FeedbackWorld feedbackWorld = WorldUtils.addWorld(this.api, worldCreator, worldConfig);

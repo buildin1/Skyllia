@@ -28,7 +28,7 @@ public class PlayerTeleportIslandEvent extends IslandEvent implements Cancellabl
             boolean cancelled,
             boolean async
     ) {
-        super(island, async);
+        super(island, false);
         this.player = player;
         this.from = from;
         this.to = to;

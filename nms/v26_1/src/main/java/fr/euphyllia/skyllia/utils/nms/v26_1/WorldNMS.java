@@ -224,7 +224,7 @@ public class WorldNMS extends fr.euphyllia.skyllia.api.utils.nms.WorldNMS {
         );
 
         console.addLevel(serverLevel);
-        console.initWorld(serverLevel);
+        console.initWorld(serverLevel,creator);
 
         serverLevel.setSpawnSettings(true);
 

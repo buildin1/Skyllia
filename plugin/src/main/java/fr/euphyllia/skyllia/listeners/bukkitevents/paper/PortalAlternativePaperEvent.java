@@ -22,31 +22,5 @@ public class PortalAlternativePaperEvent implements Listener {
     private final Logger logger = LogManager.getLogger(PortalAlternativePaperEvent.class);
 
     public PortalAlternativePaperEvent() {
-
-    }
-
-    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
-    public void onPlayerInsidePortal(final EntityInsideBlockEvent event) {
-        if (event.getEntity() instanceof Player player) {
-            Block block = event.getBlock();
-            World world = block.getWorld();
-            if (!SkylliaAPI.isWorldSkyblock(world)) return;
-            Material blockType = block.getType();
-            WorldConfig worldConfig = ConfigLoader.worldManager.getWorldConfig(world.getName());
-            if (blockType.equals(Material.NETHER_PORTAL)) {
-                if (worldConfig.getPortalEnd().equalsIgnoreCase(world.getName())) return;
-                if (!PlayerUtils.hasPermission(player, "skyllia.use.portal.nether")) return;
-                ListenersUtils.callPlayerPrepareChangeWorldSkyblockEvent(
-                        player, worldConfig, PlayerPrepareChangeWorldSkyblockEvent.PortalType.NETHER, event
-                );
-            }
-            if (blockType.equals(Material.END_PORTAL)) {
-                if (worldConfig.getPortalEnd().equalsIgnoreCase(world.getName())) return;
-                if (!PlayerUtils.hasPermission(player, "skyllia.use.portal.end")) return;
-                ListenersUtils.callPlayerPrepareChangeWorldSkyblockEvent(
-                        player, worldConfig, PlayerPrepareChangeWorldSkyblockEvent.PortalType.END, event
-                );
-            }
-        }
     }
 }

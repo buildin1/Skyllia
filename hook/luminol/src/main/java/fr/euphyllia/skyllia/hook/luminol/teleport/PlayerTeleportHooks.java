@@ -23,15 +23,15 @@ public class PlayerTeleportHooks implements Listener {
         final Island island = SkylliaAPI.getIslandByChunk(chunkX, chunkZ);
         if (island == null) return;
 
+        // 事件现在是同步的，可以直接在当前线程触发（当前线程是 Folia 的区域线程，允许同步事件）
         new PlayerTeleportIslandEvent(
                 player,
                 player.getLocation(),
                 to,
                 island,
                 event.getTeleportCause(),
-                false, // Luminol's async events are not cancellable
-                true
+                false,
+                false    // 现在的 async 参数已无效，传 false 即可
         ).callEvent();
     }
-
 }
