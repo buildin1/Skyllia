@@ -47,6 +47,7 @@ public class SkylliaExpansion extends PlaceholderExpansion {
                 new BannedHandler(),
                 new MembersHandler(),
                 new WarpHandler(),
+                new VisitedHandler(),
                 // Legacy alias: gamerule_* → same handler as flags_*
                 new FlagsHandler() {
                     @Override
@@ -92,18 +93,26 @@ public class SkylliaExpansion extends PlaceholderExpansion {
     @Override
     public String onRequest(@NotNull OfflinePlayer player, @NotNull String placeholder) {
         UUID playerId = player.getUniqueId();
-
-        Island island = SkylliaAPI.getIslandByPlayerId(playerId);
-        if (island == null) return "";
-
         String lowerPlaceholder = placeholder.toLowerCase();
 
+        @Nullable Island island = SkylliaAPI.getIslandByPlayerId(playerId);
+
+        // Try prefixed handlers first
         for (Map.Entry<String, PlaceholderHandler> entry : handlers.entrySet()) {
-            String prefix = entry.getKey();   // e.g. "island_"
+            String prefix = entry.getKey();
+            if (prefix.equals("_")) continue;
             if (lowerPlaceholder.startsWith(prefix)) {
+                PlaceholderHandler handler = entry.getValue();
+                if (handler.requiresIsland() && island == null) return "";
                 String key = lowerPlaceholder.substring(prefix.length());
-                return entry.getValue().handle(player, island, key);
+                return handler.handle(player, island, key);
             }
+        }
+
+        PlaceholderHandler fallback = handlers.get("_");
+        if (fallback != null) {
+            if (fallback.requiresIsland() && island == null) return "";
+            return fallback.handle(player, island, lowerPlaceholder);
         }
 
         return null;

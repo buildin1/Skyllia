@@ -34,8 +34,11 @@ public class MembersHandler implements PlaceholderHandler {
 
     @Override
     public @Nullable String handle(@NotNull OfflinePlayer player,
-                                   @NotNull Island island,
+                                   @Nullable Island island,
                                    @NotNull String key) {
+        if (island == null) {
+            return "";
+        }
         List<Players> members = island.getMembers();
 
         if (key.startsWith("has_")) {
