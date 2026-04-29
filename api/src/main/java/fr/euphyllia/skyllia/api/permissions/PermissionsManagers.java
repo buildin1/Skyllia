@@ -86,6 +86,10 @@ public class PermissionsManagers {
         if (role == RoleType.OWNER) return true;
         if (role == RoleType.BAN) return false;
 
+        if (SkylliaAPI.getTrustService().isTrusted(island.getId(), player.getUniqueId())) {
+            role = RoleType.MEMBER;
+        }
+
         var compiled = island.getCompiledPermissions();
         boolean has = compiled.has(SkylliaAPI.getPermissionRegistry(), role, permission);
         if (debug) {

@@ -81,8 +81,7 @@ public class UntrustSubCommand implements SubCommandInterface {
                 return;
             }
 
-            boolean removed = Skyllia.getInstance()
-                    .getInterneAPI()
+            boolean removed = SkylliaAPI
                     .getTrustService()
                     .removeTrusted(island.getId(), targetId);
 
@@ -112,8 +111,7 @@ public class UntrustSubCommand implements SubCommandInterface {
             return List.of();
         }
 
-        Set<UUID> trusted = Skyllia.getInstance()
-                .getInterneAPI()
+        Set<UUID> trusted = SkylliaAPI
                 .getTrustService()
                 .getTrusted(island.getId());
 

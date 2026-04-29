@@ -11,6 +11,7 @@ import fr.euphyllia.skyllia.api.permissions.PermissionRegistry;
 import fr.euphyllia.skyllia.api.permissions.PermissionsManagers;
 import fr.euphyllia.skyllia.api.permissions.modules.FlagModuleManager;
 import fr.euphyllia.skyllia.api.permissions.modules.PermissionModuleManager;
+import fr.euphyllia.skyllia.api.service.TrustService;
 import fr.euphyllia.skyllia.api.skyblock.Island;
 import fr.euphyllia.skyllia.api.skyblock.Players;
 import fr.euphyllia.skyllia.api.skyblock.model.IslandSettings;
@@ -236,6 +237,11 @@ public final class APISkyllia implements SkylliaImplementation {
     @Override
     public IConfigRegistry getConfigRegistry() {
         return ConfigLoader.INSTANCE;
+    }
+
+    @Override
+    public TrustService getTrustService() {
+        return this.interneAPI.getTrustService();
     }
 
     private double[] append(double[] arr, double element) {

@@ -7,7 +7,7 @@ import fr.euphyllia.skyllia.api.skyblock.model.SchematicPlugin;
 import fr.euphyllia.skyllia.api.utils.nms.*;
 import fr.euphyllia.skyllia.api.world.WorldModifier;
 import fr.euphyllia.skyllia.cache.SkyblockCache;
-import fr.euphyllia.skyllia.cache.TrustService;
+import fr.euphyllia.skyllia.api.service.TrustService;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
 import fr.euphyllia.skyllia.database.IslandQuery;
 import fr.euphyllia.skyllia.hook.essentialsx.EssentialsSpawnHook;

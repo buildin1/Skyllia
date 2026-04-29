@@ -8,6 +8,7 @@ import fr.euphyllia.skyllia.api.permissions.PermissionRegistry;
 import fr.euphyllia.skyllia.api.permissions.PermissionsManagers;
 import fr.euphyllia.skyllia.api.permissions.modules.FlagModuleManager;
 import fr.euphyllia.skyllia.api.permissions.modules.PermissionModuleManager;
+import fr.euphyllia.skyllia.api.service.TrustService;
 import fr.euphyllia.skyllia.api.skyblock.Island;
 import fr.euphyllia.skyllia.api.skyblock.Players;
 import fr.euphyllia.skyllia.api.skyblock.model.IslandSettings;
@@ -236,4 +237,15 @@ public interface SkylliaImplementation {
      * @return The IConfigRegistry instance.
      */
     IConfigRegistry getConfigRegistry();
+
+    /**
+     * Retrieves the Trust Service.
+     * <p>
+     * The Trust Service manages trusted players on islands. A trusted player
+     * is granted the same permissions as those defined for the
+     * {@link RoleType#MEMBER} role, without officially being part of the island.
+     *
+     * @return The {@link TrustService} instance.
+     */
+    TrustService getTrustService();
 }
