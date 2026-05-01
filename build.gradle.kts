@@ -99,8 +99,8 @@ tasks.test {
 
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_25
-    targetCompatibility = JavaVersion.VERSION_25
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
 }
 
 fun getGitCommitHash(): String {
@@ -137,12 +137,14 @@ modrinth {
             ?: "Automatic build from GitHub Actions."
     )
 
-    uploadFile.set(tasks.named<Jar>("shadowJar"))
+    uploadFile.set(tasks.named("shadowJar"))
+
+    debugMode.set(false)
 
     additionalFiles.set(
         listOf(
             project(":addons:SkylliaOre").tasks.named<Jar>("shadowJar"),
-            project(":addons:SkylliaInsights").tasks.named<Jar>("shadowJar"),
+            //project(":addons:SkylliaInsights").tasks.named<Jar>("shadowJar"),
             project(":addons:SkylliaChat").tasks.named<Jar>("shadowJar"),
             project(":addons:SkylliaBank").tasks.named<Jar>("shadowJar"),
             project(":addons:SkylliaChallenge").tasks.named<Jar>("shadowJar"),
@@ -187,7 +189,7 @@ tasks.modrinth {
     dependsOn(
         "shadowJar",
         ":addons:SkylliaOre:shadowJar",
-        ":addons:SkylliaInsights:shadowJar",
+        //":addons:SkylliaInsights:shadowJar",
         ":addons:SkylliaChat:shadowJar",
         ":addons:SkylliaBank:shadowJar",
         ":addons:SkylliaChallenge:shadowJar",
