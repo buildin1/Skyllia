@@ -66,13 +66,12 @@ public class ChestCommand implements SubCommandInterface {
         int size = chestManager.getChestSize(island);
 
         openChest(player, island, size);
-        return;
     }
 
     private void openChest(@NotNull Player player, @NotNull Island island, int size) {
         UUID islandId = island.getId();
-        UUID playerId = player.getUniqueId();
         ChestIslandCache cache = SkylliaChest.getInstance().getChestCache();
+        ChestManager chestManager = SkylliaChest.getInstance().getChestManager();
 
         Component title = ConfigLoader.language.translate(
                 player,
@@ -80,25 +79,19 @@ public class ChestCommand implements SubCommandInterface {
                 Map.of("%island_name%", island.getOwner().getLastKnowName())
         );
 
-        ChestIsland chestIsland = cache.getCachedChest(islandId);
+        ChestIsland chestIsland = cache.getOrCreateChest(
+                islandId,
+                id -> chestManager.loadChest(island, size, title)
+        );
 
-        if (chestIsland == null) {
-            ChestManager chestManager = SkylliaChest.getInstance().getChestManager();
-            chestIsland = chestManager.loadChest(island, size, title);
-            cache.putChest(chestIsland);
-        }
+        IslandChestInventory inventory = cache.getOrCreateInventory(
+                islandId,
+                id -> new IslandChestInventory(chestIsland)
+        );
 
-        IslandChestInventory inventory = cache.getCachedInventory(islandId);
-        if (inventory == null) {
-            inventory = new IslandChestInventory(chestIsland);
-            cache.putInventory(islandId, inventory);
-        }
-
-        cache.registerOpenChest(playerId, chestIsland);
-
-        final IslandChestInventory finalInventory = inventory;
         player.getScheduler().run(plugin, scheduledTask -> {
-            player.openInventory(finalInventory.getInventory());
+            chestIsland.setDirty(true);
+            player.openInventory(inventory.getInventory());
             ConfigLoader.language.sendMessage(player, "addons.island-chest.open");
         }, null);
     }

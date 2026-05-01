@@ -5,6 +5,7 @@ import fr.euphyllia.skyllia.api.database.IslandCustomDataQuery;
 import fr.euphyllia.skyllia.api.skyblock.Island;
 import fr.euphyllia.skylliachest.SkylliaChest;
 import fr.euphyllia.skylliachest.api.ChestIsland;
+import fr.euphyllia.skylliachest.inventory.IslandChestInventory;
 import fr.euphyllia.skylliachest.utils.InventoryDataType;
 import net.kyori.adventure.text.Component;
 import org.bukkit.NamespacedKey;
@@ -14,6 +15,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ChestManager {
 
@@ -61,7 +63,7 @@ public class ChestManager {
             );
         }
 
-        Map<Integer, ItemStack> items = new HashMap<>();
+        Map<Integer, ItemStack> items = new ConcurrentHashMap<>();
 
         if (contents != null && contents.length > 0) {
             for (int i = 0; i < Math.min(contents.length, size); i++) {
@@ -75,19 +77,19 @@ public class ChestManager {
     }
 
     public boolean saveChest(@NotNull ChestIsland chestIsland) {
-        if (!chestIsland.isDirty()) {
-            return true;
-        }
-
         Island island = chestIsland.getIsland();
-        ItemStack[] contents = chestIsland.toItemStackArray();
+
+        IslandChestInventory inv = SkylliaChest.getInstance()
+                .getChestCache()
+                .getCachedInventory(island.getId());
+
+        ItemStack[] contents = (inv != null)
+                ? inv.getInventory().getContents()
+                : chestIsland.toItemStackArray(); // fallback rare
 
         boolean success = customDataQuery.set(
-                namespaceKey,
-                island,
-                CHEST_DATA_KEY,
-                InventoryDataType.INSTANCE,
-                contents
+                namespaceKey, island, CHEST_DATA_KEY,
+                InventoryDataType.INSTANCE, contents
         );
 
         if (success) {
