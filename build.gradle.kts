@@ -137,17 +137,17 @@ modrinth {
             ?: "Automatic build from GitHub Actions."
     )
 
-    uploadFile.set(tasks.named("shadowJar"))
+    uploadFile.set(tasks.named<Jar>("shadowJar"))
 
     additionalFiles.set(
         listOf(
-            project(":addons:SkylliaOre").tasks.named("shadowJar"),
-            project(":addons:SkylliaInsights").tasks.named("shadowJar"),
-            project(":addons:SkylliaChat").tasks.named("shadowJar"),
-            project(":addons:SkylliaBank").tasks.named("shadowJar"),
-            project(":addons:SkylliaChallenge").tasks.named("shadowJar"),
-            project(":addons:SkylliaChest").tasks.named("shadowJar"),
-            project(":addons:SkylliaAcidRain").tasks.named("shadowJar"),
+            project(":addons:SkylliaOre").tasks.named<Jar>("shadowJar"),
+            project(":addons:SkylliaInsights").tasks.named<Jar>("shadowJar"),
+            project(":addons:SkylliaChat").tasks.named<Jar>("shadowJar"),
+            project(":addons:SkylliaBank").tasks.named<Jar>("shadowJar"),
+            project(":addons:SkylliaChallenge").tasks.named<Jar>("shadowJar"),
+            project(":addons:SkylliaChest").tasks.named<Jar>("shadowJar"),
+            project(":addons:SkylliaAcidRain").tasks.named<Jar>("shadowJar"),
         )
     )
 
