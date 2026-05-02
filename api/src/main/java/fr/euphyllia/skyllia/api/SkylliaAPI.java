@@ -8,6 +8,7 @@ import fr.euphyllia.skyllia.api.permissions.PermissionRegistry;
 import fr.euphyllia.skyllia.api.permissions.PermissionsManagers;
 import fr.euphyllia.skyllia.api.permissions.modules.FlagModuleManager;
 import fr.euphyllia.skyllia.api.permissions.modules.PermissionModuleManager;
+import fr.euphyllia.skyllia.api.service.TrustService;
 import fr.euphyllia.skyllia.api.skyblock.Island;
 import fr.euphyllia.skyllia.api.skyblock.Players;
 import fr.euphyllia.skyllia.api.skyblock.model.IslandSettings;
@@ -72,6 +73,12 @@ public final class SkylliaAPI {
         return implementation.getIslandByIslandId(islandId);
     }
 
+    /**
+     * Retrieves the island owned by a specific player.
+     *
+     * @param playerUniqueId The UUID of the island owner.
+     * @return The island owned by the specified player, or {@code null} if none is found.
+     */
     public static @Nullable Island getIslandByOwner(UUID playerUniqueId) {
         return implementation.getIslandByOwner(playerUniqueId);
     }
@@ -335,5 +342,18 @@ public final class SkylliaAPI {
      */
     public static IConfigRegistry getConfigRegistry() {
         return implementation.getConfigRegistry();
+    }
+
+    /**
+     * Retrieves the Trust Service.
+     * <p>
+     * The Trust Service manages trusted players on islands. A trusted player
+     * is granted the same permissions as those defined for the
+     * {@link RoleType#MEMBER} role, without officially being part of the island.
+     *
+     * @return The {@link TrustService} instance.
+     */
+    public static TrustService getTrustService() {
+        return implementation.getTrustService();
     }
 }

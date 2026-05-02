@@ -43,38 +43,6 @@ public class ChestIsland {
         return new ConcurrentHashMap<>(itemsIndexed);
     }
 
-    public void setItem(int index, ItemStack item) {
-        if (index < 0 || index >= size) {
-            throw new IllegalArgumentException("Index out of bounds: " + index);
-        }
-
-        if (item == null || item.getType().isAir()) {
-            itemsIndexed.remove(index);
-        } else {
-            itemsIndexed.put(index, item.clone());
-        }
-        this.dirty = true;
-    }
-
-    public ItemStack getItem(int index) {
-        if (index < 0 || index >= size) {
-            return null;
-        }
-        ItemStack item = itemsIndexed.get(index);
-        return item != null ? item.clone() : null;
-    }
-
-    public void updateFromInventory(@NotNull ItemStack[] contents) {
-        itemsIndexed.clear();
-        for (int i = 0; i < Math.min(contents.length, size); i++) {
-            ItemStack item = contents[i];
-            if (item != null && !item.getType().isAir()) {
-                itemsIndexed.put(i, item.clone());
-            }
-        }
-        this.dirty = true;
-    }
-
     @NotNull
     public ItemStack[] toItemStackArray() {
         ItemStack[] array = new ItemStack[size];
@@ -88,24 +56,12 @@ public class ChestIsland {
         return array;
     }
 
+
     public boolean isDirty() {
         return dirty;
     }
 
-    public void setDirty(boolean state) {
-        this.dirty = state;
-    }
-
-    public void clear() {
-        itemsIndexed.clear();
-        this.dirty = true;
-    }
-
-    public int getOccupiedSlots() {
-        return itemsIndexed.size();
-    }
-
-    public boolean isEmpty() {
-        return itemsIndexed.isEmpty();
+    public void setDirty(boolean dirty) {
+        this.dirty = dirty;
     }
 }

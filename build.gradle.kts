@@ -5,7 +5,7 @@ plugins {
     id("io.github.goooler.shadow") version "8.1.8"
     id("io.papermc.paperweight.userdev") version "2.0.0-beta.21" apply false
     id("xyz.jpenilla.run-paper") version "3.0.2"
-    id("com.modrinth.minotaur") version "2.8.10"
+    id("com.modrinth.minotaur") version "2.9.0"
 }
 
 evaluationDependsOn(":plugin")
@@ -99,8 +99,8 @@ tasks.test {
 
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_25
-    targetCompatibility = JavaVersion.VERSION_25
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
 }
 
 fun getGitCommitHash(): String {
@@ -139,15 +139,17 @@ modrinth {
 
     uploadFile.set(tasks.named("shadowJar"))
 
+    debugMode.set(false)
+
     additionalFiles.set(
         listOf(
-            project(":addons:SkylliaOre").tasks.named("shadowJar"),
-            project(":addons:SkylliaInsights").tasks.named("shadowJar"),
-            project(":addons:SkylliaChat").tasks.named("shadowJar"),
-            project(":addons:SkylliaBank").tasks.named("shadowJar"),
-            project(":addons:SkylliaChallenge").tasks.named("shadowJar"),
-            project(":addons:SkylliaChest").tasks.named("shadowJar"),
-            project(":addons:SkylliaAcidRain").tasks.named("shadowJar"),
+            project(":addons:SkylliaOre").tasks.named<Jar>("shadowJar"),
+            //project(":addons:SkylliaInsights").tasks.named<Jar>("shadowJar"),
+            project(":addons:SkylliaChat").tasks.named<Jar>("shadowJar"),
+            project(":addons:SkylliaBank").tasks.named<Jar>("shadowJar"),
+            project(":addons:SkylliaChallenge").tasks.named<Jar>("shadowJar"),
+            project(":addons:SkylliaChest").tasks.named<Jar>("shadowJar"),
+            project(":addons:SkylliaAcidRain").tasks.named<Jar>("shadowJar"),
         )
     )
 
@@ -187,7 +189,7 @@ tasks.modrinth {
     dependsOn(
         "shadowJar",
         ":addons:SkylliaOre:shadowJar",
-        ":addons:SkylliaInsights:shadowJar",
+        //":addons:SkylliaInsights:shadowJar",
         ":addons:SkylliaChat:shadowJar",
         ":addons:SkylliaBank:shadowJar",
         ":addons:SkylliaChallenge:shadowJar",

@@ -69,8 +69,11 @@ public class FlagsHandler implements PlaceholderHandler {
 
     @Override
     public @Nullable String handle(@NotNull OfflinePlayer player,
-                                   @NotNull Island island,
+                                   @Nullable Island island,
                                    @NotNull String key) {
+        if (island == null) {
+            return "";
+        }
         IslandFlagRegistry registry = SkylliaAPI.getFlagRegistry();
         Locale locale = resolveLocale(player);
 

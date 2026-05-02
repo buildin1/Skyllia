@@ -31,10 +31,11 @@ dependencies {
     compileOnly(project(":nms:v1_21_R7"))
     compileOnly(project(":nms:v26_1"))
 }
+java.disableAutoTargetJvm()
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_25
-    targetCompatibility = JavaVersion.VERSION_25
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
 }
 
 publishing {

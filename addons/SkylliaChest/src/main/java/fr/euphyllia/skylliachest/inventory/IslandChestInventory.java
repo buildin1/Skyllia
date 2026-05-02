@@ -1,6 +1,5 @@
 package fr.euphyllia.skylliachest.inventory;
 
-import fr.euphyllia.skylliachest.SkylliaChest;
 import fr.euphyllia.skylliachest.api.ChestIsland;
 import org.bukkit.Bukkit;
 import org.bukkit.inventory.Inventory;
@@ -30,21 +29,9 @@ public class IslandChestInventory implements InventoryHolder {
         inventory.setContents(contents);
     }
 
-    public void syncToChestIsland() {
-        ItemStack @NotNull [] content = inventory.getContents();
-        chestIsland.updateFromInventory(content);
-    }
-
     @NotNull
     public ChestIsland getChestIsland() {
         return chestIsland;
-    }
-
-    public boolean save() {
-
-        syncToChestIsland();
-
-        return SkylliaChest.getInstance().getChestManager().saveChest(chestIsland);
     }
 
 

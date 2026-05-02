@@ -66,8 +66,11 @@ public class PermissionsHandler implements PlaceholderHandler {
 
     @Override
     public @Nullable String handle(@NotNull OfflinePlayer player,
-                                   @NotNull Island island,
+                                   @Nullable Island island,
                                    @NotNull String key) {
+        if (island == null) {
+            return null;
+        }
         PermissionRegistry registry = SkylliaAPI.getPermissionRegistry();
         Locale locale = resolveLocale(player);
 

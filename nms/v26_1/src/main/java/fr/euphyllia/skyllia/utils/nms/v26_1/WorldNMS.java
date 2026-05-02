@@ -54,6 +54,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Locale;
 
@@ -62,6 +63,68 @@ import static net.minecraft.server.MinecraftServer.getServer;
 public class WorldNMS extends fr.euphyllia.skyllia.api.utils.nms.WorldNMS {
 
     private static final Logger log = LoggerFactory.getLogger(WorldNMS.class);
+
+    private static final Method INIT_WORLD_MODERN;
+    private static final Method INIT_WORLD_LEGACY;
+
+    static {
+        Method modern = null;
+        Method legacy = null;
+
+        try {
+            modern = DedicatedServer.class.getMethod(
+                    "initWorld",
+                    ServerLevel.class,
+                    WorldCreator.class
+            );
+        } catch (NoSuchMethodException ignored) {
+        }
+
+        try {
+            legacy = DedicatedServer.class.getMethod(
+                    "initWorld",
+                    ServerLevel.class
+            );
+        } catch (NoSuchMethodException ignored) {
+        }
+
+        if (modern != null) {
+            log.debug("Detected modern initWorld(ServerLevel, WorldCreator)");
+        } else if (legacy != null) {
+            log.debug("Detected legacy initWorld(ServerLevel)");
+        } else {
+            log.error("No compatible initWorld method detected");
+        }
+
+        INIT_WORLD_MODERN = modern;
+        INIT_WORLD_LEGACY = legacy;
+    }
+
+    private static void initWorldCompat(
+            DedicatedServer console,
+            ServerLevel level,
+            WorldCreator creator
+    ) {
+        try {
+            if (INIT_WORLD_MODERN != null) {
+                INIT_WORLD_MODERN.invoke(console, level, creator);
+                return;
+            }
+
+            if (INIT_WORLD_LEGACY != null) {
+                INIT_WORLD_LEGACY.invoke(console, level);
+                return;
+            }
+
+            throw new IllegalStateException("No compatible initWorld method found");
+
+        } catch (ReflectiveOperationException ex) {
+            throw new RuntimeException(
+                    "Failed to invoke compatible DedicatedServer#initWorld",
+                    ex
+            );
+        }
+    }
 
     @Override
     public WorldFeedback.FeedbackWorld createWorld(WorldCreator creator) {
@@ -224,7 +287,7 @@ public class WorldNMS extends fr.euphyllia.skyllia.api.utils.nms.WorldNMS {
         );
 
         console.addLevel(serverLevel);
-        console.initWorld(serverLevel,creator);
+        initWorldCompat(console, serverLevel, creator);
 
         serverLevel.setSpawnSettings(true);
 

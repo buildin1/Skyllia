@@ -24,12 +24,28 @@ public interface PlaceholderHandler {
     @NotNull String prefix();
 
     /**
+     * Indicates whether this handler requires the requesting player to have
+     * an island.
+     * <p>
+     * If {@code true}, the router will not invoke this handler when the player
+     * has no island and will return an empty string instead. If {@code false},
+     * the handler is invoked regardless and must accept a {@code null} island.
+     *
+     * @return {@code true} by default — override to allow handling without an island
+     */
+    default boolean requiresIsland() {
+        return true;
+    }
+
+    /**
      * Processes the placeholder and returns the resolved value.
      *
-     * @param player the requesting player (may be offline)
-     * @param island the island associated with the player (never {@code null})
+     * @param player the requesting player (maybe offline)
+     * @param island the island associated with the player; never {@code null}
+     *               when {@link #requiresIsland()} returns {@code true},
+     *               otherwise may be {@code null} when the player has no island
      * @param key    the placeholder key with the prefix already stripped
      * @return the resolved string value, or {@code null} if the key is unrecognized
      */
-    @Nullable String handle(@NotNull OfflinePlayer player, @NotNull Island island, @NotNull String key);
+    @Nullable String handle(@NotNull OfflinePlayer player, @Nullable Island island, @NotNull String key);
 }

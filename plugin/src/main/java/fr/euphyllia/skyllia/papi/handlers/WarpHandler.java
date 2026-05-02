@@ -52,8 +52,9 @@ public class WarpHandler implements PlaceholderHandler {
 
     @Override
     public @Nullable String handle(@NotNull OfflinePlayer player,
-                                   @NotNull Island island,
+                                   @Nullable Island island,
                                    @NotNull String key) {
+        if (island == null) return "";
         List<WarpIsland> warps = warps(island);
 
         if (key.equals("count")) {

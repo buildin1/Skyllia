@@ -4,7 +4,6 @@ import fr.euphyllia.skyllia.api.SkylliaAPI;
 import fr.euphyllia.skylliachest.api.ChestIsland;
 import fr.euphyllia.skylliachest.cache.ChestIslandCache;
 import fr.euphyllia.skylliachest.commands.ChestCommand;
-import fr.euphyllia.skylliachest.listeners.ChestListener;
 import fr.euphyllia.skylliachest.manager.ChestManager;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -13,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 public class SkylliaChest extends JavaPlugin {
 
@@ -35,10 +35,10 @@ public class SkylliaChest extends JavaPlugin {
 
         SkylliaAPI.registerCommands(new ChestCommand(this), "chest", "echest", "islandchest");
 
-        getServer().getPluginManager().registerEvents(new ChestListener(this), this);
-
         // Annoncer que c'est en beta
         log.warn("SkylliaChest is currently in beta. Please report any issues you encounter to the developer.");
+
+        Bukkit.getAsyncScheduler().runAtFixedRate(this, scheduledTask -> saveAllChests(), 1, 1, TimeUnit.MINUTES);
     }
 
     @Override
@@ -59,14 +59,15 @@ public class SkylliaChest extends JavaPlugin {
         int failed = 0;
 
         for (ChestIsland chestIsland : allChests.values()) {
-            if (chestIsland.isDirty()) {
-                boolean success = chestManager.saveChest(chestIsland);
-                if (success) {
-                    saved++;
-                } else {
-                    failed++;
-                    log.error("Failed to save chest for island {}", chestIsland.getIsland().getId());
-                }
+            if (!chestIsland.isDirty()) {
+                continue;
+            }
+            boolean success = chestManager.saveChest(chestIsland);
+            if (success) {
+                saved++;
+            } else {
+                failed++;
+                log.error("Failed to save chest for island {}", chestIsland.getIsland().getId());
             }
         }
 
