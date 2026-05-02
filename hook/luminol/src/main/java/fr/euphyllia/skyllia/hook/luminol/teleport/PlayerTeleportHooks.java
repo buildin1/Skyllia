@@ -29,8 +29,7 @@ public class PlayerTeleportHooks implements Listener {
                 to,
                 island,
                 event.getTeleportCause(),
-                false, // Luminol's async events are not cancellable
-                true
+                false
         ).callEvent();
     }
 

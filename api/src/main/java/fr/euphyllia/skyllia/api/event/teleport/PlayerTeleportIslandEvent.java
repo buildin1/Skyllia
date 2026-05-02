@@ -25,10 +25,9 @@ public class PlayerTeleportIslandEvent extends IslandEvent implements Cancellabl
             Location to,
             Island island,
             PlayerTeleportEvent.TeleportCause teleportCause,
-            boolean cancelled,
-            boolean async
+            boolean cancelled
     ) {
-        super(island, async);
+        super(island);
         this.player = player;
         this.from = from;
         this.to = to;

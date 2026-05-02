@@ -48,8 +48,7 @@ public class TeleportPermissions implements PermissionModule {
                 to,
                 island,
                 event.getCause(),
-                event.isCancelled(),
-                false
+                event.isCancelled()
         );
         playerTeleportIslandEvent.callEvent();
         if (playerTeleportIslandEvent.isCancelled()) {
