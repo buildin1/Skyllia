@@ -57,7 +57,7 @@ public class WorldBorderAddEvent implements Listener {
                 }
                 border.setCenter(centerIsland);
                 border.setSize(island.getSize());
-                player.setWorldBorder(border);
+                //player.setWorldBorder(border);
             }, null, 1L);
         });
     }

@@ -49,8 +49,8 @@ public class IslandMobSpawnOtherFlag implements FlagModule {
         if (specific == null) return;
         if (!SkylliaAPI.isWorldSkyblock(location.getWorld())) return;
         Island island = SkylliaAPI.getIslandByChunk(location.getBlockX() >> 4, location.getBlockZ() >> 4);
-        if (island == null) return;
-        if (!SkylliaAPI.getPermissionsManager().hasFlag(island, specific, ALLOW_SPAWN_ALL_OTHER)) {
+        //禁止无主空岛自然生成其他生物
+        if (island == null || !SkylliaAPI.getPermissionsManager().hasFlag(island, specific, ALLOW_SPAWN_ALL_OTHER)) {
             cancel.run();
             return;
         }

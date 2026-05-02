@@ -98,6 +98,6 @@ public class TeleportPermissions implements PermissionModule {
         }
         border.setCenter(centerIsland);
         border.setSize(island.getSize());
-        player.setWorldBorder(border);
+        //player.setWorldBorder(border);
     }
 }

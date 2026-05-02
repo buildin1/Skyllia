@@ -83,11 +83,6 @@ public class PermissionSubCommand implements SubCommandInterface {
             return;
         }
 
-        if (!PlayerUtils.hasPermission(player, "skyllia.island.command.permission")) {
-            ConfigLoader.language.sendMessage(player, "island.player.permission-denied");
-            return;
-        }
-
         Island island = SkylliaAPI.getIslandByPlayerId(player.getUniqueId());
         if (island == null) {
             ConfigLoader.language.sendMessage(player, "island.player.no-island");
@@ -95,7 +90,7 @@ public class PermissionSubCommand implements SubCommandInterface {
         }
 
         if (!canEdit(player, island)) {
-            ConfigLoader.language.sendMessage(player, "island.player.permission-denied");
+            ConfigLoader.language.sendMessage(player, "island.player.permission-low");
             return;
         }
 
@@ -190,12 +185,6 @@ public class PermissionSubCommand implements SubCommandInterface {
         boolean isReadOnly = action.equals("get")
                 || (action.equals("auto") && (args.length - offset < 3 || explicitBool == null));
 
-        if (!isReadOnly && !hasPermissionForPerm(player, key)) {
-            ConfigLoader.language.sendMessage(player, "island.permission.permission-denied", Map.of(
-                    "%perm%", toKeyString(key)
-            ));
-            return;
-        }
 
         if (action.equals("get") || (action.equals("auto") && explicitBool == null)) {
             ConfigLoader.language.sendMessage(player, "island.permission.value", Map.of(

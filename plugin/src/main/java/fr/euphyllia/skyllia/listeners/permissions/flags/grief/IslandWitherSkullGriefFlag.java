@@ -46,7 +46,10 @@ public class IslandWitherSkullGriefFlag implements FlagModule {
         final int chunkX = location.getBlockX() >> 4;
         final int chunkZ = location.getBlockZ() >> 4;
         final Island island = SkylliaAPI.getIslandByChunk(chunkX, chunkZ);
-        if (island == null) return;
+        if (island == null) {
+            event.setCancelled(true);
+            return;
+        }
 
         if (!SkylliaAPI.getPermissionsManager().hasFlag(island, ALLOW_WITHER_SKULL_GRIEF, ALLOW_MOB_GRIEF)) {
             event.setCancelled(true);

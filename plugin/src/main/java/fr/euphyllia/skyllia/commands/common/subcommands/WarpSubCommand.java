@@ -54,11 +54,6 @@ public class WarpSubCommand implements SubCommandInterface {
             return;
         }
 
-        if (!PlayerUtils.hasPermission(player, "skyllia.island.command.warp")) {
-            ConfigLoader.language.sendMessage(player, "island.player.permission-denied");
-            return;
-        }
-
         String warpName = args[0];
 
         try {
@@ -106,7 +101,7 @@ public class WarpSubCommand implements SubCommandInterface {
                 }
                 border.setCenter(center);
                 border.setSize(rayon);
-                player.setWorldBorder(border);
+                //player.setWorldBorder(border);
             });
         } catch (Exception e) {
             logger.log(Level.FATAL, e.getMessage(), e);

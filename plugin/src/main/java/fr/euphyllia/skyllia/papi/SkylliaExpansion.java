@@ -47,6 +47,7 @@ public class SkylliaExpansion extends PlaceholderExpansion {
                 new BannedHandler(),
                 new MembersHandler(),
                 new WarpHandler(),
+                new VisitedHandler(),
                 // Legacy alias: gamerule_* → same handler as flags_*
                 new FlagsHandler() {
                     @Override

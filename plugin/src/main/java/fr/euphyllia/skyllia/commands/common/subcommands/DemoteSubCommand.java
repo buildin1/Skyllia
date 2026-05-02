@@ -45,11 +45,6 @@ public class DemoteSubCommand implements SubCommandInterface {
             return;
         }
 
-        if (!PlayerUtils.hasPermission(player, "skyllia.island.command.demote")) {
-            ConfigLoader.language.sendMessage(player, "island.player.permission-denied");
-            return;
-        }
-
         if (args.length < 1) {
             ConfigLoader.language.sendMessage(player, "island.rank.demote-args-missing");
             return;

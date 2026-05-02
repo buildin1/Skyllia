@@ -1,13 +1,18 @@
 package fr.euphyllia.skyllia.commands.common;
 
 import fr.euphyllia.skyllia.Skyllia;
+import fr.euphyllia.skyllia.api.SkylliaAPI;
 import fr.euphyllia.skyllia.api.commands.SkylliaCommandInterface;
 import fr.euphyllia.skyllia.api.commands.SubCommandInterface;
 import fr.euphyllia.skyllia.api.commands.SubCommandRegistry;
+import fr.euphyllia.skyllia.api.skyblock.Island;
 import fr.euphyllia.skyllia.commands.common.subcommands.*;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
 
@@ -20,6 +25,7 @@ public class SkylliaCommand implements SkylliaCommandInterface {
 
     private final Skyllia plugin;
     private final SubCommandRegistry registry;
+    private final Logger logger = LogManager.getLogger(this);
 
     public SkylliaCommand(Skyllia Skyllia) {
         this.plugin = Skyllia;
@@ -69,9 +75,22 @@ public class SkylliaCommand implements SkylliaCommandInterface {
             Bukkit.getAsyncScheduler().runNow(this.plugin, task ->
                     subCommandInterface.onExecute(this.plugin, sender.getSender(), listArgs));
         } else {
-            // If no subcommand is provided, we can default to the "create" command
-            Bukkit.getAsyncScheduler().runNow(this.plugin, task ->
-                    registry.getSubCommandByName("create").onExecute(this.plugin, sender.getSender(), args));
+            if (sender.getSender() instanceof Player player) {
+                Island island = SkylliaAPI.getIslandByPlayerId(player.getUniqueId());
+                //logger.info("接受命令：玩家 {}", player.getName());
+                if (island == null) {
+                    //logger.info("玩家 {} 没有岛屿", player.getName());
+                    Bukkit.getAsyncScheduler().runNow(this.plugin, task ->
+                            registry.getSubCommandByName("create").onExecute(this.plugin, sender.getSender(), args));
+                }
+                else{
+                    //logger.info("玩家 {} 有岛屿", player.getName());
+                    Bukkit.getAsyncScheduler().runNow(this.plugin, task ->
+                            registry.getSubCommandByName("home").onExecute(this.plugin, sender.getSender(), args));
+                }
+                // If no subcommand is provided, we can default to the "create" command
+            }
+            //else logger.info("接受命令：非玩家");
         }
     }
 

@@ -25,7 +25,10 @@ public class IslandAllowFluidsPermissions implements FlagModule {
         final int chunkX = to.getBlockX() >> 4;
         final int chunkZ = to.getBlockZ() >> 4;
         final Island island = SkylliaAPI.getIslandByChunk(chunkX, chunkZ);
-        if (island == null) return;
+        if (island == null) {
+            event.setCancelled(true);
+            return;
+        }
 
         if (!SkylliaAPI.getPermissionsManager().hasFlag(island, ISLAND_ALLOW_FLUIDS)) {
             event.setCancelled(true);

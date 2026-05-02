@@ -66,8 +66,11 @@ public class ConfigLoader implements IConfigRegistry {
         configManagers.add(playerManager);
         configManagers.add(schematicManager);
         configManagers.add(language);
+        configManagers.add(permissionsV2);
 
-        reloadConfigs();
+        logger.log(Level.INFO, "[Config] Starting to load permission defaults...");
+        reloadConfigs();   // 会触发 permissionsV2.loadConfig()，从而输出上述详细日志
+        logger.log(Level.INFO, "[Config] Permission defaults loading complete.");
 
         logger.log(Level.INFO, "[Config] Configurations loaded successfully.");
     }

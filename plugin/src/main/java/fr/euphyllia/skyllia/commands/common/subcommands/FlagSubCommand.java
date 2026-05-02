@@ -69,11 +69,6 @@ public class FlagSubCommand implements SubCommandInterface {
             return;
         }
 
-        if (!PlayerUtils.hasPermission(player, "skyllia.island.command.flag")) {
-            ConfigLoader.language.sendMessage(player, "island.player.permission-denied");
-            return;
-        }
-
         Island island = SkylliaAPI.getIslandByPlayerId(player.getUniqueId());
         if (island == null) {
             ConfigLoader.language.sendMessage(player, "island.player.no-island");
@@ -81,7 +76,7 @@ public class FlagSubCommand implements SubCommandInterface {
         }
 
         if (!canEdit(player, island)) {
-            ConfigLoader.language.sendMessage(player, "island.player.permission-denied");
+            ConfigLoader.language.sendMessage(player, "island.player.permission-low");
             return;
         }
 
@@ -156,13 +151,6 @@ public class FlagSubCommand implements SubCommandInterface {
 
         boolean isReadOnly = action.equals("get")
                 || (action.equals("auto") && (args.length - offset < 2 || parseBool(args[offset + 1]) == null));
-
-        if (!isReadOnly && !hasPermissionForFlag(player, key)) {
-            ConfigLoader.language.sendMessage(player, "island.flag.permission-denied", Map.of(
-                    "%flag%", toKeyString(key)
-            ));
-            return;
-        }
 
         Boolean explicitBool = (args.length - offset >= 2) ? parseBool(args[offset + 1]) : null;
 

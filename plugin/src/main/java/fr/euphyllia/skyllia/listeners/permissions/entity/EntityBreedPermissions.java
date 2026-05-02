@@ -26,12 +26,15 @@ public class EntityBreedPermissions implements PermissionModule {
         final Entity child = event.getEntity();
         final Location location = child.getLocation();
 
-        if (!SkylliaAPI.isWorldSkyblock(location.getWorld())) return;
+        if (!SkylliaAPI.isWorldSkyblock(location.getWorld()) || player.isOp()) return;
 
         final int chunkX = location.getBlockX() >> 4;
         final int chunkZ = location.getBlockZ() >> 4;
         final Island island = SkylliaAPI.getIslandByChunk(chunkX, chunkZ);
-        if (island == null) return;
+        if (island == null) {
+            event.setCancelled(true);
+            return;
+        }
 
         final boolean hasPermission = SkylliaAPI.getPermissionsManager().hasPermission(player, island, ENTITY_BREED, "skyllia.player.entity.breed.bypass", ConfigLoader.general.isDebugPermission());
         if (!hasPermission) {

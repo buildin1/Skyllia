@@ -38,11 +38,6 @@ public class TransferSubCommand implements SubCommandInterface {
             return;
         }
 
-        if (!PlayerUtils.hasPermission(player, "skyllia.island.command.transfer")) {
-            ConfigLoader.language.sendMessage(player, "island.player.permission-denied");
-            return;
-        }
-
         String newOwnerName = args[0];
 
         boolean isConfirm = args.length >= 2 && args[1].equalsIgnoreCase("confirm");

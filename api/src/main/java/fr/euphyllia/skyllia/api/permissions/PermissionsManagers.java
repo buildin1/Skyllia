@@ -3,7 +3,6 @@ package fr.euphyllia.skyllia.api.permissions;
 import fr.euphyllia.skyllia.api.SkylliaAPI;
 import fr.euphyllia.skyllia.api.skyblock.Island;
 import fr.euphyllia.skyllia.api.skyblock.model.RoleType;
-import fr.euphyllia.skyllia.api.permissions.TrustService;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;

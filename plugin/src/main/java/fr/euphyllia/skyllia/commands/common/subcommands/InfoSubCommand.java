@@ -36,11 +36,6 @@ public class InfoSubCommand implements SubCommandInterface {
             return;
         }
 
-        if (!PlayerUtils.hasPermission(player, permission())) {
-            ConfigLoader.language.sendMessage(player, "island.info.no-permission");
-            return;
-        }
-
         Island island = SkylliaAPI.getIslandByPlayerId(player.getUniqueId());
 
         if (island == null) {

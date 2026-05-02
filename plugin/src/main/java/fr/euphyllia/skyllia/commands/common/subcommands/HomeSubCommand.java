@@ -35,11 +35,6 @@ public class HomeSubCommand implements SubCommandInterface {
             return;
         }
 
-        if (!PlayerUtils.hasPermission(player, "skyllia.island.command.home")) {
-            ConfigLoader.language.sendMessage(player, "island.player.permission-denied");
-            return;
-        }
-
         try {
             Island island = SkylliaAPI.getIslandByPlayerId(player.getUniqueId());
             if (island == null) {
@@ -61,7 +56,7 @@ public class HomeSubCommand implements SubCommandInterface {
             } else {
                 loc = warpIsland.location().clone();
             }
-            loc.add(0, 0.5, 0);
+            loc.add(0.5, 0.1, 0.5);
 
             player.teleportAsync(loc, PlayerTeleportEvent.TeleportCause.PLUGIN).thenRun(() -> {
                 player.setVelocity(new Vector(0, 0, 0));
@@ -79,7 +74,7 @@ public class HomeSubCommand implements SubCommandInterface {
                 }
                 border.setCenter(center);
                 border.setSize(rayon);
-                player.setWorldBorder(border);
+                //player.setWorldBorder(border);
             });
         } catch (Exception exception) {
             logger.log(Level.FATAL, exception.getMessage(), exception);

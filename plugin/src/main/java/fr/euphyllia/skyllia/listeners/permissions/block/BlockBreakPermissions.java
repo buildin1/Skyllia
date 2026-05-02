@@ -15,6 +15,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.plugin.Plugin;
 
+import static fr.euphyllia.skyllia.api.commands.SubCommandInterface.log;
+
 public class BlockBreakPermissions implements PermissionModule {
 
     private PermissionId BLOCK_BREAK;
@@ -24,16 +26,20 @@ public class BlockBreakPermissions implements PermissionModule {
         final Player player = event.getPlayer();
         final Location location = event.getBlock().getLocation();
 
-        if (!SkylliaAPI.isWorldSkyblock(location.getWorld())) return;
+        if (!SkylliaAPI.isWorldSkyblock(location.getWorld()) || player.isOp()) return;
 
         final int chunkX = location.getBlockX() >> 4;
         final int chunkZ = location.getBlockZ() >> 4;
         final Island island = SkylliaAPI.getIslandByChunk(chunkX, chunkZ);
-        if (island == null) return;
+        if (island == null) {
+            event.setCancelled(true);
+            return;
+        }
 
         final boolean hasBypass = player.hasPermission("skyllia.player.break.bypass");
         final boolean hasPermission = hasBypass || SkylliaAPI.getPermissionsManager().hasPermission(player, island, BLOCK_BREAK, null, ConfigLoader.general.isDebugPermission());
         if (!hasPermission) {
+            //log.info("玩家 {} 没有权限 BLOCK_BREAK 进行方块破坏", player.getName());
             event.setCancelled(true);
             return;
         }

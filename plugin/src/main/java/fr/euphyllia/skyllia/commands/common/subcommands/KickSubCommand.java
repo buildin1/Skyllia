@@ -43,10 +43,6 @@ public class KickSubCommand implements SubCommandInterface {
             ConfigLoader.language.sendMessage(sender, "island.player.player-only-command");
             return;
         }
-        if (!PlayerUtils.hasPermission(player, "skyllia.island.command.kick")) {
-            ConfigLoader.language.sendMessage(player, "island.player.permission-denied");
-            return;
-        }
         if (args.length < 1) {
             ConfigLoader.language.sendMessage(player, "island.kick.args-missing");
             return;

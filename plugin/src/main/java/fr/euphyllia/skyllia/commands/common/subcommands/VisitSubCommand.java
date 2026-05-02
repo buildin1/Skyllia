@@ -49,12 +49,6 @@ public class VisitSubCommand implements SubCommandInterface {
             ConfigLoader.language.sendMessage(sender, "island.player.player-only-command");
             return;
         }
-
-        if (!PlayerUtils.hasPermission(player, "skyllia.island.command.visit")) {
-            ConfigLoader.language.sendMessage(player, "island.player.permission-denied");
-            return;
-        }
-
         if (args.length < 1) {
             ConfigLoader.language.sendMessage(player, "island.visit.args-missing");
             return;
@@ -122,7 +116,7 @@ public class VisitSubCommand implements SubCommandInterface {
 
                     border.setCenter(center);
                     border.setSize(island.getSize());
-                    player.setWorldBorder(border);
+                    //player.setWorldBorder(border);
                 });
             }, null, 1L);
         } catch (Exception exception) {

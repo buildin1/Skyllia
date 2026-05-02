@@ -26,12 +26,15 @@ public class DecorHangingBreakPermissions implements PermissionModule {
         if (!(remover instanceof Player player)) return;
 
         final Location location = event.getEntity().getLocation();
-        if (!SkylliaAPI.isWorldSkyblock(location.getWorld())) return;
+        if (!SkylliaAPI.isWorldSkyblock(location.getWorld()) || player.isOp()) return;
 
         final int chunkX = location.getBlockX() >> 4;
         final int chunkZ = location.getBlockZ() >> 4;
         final Island island = SkylliaAPI.getIslandByChunk(chunkX, chunkZ);
-        if (island == null) return;
+        if (island == null) {
+            event.setCancelled(true);
+            return;
+        }
 
         final boolean hasBypass = player.hasPermission("skyllia.player.decor.hanging.break.bypass");
         final boolean hasPermission = hasBypass || SkylliaAPI.getPermissionsManager().hasPermission(player, island, DECOR_HANGING_BREAK, null, ConfigLoader.general.isDebugPermission());

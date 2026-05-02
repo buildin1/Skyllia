@@ -56,7 +56,7 @@ public class SkyblockEvent implements Listener {
                         }
                         border.setCenter(center);
                         border.setSize(newSize);
-                        player.setWorldBorder(border);
+                        //player.setWorldBorder(border);
                     }
             );
         }

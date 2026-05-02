@@ -31,11 +31,6 @@ public class LeaveSubCommand implements SubCommandInterface {
             return;
         }
 
-        if (!PlayerUtils.hasPermission(player, "skyllia.island.command.leave")) {
-            ConfigLoader.language.sendMessage(player, "island.player.permission-denied");
-            return;
-        }
-
         SkyblockManager skyblockManager = Skyllia.getInstance().getInterneAPI().getSkyblockManager();
         Island island = SkylliaAPI.getIslandByPlayerId(player.getUniqueId());
 

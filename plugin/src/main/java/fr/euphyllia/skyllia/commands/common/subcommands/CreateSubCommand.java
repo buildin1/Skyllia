@@ -45,10 +45,6 @@ public class CreateSubCommand implements SubCommandInterface {
             }
             CommandCacheExecution.addCommandExecute(playerId, "create");
             try {
-                if (!PlayerUtils.hasPermission(player, "skyllia.island.command.create")) {
-                    ConfigLoader.language.sendMessage(player, "island.player.permission-denied");
-                    return;
-                }
 
                 Island existingIsland = SkylliaAPI.getIslandByPlayerId(playerId);
                 if (existingIsland != null) {
@@ -72,11 +68,6 @@ public class CreateSubCommand implements SubCommandInterface {
                 IslandSettings islandSettings = IslandUtils.getIslandSettings(schemKey);
                 if (islandSettings == null) {
                     ConfigLoader.language.sendMessage(player, "island.type-not-exist");
-                    return;
-                }
-
-                if (!PlayerUtils.hasPermission(player, "skyllia.island.command.create.%s".formatted(schemKey))) {
-                    ConfigLoader.language.sendMessage(player, "island.player.permission-denied");
                     return;
                 }
 
@@ -151,7 +142,7 @@ public class CreateSubCommand implements SubCommandInterface {
                                         .cacheIslandAndIndex(island);
 
                                 new SkyblockLoadEvent(island).callEvent();
-                                Location spawnLoc = center.clone().add(0, 0.5, 0);
+                                Location spawnLoc = center.clone().add(0.5, 0.1, 0.5);
                                 player.teleportAsync(spawnLoc, PlayerTeleportEvent.TeleportCause.PLUGIN)
                                         .thenRun(() -> {
                                             player.setVelocity(new Vector(0, 0, 0));
@@ -163,7 +154,7 @@ public class CreateSubCommand implements SubCommandInterface {
                                             if (border == null) border = Bukkit.createWorldBorder();
                                             border.setCenter(center);
                                             border.setSize(island.getSize());
-                                            player.setWorldBorder(border);
+                                            //player.setWorldBorder(border);
                                         });
                             }
                         });

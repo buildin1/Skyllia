@@ -48,8 +48,8 @@ public class IslandMobSpawnBossFlag implements FlagModule {
         if (specific == null) return;
         if (!SkylliaAPI.isWorldSkyblock(location.getWorld())) return;
         Island island = SkylliaAPI.getIslandByChunk(location.getBlockX() >> 4, location.getBlockZ() >> 4);
-        if (island == null) return;
-        if (!SkylliaAPI.getPermissionsManager().hasFlag(island, specific, ALLOW_SPAWN_ALL_BOSS)) {
+        //禁止无主空岛自然生成任何boss生物
+        if (island == null || !SkylliaAPI.getPermissionsManager().hasFlag(island, specific, ALLOW_SPAWN_ALL_BOSS)) {
             cancel.run();
             return;
         }

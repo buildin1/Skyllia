@@ -43,7 +43,10 @@ public class ConvertObsidianToLavaPermissions implements PermissionModule {
         final int chunkX = location.getBlockX() >> 4;
         final int chunkZ = location.getBlockZ() >> 4;
         final Island island = SkylliaAPI.getIslandByChunk(chunkX, chunkZ);
-        if (island == null) return;
+        if (island == null) {
+            event.setCancelled(true);
+            return;
+        }
 
         final boolean hasPermission = SkylliaAPI.getPermissionsManager().hasPermission(
                 player, island, CONVERT_OBSIDIAN_TO_LAVA, "skyllia.player.convert_obsidian_to_lava.bypass", ConfigLoader.general.isDebugPermission()

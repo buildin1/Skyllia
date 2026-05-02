@@ -26,7 +26,7 @@ public class EntityInteractPermissions implements PermissionModule {
         final Entity target = event.getRightClicked();
         final Location location = target.getLocation();
 
-        if (!SkylliaAPI.isWorldSkyblock(location.getWorld())) return;
+        if (!SkylliaAPI.isWorldSkyblock(location.getWorld()) || player.isOp()) return;
 
         final int chunkX = location.getBlockX() >> 4;
         final int chunkZ = location.getBlockZ() >> 4;

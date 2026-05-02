@@ -25,12 +25,15 @@ public class DecorHangingPlacePermissions implements PermissionModule {
         if (player == null) return;
 
         final Location location = event.getEntity().getLocation();
-        if (!SkylliaAPI.isWorldSkyblock(location.getWorld())) return;
+        if (!SkylliaAPI.isWorldSkyblock(location.getWorld()) || player.isOp()) return;
 
         final int chunkX = location.getBlockX() >> 4;
         final int chunkZ = location.getBlockZ() >> 4;
         final Island island = SkylliaAPI.getIslandByChunk(chunkX, chunkZ);
-        if (island == null) return;
+        if (island == null) {
+            event.setCancelled(true);
+            return;
+        }
 
         final boolean hasBypass = player.hasPermission("skyllia.player.decor.hanging.place.bypass");
         final boolean hasPermission = hasBypass || SkylliaAPI.getPermissionsManager().hasPermission(player, island, DECOR_HANGING_PLACE, null, ConfigLoader.general.isDebugPermission());

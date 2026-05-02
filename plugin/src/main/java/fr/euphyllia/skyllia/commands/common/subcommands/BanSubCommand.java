@@ -40,11 +40,6 @@ public class BanSubCommand implements SubCommandInterface {
             return;
         }
 
-        if (!PlayerUtils.hasPermission(player, "skyllia.island.command.ban")) {
-            ConfigLoader.language.sendMessage(player, "island.player.permission-denied");
-            return;
-        }
-
         if (args.length < 1) {
             ConfigLoader.language.sendMessage(player, "island.ban.args-missing");
             return;

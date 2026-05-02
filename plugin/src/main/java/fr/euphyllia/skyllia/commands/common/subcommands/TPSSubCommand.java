@@ -25,11 +25,6 @@ public class TPSSubCommand implements SubCommandInterface {
             return;
         }
 
-        if (!PlayerUtils.hasPermission(player, "skyllia.island.command.tps")) {
-            ConfigLoader.language.sendMessage(player, "island.player.permission-denied");
-            return;
-        }
-
         final Location playerLocation = player.getLocation();
         if (!WorldUtils.isWorldSkyblock(playerLocation.getWorld().getName())) {
             ConfigLoader.language.sendMessage(player, "island.player.not-on-island");

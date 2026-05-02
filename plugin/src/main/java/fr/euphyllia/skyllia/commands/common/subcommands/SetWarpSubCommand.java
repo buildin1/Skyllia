@@ -51,11 +51,6 @@ public class SetWarpSubCommand implements SubCommandInterface {
             return;
         }
 
-        if (!PlayerUtils.hasPermission(player, "skyllia.island.command.setwarp")) {
-            ConfigLoader.language.sendMessage(player, "island.player.permission-denied");
-            return;
-        }
-
         Location playerLocation = player.getLocation();
         if (!WorldUtils.isWorldSkyblock(playerLocation.getWorld().getName())) {
             ConfigLoader.language.sendMessage(player, "island.player.not-on-island");
