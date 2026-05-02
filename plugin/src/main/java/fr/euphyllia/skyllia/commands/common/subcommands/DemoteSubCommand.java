@@ -107,7 +107,6 @@ public class DemoteSubCommand implements SubCommandInterface {
     @Override
     public @NotNull List<String> onTabComplete(@NotNull Plugin plugin, @NotNull CommandSender sender, @NotNull String[] args) {
         if (!(sender instanceof Player player)) return Collections.emptyList();
-        if (!PlayerUtils.hasPermission(player, "skyllia.island.command.demote")) return Collections.emptyList();
 
         if (args.length == 1) {
             Island island = SkylliaAPI.getIslandByPlayerId(player.getUniqueId());

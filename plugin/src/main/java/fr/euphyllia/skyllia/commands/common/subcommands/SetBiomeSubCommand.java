@@ -72,11 +72,6 @@ public class SetBiomeSubCommand implements SubCommandInterface {
         String biomeName = biomesImpl.getNameBiome(biome);
         String biomeRaw = biomeName.split(":")[1];
 
-        if (!PlayerUtils.hasPermission(player, "skyllia.island.command.biome.%s".formatted(biomeRaw))) {
-            ConfigLoader.language.sendMessage(player, "island.biome.permission-denied", Map.of("%s", selectBiome));
-            return;
-        }
-
         Location playerLocation = player.getLocation();
         World world = playerLocation.getWorld();
 
@@ -124,8 +119,7 @@ public class SetBiomeSubCommand implements SubCommandInterface {
             CompletableFuture<Boolean> changeBiomeFuture;
             String messageToSend;
 
-            if (args.length >= 2 && args[1].equalsIgnoreCase("island")
-                    && PlayerUtils.hasPermission(player, "skyllia.island.command.biome_island")) {
+            if (args.length >= 2 && args[1].equalsIgnoreCase("island")) {
 
                 changeBiomeFuture = Skyllia.getInstance().getInterneAPI().getWorldModifier(SchematicPlugin.UNKNOWN).changeBiomeIsland(world, biome, island, ConfigLoader.general.getRegionDistance());
                 messageToSend = "island.biome.island-success";

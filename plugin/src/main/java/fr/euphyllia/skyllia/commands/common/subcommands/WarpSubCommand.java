@@ -112,7 +112,6 @@ public class WarpSubCommand implements SubCommandInterface {
     @Override
     public @NotNull List<String> onTabComplete(@NotNull Plugin plugin, @NotNull CommandSender sender, @NotNull String[] args) {
         if (!(sender instanceof Player player)) return Collections.emptyList();
-        if (!PlayerUtils.hasPermission(player, "skyllia.island.command.warp")) return Collections.emptyList();
         if (args.length != 1) return Collections.emptyList();
 
         Island island = SkylliaAPI.getIslandByPlayerId(player.getUniqueId());

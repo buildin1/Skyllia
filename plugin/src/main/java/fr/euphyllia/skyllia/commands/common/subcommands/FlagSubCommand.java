@@ -91,7 +91,7 @@ public class FlagSubCommand implements SubCommandInterface {
             String filter = (args.length >= 2) ? args[1].toLowerCase(Locale.ROOT) : "";
             List<String> all = registry.keys().stream()
                     .map(FlagSubCommand::toKeyString)
-                    .filter(k -> (filter.isEmpty() || k.toLowerCase(Locale.ROOT).contains(filter)) && PlayerUtils.hasPermission(player, "skyllia.island.flag." + k))
+                    .filter(k -> (filter.isEmpty() || k.toLowerCase(Locale.ROOT).contains(filter)))
                     .sorted()
                     .toList();
 
@@ -252,7 +252,6 @@ public class FlagSubCommand implements SubCommandInterface {
     @Override
     public @NotNull List<String> onTabComplete(@NotNull Plugin plugin, @NotNull CommandSender sender, @NotNull String[] args) {
         if (!(sender instanceof Player player)) return Collections.emptyList();
-        if (!PlayerUtils.hasPermission(player, "skyllia.island.command.flag")) return Collections.emptyList();
 
         IslandFlagRegistry registry = SkylliaAPI.getFlagRegistry();
 

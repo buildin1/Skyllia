@@ -36,11 +36,6 @@ public class InfoSubCommand implements SubCommandInterface {
             ConfigLoader.language.sendMessage(sender, "island.player.player-only-command");
             return;
         }
-
-        if (!PlayerUtils.hasPermission(player, permission())) {
-            ConfigLoader.language.sendMessage(player, "island.info.no-permission");
-            return;
-        }
         UUID playerId;
         if (args.length == 1) {
             playerId = Bukkit.getPlayerUniqueId(args[0]);

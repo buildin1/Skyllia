@@ -87,7 +87,6 @@ public class KickSubCommand implements SubCommandInterface {
     @Override
     public @NotNull List<String> onTabComplete(@NotNull Plugin plugin, @NotNull CommandSender sender, @NotNull String[] args) {
         if (!(sender instanceof Player player)) return Collections.emptyList();
-        if (!PlayerUtils.hasPermission(player, "skyllia.island.command.kick")) return Collections.emptyList();
 
         if (args.length == 1) {
             String partial = args[0].trim().toLowerCase();

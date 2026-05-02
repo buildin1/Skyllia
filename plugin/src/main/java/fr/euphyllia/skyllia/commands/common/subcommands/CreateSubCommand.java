@@ -176,11 +176,6 @@ public class CreateSubCommand implements SubCommandInterface {
             return;
         }
 
-        if (!PlayerUtils.hasPermission(player, "skyllia.island.command.create")) {
-            ConfigLoader.language.sendMessage(player, "island.player.permission-denied");
-            return;
-        }
-
         boolean bypass = ConfigLoader.general.isAllowBypassIslandQueue()
                 && PlayerUtils.hasPermission(player, "skyllia.island.bypass.queue");
 

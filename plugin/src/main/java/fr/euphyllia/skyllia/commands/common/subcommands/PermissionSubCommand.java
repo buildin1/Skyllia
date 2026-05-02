@@ -105,7 +105,7 @@ public class PermissionSubCommand implements SubCommandInterface {
             String filter = (args.length >= 2) ? args[1].toLowerCase(Locale.ROOT) : "";
             List<String> all = registry.keys().stream()
                     .map(PermissionSubCommand::toKeyString)
-                    .filter(k -> (filter.isEmpty() || k.toLowerCase(Locale.ROOT).contains(filter)) && PlayerUtils.hasPermission(player, "skyllia.island.permission." + k))
+                    .filter(k -> (filter.isEmpty() || k.toLowerCase(Locale.ROOT).contains(filter)))
                     .sorted()
                     .toList();
 
@@ -252,7 +252,6 @@ public class PermissionSubCommand implements SubCommandInterface {
     @Override
     public @NotNull List<String> onTabComplete(@NotNull Plugin plugin, @NotNull CommandSender sender, @NotNull String[] args) {
         if (!(sender instanceof Player player)) return Collections.emptyList();
-        if (!PlayerUtils.hasPermission(player, "skyllia.island.command.permission")) return Collections.emptyList();
 
         PermissionRegistry registry = SkylliaAPI.getPermissionRegistry();
 

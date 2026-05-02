@@ -18,16 +18,6 @@ import org.slf4j.LoggerFactory;
 public class PermissionsManagers {
 
     private static final Logger log = LoggerFactory.getLogger(PermissionsManagers.class);
-    private final TrustService trustService;
-
-    /**
-     * Constructs a new PermissionsManagers with the given TrustService.
-     *
-     * @param trustService the service used to check trusted players.
-     */
-    public PermissionsManagers(TrustService trustService) {
-        this.trustService = trustService;
-    }
 
     /**
      * Checks whether the given player has the specified permission on the island.
@@ -65,7 +55,6 @@ public class PermissionsManagers {
      *   <li>If {@code bukkitPermission} is non-null and the player holds it, access is granted immediately.</li>
      *   <li>If the player's role is {@link RoleType#OWNER}, access is always granted.</li>
      *   <li>If the player's role is {@link RoleType#BAN}, access is always denied.</li>
-     *   <li>If the player is marked as trusted for this island, their role is treated as {@link RoleType#MEMBER}.</li>
      *   <li>Otherwise, the island's compiled permissions are consulted for the player's role.</li>
      * </ol>
      * </p>
@@ -93,14 +82,6 @@ public class PermissionsManagers {
         var member = island.getMember(player.getUniqueId());
         RoleType role = member != null ? member.getRoleType() : RoleType.VISITOR;
         if (role == null) role = RoleType.VISITOR;
-
-        // if player is trusted by island, his role will be MEMBER.
-        if (role != RoleType.OWNER && role != RoleType.BAN) {
-            if (trustService.isTrusted(island.getId(), player.getUniqueId())) {
-                role = RoleType.MEMBER;
-                //log.info("Player {} is trusted on island {}, role set to MEMBER", player.getName(), island.getId());
-            }
-        }
 
         if (role == RoleType.OWNER) return true;
         if (role == RoleType.BAN) return false;
