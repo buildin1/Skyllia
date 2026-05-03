@@ -66,6 +66,8 @@ public class ConfigLoader implements IConfigRegistry {
         configManagers.add(playerManager);
         configManagers.add(schematicManager);
         configManagers.add(language);
+        configManagers.add(permissionsV2);
+        configManagers.add(islandFlags);
 
         reloadConfigs();
 

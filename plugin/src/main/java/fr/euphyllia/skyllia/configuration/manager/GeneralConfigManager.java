@@ -40,6 +40,15 @@ public class GeneralConfigManager implements IConfigurationProvider {
     private boolean debugPermission;
     private boolean changed = false;
 
+    // Cache TTL settings (seconds)
+    private long cacheTtlState;
+    private long cacheTtlMembers;
+    private long cacheTtlWarps;
+    private long cacheTtlIsland;
+    private long cacheTtlPlayerLink;
+    private long cacheTtlRole;
+    private long cacheTtlNameRole;
+
     public GeneralConfigManager(CommentedFileConfig config) {
         this.config = config;
         loadConfig();
@@ -75,6 +84,14 @@ public class GeneralConfigManager implements IConfigurationProvider {
         this.spawnPitch = getOrSetDefault("settings.spawn.pitch", 0.0f, Float.class);
 
         this.debugPermission = getOrSetDefault("debug.permission", false, Boolean.class);
+
+        this.cacheTtlState = getOrSetDefault("settings.cache.ttl.state", -1L, Long.class);
+        this.cacheTtlMembers = getOrSetDefault("settings.cache.ttl.members", -1L, Long.class);
+        this.cacheTtlWarps = getOrSetDefault("settings.cache.ttl.warps", -1L, Long.class);
+        this.cacheTtlIsland = getOrSetDefault("settings.cache.ttl.island", -1L, Long.class);
+        this.cacheTtlPlayerLink = getOrSetDefault("settings.cache.ttl.player-link", -1L, Long.class);
+        this.cacheTtlRole = getOrSetDefault("settings.cache.ttl.role", -1L, Long.class);
+        this.cacheTtlNameRole = getOrSetDefault("settings.cache.ttl.name-role", -1L, Long.class);
 
         if (changed) {
             TomlWriter tomlWriter = new TomlWriter();
@@ -187,6 +204,34 @@ public class GeneralConfigManager implements IConfigurationProvider {
 
     public boolean isEnableObsidianToLavaConversion() {
         return enableObsidianToLavaConversion;
+    }
+
+    public long getCacheTtlState() {
+        return cacheTtlState;
+    }
+
+    public long getCacheTtlMembers() {
+        return cacheTtlMembers;
+    }
+
+    public long getCacheTtlWarps() {
+        return cacheTtlWarps;
+    }
+
+    public long getCacheTtlIsland() {
+        return cacheTtlIsland;
+    }
+
+    public long getCacheTtlPlayerLink() {
+        return cacheTtlPlayerLink;
+    }
+
+    public long getCacheTtlRole() {
+        return cacheTtlRole;
+    }
+
+    public long getCacheTtlNameRole() {
+        return cacheTtlNameRole;
     }
 
 }
