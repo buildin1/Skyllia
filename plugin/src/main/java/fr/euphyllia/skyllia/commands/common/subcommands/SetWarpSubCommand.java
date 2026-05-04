@@ -70,7 +70,7 @@ public class SetWarpSubCommand implements SubCommandInterface {
 
         String warpName = args[0];
 
-        boolean allowed = SkylliaAPI.getPermissionsManager().hasPermission(player, island, ISLAND_SET_WARP_PERMISSION, null, ConfigLoader.general.isDebugPermission());
+        boolean allowed = SkylliaAPI.getPermissionsManager().hasPermission(player, island, ISLAND_SET_WARP_PERMISSION, null, ConfigLoader.general.getDebugSettings().permission());
         if (!allowed) {
             ConfigLoader.language.sendMessage(player, "island.player.permission-denied");
             return;

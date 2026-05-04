@@ -68,7 +68,7 @@ public class TeleportPermissions implements PermissionModule {
         }
 
         if (island.isPrivateIsland()) {
-            final boolean hasPermission = SkylliaAPI.getPermissionsManager().hasPermission(player, island, TELEPORT, "skyllia.player.teleport.bypass", ConfigLoader.general.isDebugPermission());
+            final boolean hasPermission = SkylliaAPI.getPermissionsManager().hasPermission(player, island, TELEPORT, "skyllia.player.teleport.bypass", ConfigLoader.general.getDebugSettings().permission());
             if (!hasPermission) {
                 ConfigLoader.language.sendMessage(event.getPlayer(), "island.visit.island-closed");
                 event.setCancelled(true);

@@ -4,6 +4,7 @@ import fr.euphyllia.skyllia.api.InterneAPI;
 import fr.euphyllia.skyllia.api.permissions.*;
 import fr.euphyllia.skyllia.api.permissions.modules.FlagModuleManager;
 import fr.euphyllia.skyllia.api.permissions.modules.PermissionModuleManager;
+import fr.euphyllia.skyllia.managers.skyblock.ImplPermissionsManagers;
 import fr.euphyllia.skyllia.managers.world.WorldsManager;
 import org.bukkit.Bukkit;
 
@@ -33,7 +34,7 @@ public class Managers {
 
         this.permissionRegistry = new PermissionRegistry(indexStore);
         this.permissionModuleManager = new PermissionModuleManager(api.getPlugin(), this.permissionRegistry);
-        this.permissionsManagers = new PermissionsManagers();
+        this.permissionsManagers = new ImplPermissionsManagers();
 
         this.flagRegistry = new IslandFlagRegistry(indexStore);
         this.flagModuleManager = new FlagModuleManager(api.getPlugin(), this.flagRegistry);

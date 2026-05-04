@@ -29,7 +29,7 @@ public class MoveEvent implements Listener {
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onPlayerTeleportOutside(final PlayerMoveEvent event) {
-        if (!ConfigLoader.general.isTeleportOutsideIsland()) return;
+        if (!ConfigLoader.general.getIslandSettings().teleportOutsideIsland()) return;
 
         final Player player = event.getPlayer();
         if (player.hasPermission("skyllia.island.outside.bypass")) return;
@@ -72,7 +72,7 @@ public class MoveEvent implements Listener {
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onDontLeaveIsland(final PlayerMoveEvent event) {
-        if (!ConfigLoader.general.isRestrictPlayerMovement()) return;
+        if (!ConfigLoader.general.getIslandSettings().restrictPlayerMovement()) return;
 
         final Player player = event.getPlayer();
         if (player.hasPermission("skyllia.island.border.bypass")) return;

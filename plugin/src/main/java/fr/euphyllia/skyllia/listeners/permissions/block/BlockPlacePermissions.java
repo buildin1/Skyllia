@@ -32,7 +32,7 @@ public class BlockPlacePermissions implements PermissionModule {
         if (island == null) return;
 
         final boolean hasBypass = player.hasPermission("skyllia.player.place.bypass");
-        final boolean hasPermission = hasBypass || SkylliaAPI.getPermissionsManager().hasPermission(player, island, BLOCK_PLACE, null, ConfigLoader.general.isDebugPermission());
+        final boolean hasPermission = hasBypass || SkylliaAPI.getPermissionsManager().hasPermission(player, island, BLOCK_PLACE, null, ConfigLoader.general.getDebugSettings().permission());
         if (!hasPermission) {
             event.setCancelled(true);
             return;

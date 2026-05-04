@@ -33,7 +33,7 @@ public class DecorHangingPlacePermissions implements PermissionModule {
         if (island == null) return;
 
         final boolean hasBypass = player.hasPermission("skyllia.player.decor.hanging.place.bypass");
-        final boolean hasPermission = hasBypass || SkylliaAPI.getPermissionsManager().hasPermission(player, island, DECOR_HANGING_PLACE, null, ConfigLoader.general.isDebugPermission());
+        final boolean hasPermission = hasBypass || SkylliaAPI.getPermissionsManager().hasPermission(player, island, DECOR_HANGING_PLACE, null, ConfigLoader.general.getDebugSettings().permission());
         if (!hasPermission) {
             event.setCancelled(true);
             return;

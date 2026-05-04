@@ -34,7 +34,7 @@ public class EntityInteractPermissions implements PermissionModule {
         if (island == null) return;
 
         final boolean hasBypass = player.hasPermission("skyllia.player.entity.interact.bypass");
-        final boolean hasPermission = hasBypass || SkylliaAPI.getPermissionsManager().hasPermission(player, island, ENTITY_INTERACT, null, ConfigLoader.general.isDebugPermission());
+        final boolean hasPermission = hasBypass || SkylliaAPI.getPermissionsManager().hasPermission(player, island, ENTITY_INTERACT, null, ConfigLoader.general.getDebugSettings().permission());
         if (!hasPermission) {
             event.setCancelled(true);
             return;

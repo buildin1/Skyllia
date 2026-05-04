@@ -33,7 +33,7 @@ public class ItemDropPermissions implements PermissionModule {
         if (island == null) return;
 
         final boolean hasBypass = player.hasPermission("skyllia.player.item.drop.bypass");
-        final boolean hasPermission = hasBypass || SkylliaAPI.getPermissionsManager().hasPermission(player, island, ITEM_DROP, null, ConfigLoader.general.isDebugPermission());
+        final boolean hasPermission = hasBypass || SkylliaAPI.getPermissionsManager().hasPermission(player, island, ITEM_DROP, null, ConfigLoader.general.getDebugSettings().permission());
         if (!hasPermission) {
             event.setCancelled(true);
             return;

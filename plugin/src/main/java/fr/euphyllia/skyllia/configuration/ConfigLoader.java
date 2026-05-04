@@ -90,7 +90,7 @@ public class ConfigLoader implements IConfigRegistry {
             }
             logger.log(Level.INFO, "[Config] Reload complete.");
 
-            if (general.isDebugPermission()) {
+            if (general.getDebugSettings().permission()) {
                 logger.log(Level.WARN, "!!! Warning !!!\n" +
                         "Verbose permission debugging is active.\n" +
                         "Although single hasPermission checks are very fast,\n" +

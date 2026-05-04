@@ -107,7 +107,7 @@ public class SetBiomeSubCommand implements SubCommandInterface {
 
             CommandCacheExecution.addCommandExecute(islandId, "biome");
 
-            boolean allowed = SkylliaAPI.getPermissionsManager().hasPermission(player, island, ISLAND_SET_BIOME_PERMISSION, null, ConfigLoader.general.isDebugPermission());
+            boolean allowed = SkylliaAPI.getPermissionsManager().hasPermission(player, island, ISLAND_SET_BIOME_PERMISSION, null, ConfigLoader.general.getDebugSettings().permission());
             if (!allowed) {
                 ConfigLoader.language.sendMessage(player, "island.player.permission-denied");
                 CommandCacheExecution.removeCommandExec(islandId, "biome");
@@ -132,7 +132,7 @@ public class SetBiomeSubCommand implements SubCommandInterface {
             if (args.length >= 2 && args[1].equalsIgnoreCase("island")
                     && PlayerUtils.hasPermission(player, "skyllia.island.command.biome_island")) {
 
-                changeBiomeFuture = Skyllia.getInstance().getInterneAPI().getWorldModifier(SchematicPlugin.UNKNOWN).changeBiomeIsland(world, biome, island, ConfigLoader.general.getRegionDistance());
+                changeBiomeFuture = Skyllia.getInstance().getInterneAPI().getWorldModifier(SchematicPlugin.UNKNOWN).changeBiomeIsland(world, biome, island, ConfigLoader.general.getIslandSettings().regionDistance());
                 messageToSend = "island.biome.island-success";
 
             } else {

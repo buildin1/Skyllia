@@ -339,7 +339,7 @@ public class SkyblockManager {
     }
 
     private int regionRadiusFromConfig() {
-        int d = ConfigLoader.general.getRegionDistance();
+        int d = ConfigLoader.general.getIslandSettings().regionDistance();
         if (d <= 0) return 1;
         int maxRadiusBlocks = d / 2;
         return Math.max(1, (int) Math.ceil(maxRadiusBlocks / 512.0));

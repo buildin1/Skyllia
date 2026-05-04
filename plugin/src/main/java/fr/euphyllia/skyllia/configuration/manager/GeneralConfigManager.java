@@ -11,43 +11,62 @@ import org.bukkit.Location;
 public class GeneralConfigManager implements IConfigurationProvider {
 
     private final CommentedFileConfig config;
-    // Configuration basic
-    private int configVersion;
-    private boolean verbose;
-    // Settings
-    private int updateCacheTimer;
-    // Island settings
-    private int regionDistance;
-    private int maxIslands;
-    private boolean teleportOutsideIsland;
-    private boolean restrictPlayerMovement;
-    private boolean enableObsidianToLavaConversion;
-    private boolean allowBypassIslandQueue;
-    // Island deletion settings
-    private boolean preventDeletionIfHasMembers;
-    private boolean deleteChunkPerimeterIsland;
-    // Island invitation settings
-    private boolean teleportWhenAcceptingInvitation;
-    // Spawn settings
-    private boolean spawnEnabled;
-    private String spawnWorld;
-    private double spawnX;
-    private double spawnY;
-    private double spawnZ;
-    private float spawnYaw;
-    private float spawnPitch;
-    // Debug settings
-    private boolean debugPermission;
     private boolean changed = false;
 
-    // Cache TTL settings (seconds)
-    private long cacheTtlState;
-    private long cacheTtlMembers;
-    private long cacheTtlWarps;
-    private long cacheTtlIsland;
-    private long cacheTtlPlayerLink;
-    private long cacheTtlRole;
-    private long cacheTtlNameRole;
+    private Basic basic;
+    private IslandSettings islandSettings;
+    private SpawnSettings spawnSettings;
+    private DebugSettings debugSettings;
+    private CacheTtlSettings cacheTtlSettings;
+    private PermissionsSettings permissionsSettings;
+
+
+    public record Basic(int configVersion, boolean verbose) {
+    }
+
+    public record IslandSettings(
+            int regionDistance,
+            int maxIslands,
+            boolean teleportOutsideIsland,
+            boolean restrictPlayerMovement,
+            boolean enableObsidianToLavaConversion,
+            // delete
+            boolean preventDeletionIfHasMembers,
+            boolean deleteChunkPerimeterIsland,
+            // invitation
+            boolean teleportWhenAcceptingInvitation,
+            // queue
+            boolean allowBypassQueue
+    ) {
+    }
+
+    public record SpawnSettings(
+            boolean enabled,
+            String worldName,
+            double x,
+            double y,
+            double z,
+            float yaw,
+            float pitch
+    ) {
+    }
+
+    public record DebugSettings(boolean permission) {
+    }
+
+    public record CacheTtlSettings(
+            long warps,
+            long nameRole,
+            long role,
+            long island,
+            long playerLink,
+            long members,
+            long state
+    ) {
+    }
+
+    public record PermissionsSettings(boolean checkOwner, boolean checkBan) {
+    }
 
     public GeneralConfigManager(CommentedFileConfig config) {
         this.config = config;
@@ -57,41 +76,52 @@ public class GeneralConfigManager implements IConfigurationProvider {
     @Override
     public void loadConfig() {
         changed = false;
-        this.configVersion = getOrSetDefault("config-version", 4, Integer.class);
-        this.verbose = getOrSetDefault("verbose", false, Boolean.class);
 
-        this.updateCacheTimer = getOrSetDefault("settings.global.cache.update-timer-seconds", 30, Integer.class);
+        this.basic = new Basic(
+                getOrSetDefault("config-version", 4, Integer.class),
+                getOrSetDefault("verbose", false, Boolean.class)
+        );
 
-        this.regionDistance = getOrSetDefault("settings.island.region-distance", -1, Integer.class);
-        this.maxIslands = getOrSetDefault("settings.island.max-islands", 500_000, Integer.class);
-        this.teleportOutsideIsland = getOrSetDefault("settings.island.teleport-outside-island", false, Boolean.class);
-        this.restrictPlayerMovement = getOrSetDefault("settings.island.restrict-player-movement", false, Boolean.class);
-        this.enableObsidianToLavaConversion = getOrSetDefault("settings.island.enable-obsidian-to-lava-conversion", true, Boolean.class);
+        this.islandSettings = new IslandSettings(
+                getOrSetDefault("settings.island.region-distance", -1, Integer.class),
+                getOrSetDefault("settings.island.max-islands", 500_000, Integer.class),
+                getOrSetDefault("settings.island.teleport-outside-island", false, Boolean.class),
+                getOrSetDefault("settings.island.restrict-player-movement", false, Boolean.class),
+                getOrSetDefault("settings.island.enable-obsidian-to-lava-conversion", true, Boolean.class),
+                getOrSetDefault("settings.island.delete.prevent-deletion-if-has-members", true, Boolean.class),
+                getOrSetDefault("settings.island.delete.chunk-perimeter-island", false, Boolean.class),
+                getOrSetDefault("settings.island.invitation.teleport-when-accepting", true, Boolean.class),
+                getOrSetDefault("settings.island.queue.allow-bypass", true, Boolean.class)
+        );
 
-        this.preventDeletionIfHasMembers = getOrSetDefault("settings.island.delete.prevent-deletion-if-has-members", true, Boolean.class);
-        this.deleteChunkPerimeterIsland = getOrSetDefault("settings.island.delete.chunk-perimeter-island", false, Boolean.class);
+        this.spawnSettings = new SpawnSettings(
+                getOrSetDefault("settings.spawn.enable", true, Boolean.class),
+                getOrSetDefault("settings.spawn.world-name", "world", String.class),
+                getOrSetDefault("settings.spawn.block-x", 0.0, Double.class),
+                getOrSetDefault("settings.spawn.block-y", 64.0, Double.class),
+                getOrSetDefault("settings.spawn.block-z", 0.0, Double.class),
+                getOrSetDefault("settings.spawn.yaw", 0.0f, Float.class),
+                getOrSetDefault("settings.spawn.pitch", 0.0f, Float.class)
+        );
 
-        this.allowBypassIslandQueue = getOrSetDefault("settings.island.queue.allow-bypass", true, Boolean.class);
+        this.debugSettings = new DebugSettings(
+                getOrSetDefault("debug.permission", false, Boolean.class)
+        );
 
-        this.teleportWhenAcceptingInvitation = getOrSetDefault("settings.island.invitation.teleport-when-accepting-invitation", true, Boolean.class);
+        this.cacheTtlSettings = new CacheTtlSettings(
+                getOrSetDefault("settings.cache.ttl.warps", -1L, Long.class),
+                getOrSetDefault("settings.cache.ttl.name-role", -1L, Long.class),
+                getOrSetDefault("settings.cache.ttl.role", -1L, Long.class),
+                getOrSetDefault("settings.cache.ttl.island", -1L, Long.class),
+                getOrSetDefault("settings.cache.ttl.player-link", -1L, Long.class),
+                getOrSetDefault("settings.cache.ttl.members", -1L, Long.class),
+                getOrSetDefault("settings.cache.ttl.state", -1L, Long.class)
+        );
 
-        this.spawnEnabled = getOrSetDefault("settings.spawn.enable", true, Boolean.class);
-        this.spawnWorld = getOrSetDefault("settings.spawn.world-name", "world", String.class);
-        this.spawnX = getOrSetDefault("settings.spawn.block-x", 0.0, Double.class);
-        this.spawnY = getOrSetDefault("settings.spawn.block-y", 64.0, Double.class);
-        this.spawnZ = getOrSetDefault("settings.spawn.block-z", 0.0, Double.class);
-        this.spawnYaw = getOrSetDefault("settings.spawn.yaw", 0.0f, Float.class);
-        this.spawnPitch = getOrSetDefault("settings.spawn.pitch", 0.0f, Float.class);
-
-        this.debugPermission = getOrSetDefault("debug.permission", false, Boolean.class);
-
-        this.cacheTtlState = getOrSetDefault("settings.cache.ttl.state", -1L, Long.class);
-        this.cacheTtlMembers = getOrSetDefault("settings.cache.ttl.members", -1L, Long.class);
-        this.cacheTtlWarps = getOrSetDefault("settings.cache.ttl.warps", -1L, Long.class);
-        this.cacheTtlIsland = getOrSetDefault("settings.cache.ttl.island", -1L, Long.class);
-        this.cacheTtlPlayerLink = getOrSetDefault("settings.cache.ttl.player-link", -1L, Long.class);
-        this.cacheTtlRole = getOrSetDefault("settings.cache.ttl.role", -1L, Long.class);
-        this.cacheTtlNameRole = getOrSetDefault("settings.cache.ttl.name-role", -1L, Long.class);
+        this.permissionsSettings = new PermissionsSettings(
+                getOrSetDefault("permissions.check-owner", false, Boolean.class),
+                getOrSetDefault("permissions.check-ban", false, Boolean.class)
+        );
 
         if (changed) {
             TomlWriter tomlWriter = new TomlWriter();
@@ -124,114 +154,47 @@ public class GeneralConfigManager implements IConfigurationProvider {
             return (T) value;
         }
 
-        // Cas spécial : Integer → Long
         if (expectedClass == Long.class && value instanceof Integer) {
             return (T) Long.valueOf((Integer) value);
         }
 
-        // Cas spécial : Double → Float
         if (expectedClass == Float.class && value instanceof Double) {
             return (T) Float.valueOf(((Double) value).floatValue());
         }
 
-        throw new IllegalStateException("Cannot convert value at path '" + path + "' from " + value.getClass().getSimpleName() + " to " + expectedClass.getSimpleName());
+        throw new IllegalStateException("Cannot convert value at path '" + path + "' from "
+                + value.getClass().getSimpleName() + " to " + expectedClass.getSimpleName());
     }
 
-    public int getConfigVersion() {
-        return configVersion;
+    public Basic getBasic() {
+        return basic;
     }
 
-    public boolean isVerbose() {
-        return verbose;
+    public IslandSettings getIslandSettings() {
+        return islandSettings;
     }
 
-    public int getUpdateCacheTimer() {
-        return updateCacheTimer;
+    public SpawnSettings getSpawnSettings() {
+        return spawnSettings;
     }
 
-    public boolean isPreventDeletionIfHasMembers() {
-        return preventDeletionIfHasMembers;
+    public DebugSettings getDebugSettings() {
+        return debugSettings;
     }
 
-    public boolean isSpawnEnabled() {
-        return spawnEnabled;
+    public CacheTtlSettings getCacheTtlSettings() {
+        return cacheTtlSettings;
     }
 
-    public boolean isDebugPermission() {
-        return debugPermission;
+    public PermissionsSettings getPermissionsSettings() {
+        return permissionsSettings;
     }
 
     public Location getSpawnLocation() {
-        if (!spawnEnabled) {
-            return null;
-        }
-
-        var world = Bukkit.getWorld(spawnWorld);
-        if (world == null) {
-            return null;
-        }
-
-        return new Location(world, spawnX, spawnY, spawnZ, spawnYaw, spawnPitch);
+        if (!spawnSettings.enabled()) return null;
+        var world = Bukkit.getWorld(spawnSettings.worldName());
+        if (world == null) return null;
+        return new Location(world, spawnSettings.x(), spawnSettings.y(), spawnSettings.z(),
+                spawnSettings.yaw(), spawnSettings.pitch());
     }
-
-    public int getRegionDistance() {
-        return regionDistance;
-    }
-
-    public int getMaxIslands() {
-        return maxIslands;
-    }
-
-    public boolean isDeleteChunkPerimeterIsland() {
-        return deleteChunkPerimeterIsland;
-    }
-
-    public boolean isTeleportOutsideIsland() {
-        return teleportOutsideIsland;
-    }
-
-    public boolean isTeleportWhenAcceptingInvitation() {
-        return teleportWhenAcceptingInvitation;
-    }
-
-    public boolean isRestrictPlayerMovement() {
-        return restrictPlayerMovement;
-    }
-
-    public boolean isAllowBypassIslandQueue() {
-        return allowBypassIslandQueue;
-    }
-
-    public boolean isEnableObsidianToLavaConversion() {
-        return enableObsidianToLavaConversion;
-    }
-
-    public long getCacheTtlState() {
-        return cacheTtlState;
-    }
-
-    public long getCacheTtlMembers() {
-        return cacheTtlMembers;
-    }
-
-    public long getCacheTtlWarps() {
-        return cacheTtlWarps;
-    }
-
-    public long getCacheTtlIsland() {
-        return cacheTtlIsland;
-    }
-
-    public long getCacheTtlPlayerLink() {
-        return cacheTtlPlayerLink;
-    }
-
-    public long getCacheTtlRole() {
-        return cacheTtlRole;
-    }
-
-    public long getCacheTtlNameRole() {
-        return cacheTtlNameRole;
-    }
-
 }

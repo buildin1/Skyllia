@@ -61,7 +61,7 @@ public class SkyblockCache {
     }
 
     public void putIsland(Island island) {
-        put(islandById, island.getId(), island, ConfigLoader.general.getCacheTtlIsland());
+        put(islandById, island.getId(), island, ConfigLoader.general.getCacheTtlSettings().island());
     }
 
     public @Nullable UUID getIslandIdByPlayer(UUID playerId) {
@@ -69,7 +69,7 @@ public class SkyblockCache {
     }
 
     public void putIslandIdByPlayer(UUID playerId, UUID islandId) {
-        put(islandIdByPlayer, playerId, islandId, ConfigLoader.general.getCacheTtlPlayerLink());
+        put(islandIdByPlayer, playerId, islandId, ConfigLoader.general.getCacheTtlSettings().playerLink());
     }
 
     public @Nullable Players getOwner(UUID islandId) {
@@ -77,7 +77,7 @@ public class SkyblockCache {
     }
 
     public void putOwner(UUID islandId, Players owner) {
-        put(ownerByIsland, islandId, owner,  ConfigLoader.general.getCacheTtlMembers());
+        put(ownerByIsland, islandId, owner,  ConfigLoader.general.getCacheTtlSettings().members());
         putRole(islandId, owner.getMojangId(), RoleType.OWNER);
     }
 
@@ -87,7 +87,7 @@ public class SkyblockCache {
 
     public void putMembers(UUID islandId, List<Players> members) {
         List<Players> copy = List.copyOf(members);
-        put(membersByIsland, islandId, copy,  ConfigLoader.general.getCacheTtlMembers());
+        put(membersByIsland, islandId, copy,  ConfigLoader.general.getCacheTtlSettings().members());
         for (Players p : copy) {
             putRole(islandId, p.getMojangId(), p.getRoleType());
             if (p.getLastKnowName() != null) {
@@ -102,7 +102,7 @@ public class SkyblockCache {
 
     public void putBanned(UUID islandId, List<Players> banned) {
         List<Players> copy = List.copyOf(banned);
-        put(bannedByIsland, islandId, copy,  ConfigLoader.general.getCacheTtlMembers());
+        put(bannedByIsland, islandId, copy,  ConfigLoader.general.getCacheTtlSettings().members());
         for (Players p : copy) {
             putRole(islandId, p.getMojangId(), RoleType.BAN);
         }
@@ -113,7 +113,7 @@ public class SkyblockCache {
     }
 
     public void putRole(UUID islandId, UUID playerId, RoleType role) {
-        put(roleByMember, new MemberKey(islandId, playerId), role, ConfigLoader.general.getCacheTtlRole());
+        put(roleByMember, new MemberKey(islandId, playerId), role, ConfigLoader.general.getCacheTtlSettings().role());
     }
 
     public @Nullable RoleType getRoleByName(UUID islandId, String nameLower) {
@@ -121,7 +121,7 @@ public class SkyblockCache {
     }
 
     public void putRoleByName(UUID islandId, String nameLower, RoleType role) {
-        put(roleByMemberName, new MemberNameKey(islandId, nameLower), role, ConfigLoader.general.getCacheTtlNameRole());
+        put(roleByMemberName, new MemberNameKey(islandId, nameLower), role, ConfigLoader.general.getCacheTtlSettings().nameRole());
     }
 
     public @Nullable List<WarpIsland> getWarps(UUID islandId) {
@@ -129,9 +129,9 @@ public class SkyblockCache {
     }
 
     public void putWarps(UUID islandId, List<WarpIsland> warps) {
-        put(warpsByIsland, islandId, List.copyOf(warps), ConfigLoader.general.getCacheTtlWarps());
+        put(warpsByIsland, islandId, List.copyOf(warps), ConfigLoader.general.getCacheTtlSettings().warps());
         for (WarpIsland w : warps) {
-            put(warpByKey, new WarpKey(islandId, w.warpName().toLowerCase(Locale.ROOT)), w, ConfigLoader.general.getCacheTtlWarps());
+            put(warpByKey, new WarpKey(islandId, w.warpName().toLowerCase(Locale.ROOT)), w, ConfigLoader.general.getCacheTtlSettings().warps());
         }
     }
 
@@ -140,7 +140,7 @@ public class SkyblockCache {
     }
 
     public void putWarp(UUID islandId, String name, WarpIsland warp) {
-        put(warpByKey, new WarpKey(islandId, name.toLowerCase(Locale.ROOT)), warp, ConfigLoader.general.getCacheTtlWarps());
+        put(warpByKey, new WarpKey(islandId, name.toLowerCase(Locale.ROOT)), warp, ConfigLoader.general.getCacheTtlSettings().warps());
     }
 
     public @Nullable IslandStateSnapshot getState(UUID islandId) {
@@ -148,7 +148,7 @@ public class SkyblockCache {
     }
 
     public void putState(UUID islandId, IslandStateSnapshot state) {
-        put(stateByIsland, islandId, state, ConfigLoader.general.getCacheTtlState());
+        put(stateByIsland, islandId, state, ConfigLoader.general.getCacheTtlSettings().state());
     }
 
     public void invalidateIsland(UUID islandId) {

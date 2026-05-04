@@ -190,7 +190,7 @@ public class CreateSubCommand implements SubCommandInterface {
             return;
         }
 
-        boolean bypass = ConfigLoader.general.isAllowBypassIslandQueue()
+        boolean bypass = ConfigLoader.general.getIslandSettings().allowBypassQueue()
                 && PlayerUtils.hasPermission(player, "skyllia.island.bypass.queue");
 
         if (bypass) {

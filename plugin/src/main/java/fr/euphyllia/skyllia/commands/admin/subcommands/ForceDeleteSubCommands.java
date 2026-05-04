@@ -88,7 +88,7 @@ public class ForceDeleteSubCommands implements SubCommandInterface {
                     ConfigLoader.worldManager.getWorldConfigs().forEach((name, environnements) -> {
                         if (environnements.shouldDeleteIsland()) {
                             Skyllia.getInstance().getInterneAPI().getWorldModifier(SchematicPlugin.UNKNOWN)
-                                    .deleteIsland(island, Bukkit.getWorld(name), ConfigLoader.general.getRegionDistance(), (success) -> {
+                                    .deleteIsland(island, Bukkit.getWorld(name), ConfigLoader.general.getIslandSettings().regionDistance(), (success) -> {
                                         if (!success) failed.set(true);
                                         if (worldsLeft.decrementAndGet() == 0) {
                                             boolean value = skyblockManager.setLockedIsland(island, failed.get());

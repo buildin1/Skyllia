@@ -15,7 +15,7 @@ import org.bukkit.event.player.PlayerTeleportEvent;
 public class PlayerUtils {
 
     public static void teleportPlayerSpawn(Player player) {
-        if (!ConfigLoader.general.isSpawnEnabled()) return;
+        if (!ConfigLoader.general.getSpawnSettings().enabled()) return;
         player.getScheduler().execute(SkylliaAPI.getPlugin(), () -> {
             if (!player.isOnline()) return;
 
@@ -50,7 +50,7 @@ public class PlayerUtils {
     public static boolean hasPermission(Player player, String key) {
         var result = player.hasPermission(key);
 
-        if (!ConfigLoader.general.isDebugPermission())
+        if (!ConfigLoader.general.getDebugSettings().permission())
             return result;
 
         var text = Component.text()

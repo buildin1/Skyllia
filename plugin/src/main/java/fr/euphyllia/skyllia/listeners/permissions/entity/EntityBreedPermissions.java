@@ -33,7 +33,7 @@ public class EntityBreedPermissions implements PermissionModule {
         final Island island = SkylliaAPI.getIslandByChunk(chunkX, chunkZ);
         if (island == null) return;
 
-        final boolean hasPermission = SkylliaAPI.getPermissionsManager().hasPermission(player, island, ENTITY_BREED, "skyllia.player.entity.breed.bypass", ConfigLoader.general.isDebugPermission());
+        final boolean hasPermission = SkylliaAPI.getPermissionsManager().hasPermission(player, island, ENTITY_BREED, "skyllia.player.entity.breed.bypass", ConfigLoader.general.getDebugSettings().permission());
         if (!hasPermission) {
             event.setCancelled(true);
         }

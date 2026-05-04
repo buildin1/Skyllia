@@ -39,7 +39,7 @@ public class BlockInteractPermissions implements PermissionModule {
         if (island == null) return;
 
         final boolean hasBypass = player.hasPermission("skyllia.player.interact.bypass");
-        final boolean hasPermission = hasBypass || SkylliaAPI.getPermissionsManager().hasPermission(player, island, BLOCK_INTERACT, null, ConfigLoader.general.isDebugPermission());
+        final boolean hasPermission = hasBypass || SkylliaAPI.getPermissionsManager().hasPermission(player, island, BLOCK_INTERACT, null, ConfigLoader.general.getDebugSettings().permission());
         if (!hasPermission) {
             event.setCancelled(true);
             return;

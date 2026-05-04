@@ -176,8 +176,8 @@ public class MariaDBDatabaseInitialize extends DatabaseInitializeQuery {
     public MariaDBDatabaseInitialize(@NotNull DatabaseLoader databaseLoader) {
         this.databaseLoader = databaseLoader;
         this.configVersion = ConfigLoader.database.getConfigVersion();
-        this.regionDistance = ConfigLoader.general.getRegionDistance();
-        this.maxIslands = ConfigLoader.general.getMaxIslands();
+        this.regionDistance = ConfigLoader.general.getIslandSettings().regionDistance();
+        this.maxIslands = ConfigLoader.general.getIslandSettings().maxIslands();
     }
 
     @Override
