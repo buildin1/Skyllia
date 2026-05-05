@@ -69,7 +69,7 @@ public class ConfigLoader implements IConfigRegistry {
         configManagers.add(permissionsV2);
         configManagers.add(islandFlags);
 
-        reloadConfigs();
+        //reloadConfigs();
 
         logger.log(Level.INFO, "[Config] Configurations loaded successfully.");
     }

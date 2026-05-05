@@ -73,6 +73,8 @@ public class Skyllia extends JavaPlugin {
         this.interneAPI.setManagers(new fr.euphyllia.skyllia.managers.Managers(interneAPI));
         this.interneAPI.getManagers().init();
 
+        ConfigLoader.reloadConfigs();
+
         // Register commands via CommandRegistrar
         CommandRegistrar commandRegistrar = new CommandRegistrar(this);
         commandRegistrar.registerCommands();
