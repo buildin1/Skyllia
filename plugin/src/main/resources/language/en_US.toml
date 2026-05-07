@@ -964,3 +964,7 @@ description = "Controls Giant spawning."
 [island.flag.spawn_other_illusioner]
 name = "Illusioner"
 description = "Controls Illusioner spawning."
+
+[debug]
+permission-has = "<player> HAVE <permission> permission"
+permission-missing = "<player> DOESN'T HAVE <permission> permission"

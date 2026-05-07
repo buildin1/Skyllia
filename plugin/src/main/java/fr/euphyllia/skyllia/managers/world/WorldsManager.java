@@ -6,6 +6,7 @@ import fr.euphyllia.skyllia.api.world.GeneratorFactory;
 import fr.euphyllia.skyllia.api.world.WorldFeedback;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
 import fr.euphyllia.skyllia.utils.WorldUtils;
+import fr.euphyllia.skyllia.utils.generators.BedrockWorldGen;
 import fr.euphyllia.skyllia.utils.generators.FixedBiomeProvider;
 import fr.euphyllia.skyllia.utils.generators.OceanWorldGen;
 import fr.euphyllia.skyllia.utils.generators.VoidWorldGen;
@@ -54,6 +55,7 @@ public class WorldsManager {
 
             return new OceanWorldGen(seaHeight, OceanWorldGen.parseMaterial(seaBlockStr));
         });
+        generators.put("bedrock", (name, config) -> new BedrockWorldGen());
     }
 
     public void registerGenerator(String id, GeneratorFactory factory) {
