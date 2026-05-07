@@ -17,6 +17,8 @@ import fr.euphyllia.skyllia.api.skyblock.model.RoleType;
 import fr.euphyllia.skyllia.api.utils.nms.BiomesImpl;
 import fr.euphyllia.skyllia.api.utils.nms.MobsSpawnImpl;
 import fr.euphyllia.skyllia.api.utils.nms.WorldNMS;
+import io.papermc.paper.ServerBuildInfo;
+import net.kyori.adventure.key.Key;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -38,7 +40,7 @@ public final class SkylliaAPI {
     private static SkylliaImplementation implementation;
 
     static {
-        IS_FOLIA = hasClass("io.papermc.paper.threadedregions.RegionizedServer");
+        IS_FOLIA = ServerBuildInfo.buildInfo().isBrandCompatible(Key.key("papermc", "folia"));
     }
 
     /**
@@ -150,21 +152,6 @@ public final class SkylliaAPI {
      */
     public static Plugin getPlugin() {
         return PLUGIN;
-    }
-
-    /**
-     * Checks if a class with the specified name exists in the classpath.
-     *
-     * @param className The name of the class to check.
-     * @return True if the class exists, false otherwise.
-     */
-    private static boolean hasClass(String className) {
-        try {
-            Class.forName(className);
-            return true;
-        } catch (ClassNotFoundException var2) {
-            return false;
-        }
     }
 
     /**
