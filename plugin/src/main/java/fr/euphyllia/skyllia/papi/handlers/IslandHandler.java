@@ -6,6 +6,7 @@ import fr.euphyllia.skyllia.api.skyblock.Island;
 import fr.euphyllia.skyllia.api.skyblock.Players;
 import fr.euphyllia.skyllia.papi.SkylliaPAPIUtils;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
@@ -96,8 +97,14 @@ public class IslandHandler implements PlaceholderHandler {
         TrustService trustService = SkylliaAPI.getTrustService();
         int count = 0;
         for (Player online : Bukkit.getOnlinePlayers()) {
-            Island standing = SkylliaAPI.getIslandByChunk(online.getLocation().getChunk());
+            // Calculate the block X/Z directly from Pos without retrieving a Chunk object
+            Location loc = online.getLocation();
+            int chunkX = loc.getBlockX() >> 4;
+            int chunkZ = loc.getBlockZ() >> 4;
+
+            Island standing = SkylliaAPI.getIslandByChunk(chunkX, chunkZ);
             if (standing == null || !standing.getId().equals(islandId)) continue;
+
             UUID playerId = online.getUniqueId();
             if (island.getMember(playerId) != null) continue;
             if (trustService != null && trustService.isTrusted(islandId, playerId)) continue;
