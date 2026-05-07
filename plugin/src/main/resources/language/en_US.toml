@@ -966,5 +966,5 @@ name = "Illusioner"
 description = "Controls Illusioner spawning."
 
 [debug]
-permission-has = "<player> HAVE <permission> permission"
-permission-missing = "<player> DOESN'T HAVE <permission> permission"
+permission-has = "%player% HAVE %permission% permission"
+permission-missing = "%player% DOESN'T HAVE %permission% permission"

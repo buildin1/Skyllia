@@ -58,8 +58,8 @@ public class PlayerUtils {
                 : "debug.permission-missing";
 
         Map<String, String> placeholders = Map.of(
-                "<player>", player.getName(),
-                "<permission>", key
+                "%player%", player.getName(),
+                "%permission%", key
         );
 
         Component message = ConfigLoader.language.translate(

@@ -973,5 +973,5 @@ name = "Illusionniste"
 description = "Contrôle l'apparition des Illusionnistes."
 
 [debug]
-permission-has = "<player> a la permission : <permission>"
-permission-missing = "<player> n'a pas la permission : <permission>"
+permission-has = "%player% a la permission : %permission%"
+permission-missing = "%player% n'a pas la permission : %permission%"
