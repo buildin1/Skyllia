@@ -60,35 +60,31 @@ public class BankCommand implements SubCommandInterface {
         }
         UUID playerId = player.getUniqueId();
 
-        if (CommandCacheExecution.isAlreadyExecute(playerId, "bank")) {
+        if (!CommandCacheExecution.tryAcquire(playerId, "bank")) {
             ConfigLoader.language.sendMessage(player, "island.generic.command-in-progress");
             return;
         }
-        CommandCacheExecution.addCommandExecute(playerId, "bank");
 
-        // Récupérer l'île du joueur
-        @Nullable Island island = SkylliaAPI.getIslandByPlayerId(playerId);
-        if (island == null) {
-            ConfigLoader.language.sendMessage(player, "addons.bank.player.no-island");
-            CommandCacheExecution.removeCommandExec(playerId, "bank");
-            return;
-        }
-
-        if (args.length == 0) {
-            // Commande sans argument => afficher le solde
-            handleBalance(player, island);
-            return;
-        }
-
-        String subCommand = args[0].toLowerCase();
-        switch (subCommand) {
-            case "deposit" -> handleDeposit(player, island, args);
-            case "withdraw" -> handleWithdraw(player, island, args);
-            case "balance" -> handleBalance(player, island);
-            default -> {
-                ConfigLoader.language.sendMessage(player, "addons.bank.player.unknown-command");
-                CommandCacheExecution.removeCommandExec(playerId, "bank");
+        try {
+            @Nullable Island island = SkylliaAPI.getIslandByPlayerId(playerId);
+            if (island == null) {
+                ConfigLoader.language.sendMessage(player, "addons.bank.player.no-island");
+                return;
             }
+
+            if (args.length == 0) {
+                handleBalance(player, island);
+                return;
+            }
+
+            switch (args[0].toLowerCase()) {
+                case "deposit" -> handleDeposit(player, island, args);
+                case "withdraw" -> handleWithdraw(player, island, args);
+                case "balance" -> handleBalance(player, island);
+                default -> ConfigLoader.language.sendMessage(player, "addons.bank.player.unknown-command");
+            }
+        } finally {
+            CommandCacheExecution.removeCommandExec(playerId, "bank");
         }
     }
 
@@ -147,6 +143,11 @@ public class BankCommand implements SubCommandInterface {
                 if (refundResponse.transactionSuccess()) {
                     ConfigLoader.language.sendMessage(player, "addons.bank.player.error-deposit-refunded");
                 } else {
+                    log.error("CRITICAL: bank deposit failed AND refund failed. " +
+                                    "Player={} ({}), island={}, amount={}, balanceBeforeRefund={}. " +
+                                    "Manual compensation required.",
+                            player.getName(), player.getUniqueId(), island.getId(),
+                            amount, economy.getBalance(player));
                     ConfigLoader.language.sendMessage(player, "addons.bank.player.critical-error-deposit");
                 }
             }

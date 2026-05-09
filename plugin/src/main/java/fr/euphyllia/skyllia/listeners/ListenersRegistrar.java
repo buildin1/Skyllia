@@ -9,6 +9,7 @@ import fr.euphyllia.skyllia.listeners.bukkitevents.folia.PortalAlternativeFoliaE
 import fr.euphyllia.skyllia.listeners.bukkitevents.paper.PortalAlternativePaperEvent;
 import fr.euphyllia.skyllia.listeners.bukkitevents.player.JoinEvent;
 import fr.euphyllia.skyllia.listeners.bukkitevents.player.MoveEvent;
+import fr.euphyllia.skyllia.listeners.bukkitevents.player.QuitEvent;
 import fr.euphyllia.skyllia.listeners.bukkitevents.player.WorldBorderAddEvent;
 import fr.euphyllia.skyllia.listeners.permissions.block.*;
 import fr.euphyllia.skyllia.listeners.permissions.decor.DecorHangingBreakPermissions;
@@ -71,6 +72,8 @@ public class ListenersRegistrar {
         registerEvent(pluginManager, new PistonEvent(interneAPI));
         registerEvent(pluginManager, new GrowEvent(interneAPI));
         registerEvent(pluginManager, new MoveEvent());
+        registerEvent(pluginManager, new QuitEvent());
+
 
         // Folia/Paper specifics
         if (SkylliaAPI.isFolia()) {

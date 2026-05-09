@@ -37,8 +37,8 @@ public class BlockBreakPermissions implements PermissionModule {
             event.setCancelled(true);
             return;
         }
-        if (!hasBypass && ListenersUtils.isBlockOutsideIsland(island, location, event)) {
-            return;
+        if (!hasBypass) {
+            ListenersUtils.isBlockOutsideIsland(island, location, event);
         }
     }
 

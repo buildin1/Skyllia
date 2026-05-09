@@ -50,6 +50,10 @@ public class CacheCommands {
         warpTabCache.clear();
     }
 
+    public static void invalidatePlayer(UUID playerId) {
+        warpTabCache.remove(playerId);
+    }
+
     public record CreateCacheCommandsTabs(CommandSender commandSender, String key) {
     }
 }

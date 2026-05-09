@@ -39,75 +39,82 @@ public class CreateSubCommand implements SubCommandInterface {
 
             final UUID playerId = player.getUniqueId();
 
-            if (CommandCacheExecution.isAlreadyExecute(playerId, "create")) {
+            if (!CommandCacheExecution.tryAcquire(playerId, "create")) {
                 ConfigLoader.language.sendMessage(player, "island.generic.command-in-progress");
                 return;
             }
-            CommandCacheExecution.addCommandExecute(playerId, "create");
-            try {
-                if (!PlayerUtils.hasPermission(player, "skyllia.island.command.create")) {
-                    ConfigLoader.language.sendMessage(player, "island.player.permission-denied");
-                    return;
-                }
 
-                Island existingIsland = SkylliaAPI.getIslandByPlayerId(playerId);
-                if (existingIsland != null) {
-                    new HomeSubCommand().onExecute(plugin, player, args);
-                    return;
-                }
-
-                List<String> schematicsKeys = ConfigLoader.schematicManager.getIslandTypes();
-                if (schematicsKeys.isEmpty()) {
-                    ConfigLoader.language.sendMessage(player, "island.schematic-not-exist");
-                    return;
-                }
-
-                String schemKey = (args.length > 0 && schematicsKeys.contains(args[0])) ? args[0] : schematicsKeys.getFirst();
-                Map<String, SchematicSetting> schematicSettingMap = IslandUtils.getSchematic(schemKey);
-                if (schematicSettingMap == null || schematicSettingMap.isEmpty()) {
-                    ConfigLoader.language.sendMessage(player, "island.schematic-not-exist");
-                    return;
-                }
-
-                IslandSettings islandSettings = IslandUtils.getIslandSettings(schemKey);
-                if (islandSettings == null) {
-                    ConfigLoader.language.sendMessage(player, "island.type-not-exist");
-                    return;
-                }
-
-                if (!PlayerUtils.hasPermission(player, "skyllia.island.command.create.%s".formatted(schemKey))) {
-                    ConfigLoader.language.sendMessage(player, "island.player.permission-denied");
-                    return;
-                }
-
-                ConfigLoader.language.sendMessage(player, "island.create-in-progress");
-                UUID idIsland = UUID.randomUUID();
-
-                Players owners = new Players(player.getUniqueId(), player.getName(), null, RoleType.OWNER);
-                boolean isCreate = SkylliaAPI.createIsland(idIsland, islandSettings, owners);
-                if (!isCreate) {
-                    ConfigLoader.language.sendMessage(player, "island.generic-error");
-                    return;
-                }
-
-                Island island = SkylliaAPI.getIslandByIslandId(idIsland);
-                if (island == null) {
-                    ConfigLoader.language.sendMessage(player, "island.generic-error");
-                    return;
-                }
-
-                new SkyblockCreateEvent(island, playerId).callEvent();
-
-                pasteAllSchematics(plugin, player, island, schematicSettingMap)
-                        .thenRun(() -> ConfigLoader.language.sendMessage(player, "island.create-finish"))
-                        .exceptionally(e -> {
-                            logger.error("Island creation failed for {}: {}", island.getId(), e.getMessage());
-                            ConfigLoader.language.sendMessage(player, "island.generic-error");
-                            return null;
-                        });
-            } finally {
+            if (!PlayerUtils.hasPermission(player, "skyllia.island.command.create")) {
+                ConfigLoader.language.sendMessage(player, "island.player.permission-denied");
                 CommandCacheExecution.removeCommandExec(playerId, "create");
+                return;
             }
+
+            Island existingIsland = SkylliaAPI.getIslandByPlayerId(playerId);
+            if (existingIsland != null) {
+                new HomeSubCommand().onExecute(plugin, player, args);
+                CommandCacheExecution.removeCommandExec(playerId, "create");
+                return;
+            }
+
+            List<String> schematicsKeys = ConfigLoader.schematicManager.getIslandTypes();
+            if (schematicsKeys.isEmpty()) {
+                ConfigLoader.language.sendMessage(player, "island.schematic-not-exist");
+                CommandCacheExecution.removeCommandExec(playerId, "create");
+                return;
+            }
+
+            String schemKey = (args.length > 0 && schematicsKeys.contains(args[0])) ? args[0] : schematicsKeys.getFirst();
+            Map<String, SchematicSetting> schematicSettingMap = IslandUtils.getSchematic(schemKey);
+            if (schematicSettingMap == null || schematicSettingMap.isEmpty()) {
+                ConfigLoader.language.sendMessage(player, "island.schematic-not-exist");
+                CommandCacheExecution.removeCommandExec(playerId, "create");
+                return;
+            }
+
+            IslandSettings islandSettings = IslandUtils.getIslandSettings(schemKey);
+            if (islandSettings == null) {
+                ConfigLoader.language.sendMessage(player, "island.type-not-exist");
+                CommandCacheExecution.removeCommandExec(playerId, "create");
+                return;
+            }
+
+            if (!PlayerUtils.hasPermission(player, "skyllia.island.command.create.%s".formatted(schemKey))) {
+                ConfigLoader.language.sendMessage(player, "island.player.permission-denied");
+                CommandCacheExecution.removeCommandExec(playerId, "create");
+                return;
+            }
+
+            ConfigLoader.language.sendMessage(player, "island.create-in-progress");
+            UUID idIsland = UUID.randomUUID();
+
+            Players owners = new Players(player.getUniqueId(), player.getName(), null, RoleType.OWNER);
+            boolean isCreate = SkylliaAPI.createIsland(idIsland, islandSettings, owners);
+            if (!isCreate) {
+                ConfigLoader.language.sendMessage(player, "island.generic-error");
+                CommandCacheExecution.removeCommandExec(playerId, "create");
+                return;
+            }
+
+            Island island = SkylliaAPI.getIslandByIslandId(idIsland);
+            if (island == null) {
+                ConfigLoader.language.sendMessage(player, "island.generic-error");
+                CommandCacheExecution.removeCommandExec(playerId, "create");
+                return;
+            }
+
+            new SkyblockCreateEvent(island, playerId).callEvent();
+
+            pasteAllSchematics(plugin, player, island, schematicSettingMap)
+                    .whenComplete((result, throwable) -> {
+                        if (throwable != null) {
+                            logger.error("Island creation failed for {}: {}", island.getId(), throwable.getMessage());
+                            ConfigLoader.language.sendMessage(player, "island.generic-error");
+                        } else {
+                            ConfigLoader.language.sendMessage(player, "island.create-finish");
+                        }
+                        CommandCacheExecution.removeCommandExec(playerId, "create");
+                    });
         });
     }
 

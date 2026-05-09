@@ -10,7 +10,7 @@ public interface SpawnHook {
 
     @Nullable Location getSpawnLocation(Player player);
 
-    default boolean hasClass(String className) {
+    static boolean hasClass(String className) {
         try {
             Class.forName(className);
             return true;
