@@ -11,14 +11,26 @@ import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.regex.Pattern;
 
 /**
- * The {@code MariaDB} class is responsible for managing a MariaDB connection using
- * a HikariCP connection pool. It implements both {@link DBConnect} and {@link DBInterface},
- * providing methods to load and close the pool, check the connection status, and retrieve
- * a valid SQL connection.
+ * MariaDB connection backend.
+ * <p>
+ * Uses HikariCP for pooling with prepared-statement caching enabled by default
+ * (via {@link DatabaseConfig}). The bootstrap step ({@link #ensureDatabaseExists()})
+ * creates the database if missing, with a strict identifier check to prevent any
+ * SQL injection through the configured database name.
+ * </p>
  */
 public class MariaDB implements DBConnect, DBInterface {
+
+    /**
+     * Allowed identifier pattern for database names: alphanumerics and underscores
+     * only. This is intentionally stricter than what MariaDB itself supports (which
+     * allows almost anything when backtick-quoted), because we want to fail fast on
+     * suspicious config values rather than try to escape them.
+     */
+    private static final Pattern SAFE_IDENT = Pattern.compile("^[A-Za-z0-9_]+$");
 
     private final Logger logger = LogManager.getLogger(MariaDB.class);
     private final DatabaseConfig mariaDBConfig;
@@ -51,28 +63,43 @@ public class MariaDB implements DBConnect, DBInterface {
         ensureDatabaseExists();
 
         this.pool = new HikariDataSource();
-        this.pool.setPoolName("skyllia-hikari");
+        this.pool.setPoolName("skyllia-mariadb-hikari");
         this.pool.setDriverClassName("org.mariadb.jdbc.Driver");
-        this.pool.setJdbcUrl("jdbc:mariadb://%s:%s/%s"
-                .formatted(mariaDBConfig.hostname(), mariaDBConfig.port(), mariaDBConfig.database()));
-
+        this.pool.setJdbcUrl(buildJdbcUrl(mariaDBConfig.database()));
         this.pool.setUsername(mariaDBConfig.user());
         this.pool.setPassword(mariaDBConfig.pass());
 
-        // Configure the connection pool
+        // Pool sizing
         this.pool.setMaximumPoolSize(mariaDBConfig.maxPool());
         this.pool.setMinimumIdle(mariaDBConfig.minPool());
         this.pool.setMaxLifetime(mariaDBConfig.maxLifeTime());
         this.pool.setKeepaliveTime(mariaDBConfig.keepAliveTime());
         this.pool.setConnectionTimeout(mariaDBConfig.timeOut());
 
+        // Validation & leak detection
+        if (mariaDBConfig.validationTimeout() != null && mariaDBConfig.validationTimeout() > 0) {
+            this.pool.setValidationTimeout(mariaDBConfig.validationTimeout());
+        }
+        if (mariaDBConfig.leakDetectionThreshold() != null && mariaDBConfig.leakDetectionThreshold() > 0) {
+            this.pool.setLeakDetectionThreshold(mariaDBConfig.leakDetectionThreshold());
+        }
+
+        // Prepared-statement caching.
+        if (Boolean.TRUE.equals(mariaDBConfig.cachePrepStmts())) {
+            applyDataSourceProperty("cachePrepStmts", mariaDBConfig.cachePrepStmts());
+            applyDataSourceProperty("prepStmtCacheSize", mariaDBConfig.prepStmtCacheSize());
+            applyDataSourceProperty("prepStmtCacheSqlLimit", mariaDBConfig.prepStmtCacheSqlLimit());
+            applyDataSourceProperty("useServerPrepStmts", mariaDBConfig.useServerPrepStmts());
+        }
+
         try (Connection connection = pool.getConnection()) {
             if (connection.isValid(2)) {
                 this.connected = true;
                 this.logger.info(
-                        "MariaDB pool initialized successfully. Minimum pool size: {}, Maximum pool size: {}",
+                        "MariaDB pool initialized successfully. Min={}, Max={}, prepStmtCache={}",
                         mariaDBConfig.minPool(),
-                        mariaDBConfig.maxPool()
+                        mariaDBConfig.maxPool(),
+                        Boolean.TRUE.equals(mariaDBConfig.cachePrepStmts())
                 );
                 return true;
             }
@@ -80,6 +107,25 @@ public class MariaDB implements DBConnect, DBInterface {
             throw new DatabaseException("Failed to initialize the MariaDB pool", e);
         }
         return false;
+    }
+
+    private String buildJdbcUrl(@Nullable String database) {
+        StringBuilder url = new StringBuilder("jdbc:mariadb://")
+                .append(mariaDBConfig.hostname())
+                .append(':').append(mariaDBConfig.port())
+                .append('/');
+        if (database != null) {
+            url.append(database);
+        }
+        if (Boolean.TRUE.equals(mariaDBConfig.useSSL())) {
+            url.append("?useSSL=true");
+        }
+        return url.toString();
+    }
+
+    private void applyDataSourceProperty(String key, @Nullable Object value) {
+        if (value == null) return;
+        this.pool.addDataSourceProperty(key, String.valueOf(value));
     }
 
     /**
@@ -128,15 +174,23 @@ public class MariaDB implements DBConnect, DBInterface {
     }
 
     private void ensureDatabaseExists() throws DatabaseException {
-
         try {
             Class.forName("org.mariadb.jdbc.Driver");
         } catch (ClassNotFoundException e) {
             throw new DatabaseException("MariaDB JDBC driver not found in classpath", e);
         }
 
-        String bootstrapUrl = "jdbc:mariadb://%s:%s/"
-                .formatted(mariaDBConfig.hostname(), mariaDBConfig.port());
+        final String dbName = mariaDBConfig.database();
+        if (dbName == null || dbName.isBlank()) {
+            throw new DatabaseException("MariaDB database name is missing in configuration.");
+        }
+        if (!SAFE_IDENT.matcher(dbName).matches()) {
+            throw new DatabaseException(
+                    "MariaDB database name '" + dbName + "' contains forbidden characters. " +
+                            "Only [A-Za-z0-9_] are allowed."
+            );
+        }
+        String bootstrapUrl = buildJdbcUrl(null);
 
         try (Connection connection = java.sql.DriverManager.getConnection(
                 bootstrapUrl,
@@ -145,12 +199,9 @@ public class MariaDB implements DBConnect, DBInterface {
         );
              var statement = connection.createStatement()) {
 
-            statement.execute(
-                    "CREATE DATABASE IF NOT EXISTS `%s`"
-                            .formatted(mariaDBConfig.database())
-            );
+            statement.execute("CREATE DATABASE IF NOT EXISTS `" + dbName + "`");
 
-            logger.info("Database '{}' ensured.", mariaDBConfig.database());
+            logger.info("MariaDB database '{}' ensured.", dbName);
 
         } catch (SQLException e) {
             throw new DatabaseException("Failed to create database if not exists", e);

@@ -12,8 +12,28 @@ import org.jetbrains.annotations.Nullable;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.regex.Pattern;
 
+/**
+ * PostgreSQL connection backend.
+ * <p>
+ * Uses HikariCP for pooling. The bootstrap step ({@link #ensureDatabaseExists()})
+ * connects to the {@code postgres} system database, checks for the configured
+ * database via parameterized query (no injection surface), then creates it with
+ * a properly quoted identifier if missing.
+ * </p>
+ */
 public class Postgres implements DBConnect, DBInterface {
+
+    /**
+     * Allowed identifier pattern. Matches the rule used by MariaDB to keep
+     * configuration semantics uniform across SGBDs. PostgreSQL itself supports
+     * any string between double quotes (with quote-doubling), but Skyllia
+     * intentionally restricts to a safe subset.
+     */
+    private static final Pattern SAFE_IDENT = Pattern.compile("^[A-Za-z0-9_]+$");
+
+    private static final String BOOTSTRAP_DB = "postgres";
 
     private final Logger logger = LogManager.getLogger(Postgres.class);
     private final DatabaseConfig cfg;
@@ -42,9 +62,7 @@ public class Postgres implements DBConnect, DBInterface {
         this.pool = new HikariDataSource();
         this.pool.setPoolName("skyllia-pg-hikari");
         this.pool.setDriverClassName("org.postgresql.Driver");
-
-        this.pool.setJdbcUrl("jdbc:postgresql://%s:%s/%s".formatted(
-                cfg.hostname(), cfg.port(), cfg.database()));
+        this.pool.setJdbcUrl(buildJdbcUrl(cfg.database()));
         this.pool.setUsername(cfg.user());
         this.pool.setPassword(cfg.pass());
 
@@ -58,13 +76,33 @@ public class Postgres implements DBConnect, DBInterface {
         this.pool.setKeepaliveTime(cfg.keepAliveTime().longValue());
         this.pool.setConnectionTimeout(cfg.timeOut().longValue());
 
+        if (cfg.validationTimeout() != null && cfg.validationTimeout() > 0) {
+            this.pool.setValidationTimeout(cfg.validationTimeout());
+        }
+        if (cfg.leakDetectionThreshold() != null && cfg.leakDetectionThreshold() > 0) {
+            this.pool.setLeakDetectionThreshold(cfg.leakDetectionThreshold());
+        }
+
+        if (Boolean.FALSE.equals(cfg.useServerPrepStmts())) {
+            this.pool.addDataSourceProperty("prepareThreshold", "0");
+        }
+
+        if (cfg.prepStmtCacheSize() != null && cfg.prepStmtCacheSize() > 0) {
+            this.pool.addDataSourceProperty(
+                    "preparedStatementCacheQueries",
+                    String.valueOf(cfg.prepStmtCacheSize())
+            );
+        }
+
+
         try (Connection c = pool.getConnection()) {
             if (c.isValid(2)) {
                 this.connected = true;
                 this.logger.info(
-                        "PostgreSQL pool initialized successfully. Minimum pool size: {}, Maximum pool size: {}",
+                        "PostgreSQL pool initialized successfully. Min={}, Max={}, serverPrepStmts={}",
                         cfg.minPool(),
-                        cfg.maxPool()
+                        cfg.maxPool(),
+                        !Boolean.FALSE.equals(cfg.useServerPrepStmts())
                 );
                 return true;
             }
@@ -73,6 +111,17 @@ public class Postgres implements DBConnect, DBInterface {
         }
         return false;
 
+    }
+
+    private String buildJdbcUrl(String database) {
+        StringBuilder url = new StringBuilder("jdbc:postgresql://")
+                .append(cfg.hostname())
+                .append(':').append(cfg.port())
+                .append('/').append(database);
+        if (Boolean.TRUE.equals(cfg.useSSL())) {
+            url.append("?ssl=true");
+        }
+        return url.toString();
     }
 
     /**
@@ -121,11 +170,18 @@ public class Postgres implements DBConnect, DBInterface {
             throw new DatabaseException("PostgreSQL JDBC driver not found in classpath", e);
         }
 
-        final String bootstrapDb = "postgres";
-        final String bootstrapUrl = "jdbc:postgresql://%s:%s/%s"
-                .formatted(cfg.hostname(), cfg.port(), bootstrapDb);
-
         final String dbName = cfg.database();
+        if (dbName == null || dbName.isBlank()) {
+            throw new DatabaseException("PostgreSQL database name is missing in configuration.");
+        }
+        if (!SAFE_IDENT.matcher(dbName).matches()) {
+            throw new DatabaseException(
+                    "PostgreSQL database name '" + dbName + "' contains forbidden characters. " +
+                            "Only [A-Za-z0-9_] are allowed."
+            );
+        }
+
+        final String bootstrapUrl = buildJdbcUrl(BOOTSTRAP_DB);
 
         try (Connection c = DriverManager.getConnection(bootstrapUrl, cfg.user(), cfg.pass())) {
 

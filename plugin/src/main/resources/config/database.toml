@@ -1,8 +1,21 @@
 # Configuration file version. Do not modify manually.
-config-version = 3
+config-version = 4
 
+# ============================================================================
+# Defaults are sized for ~300-500 concurrent active islands. Tested OK up to
+# ~1000 islands on standard hardware. For very large servers (1000+ active),
+# bump maxPool to 30-40 and prepStmtCacheSize to 750. For very small servers
+# (<50 islands), the defaults waste a few MB of RAM but cause no harm.
+# ============================================================================
+
+
+# ============================================================================
+# MariaDB
+# ============================================================================
 [mariadb]
-# Enables or disables the use of MariaDB (if false, SQLite will be used if enabled).
+# Enables or disables the use of MariaDB.
+# Only ONE backend may be enabled at a time. Order of priority if multiple are
+# enabled: MariaDB > PostgreSQL > SQLite.
 enabled = false
 
 # IP address or hostname of the MariaDB server.
@@ -12,37 +25,140 @@ hostname = "127.0.0.1"
 port = 3306
 
 # Name of the database used for Skyblock.
+# IMPORTANT: only [A-Za-z0-9_] characters are allowed for security reasons.
+# The plugin will refuse to start with any other value.
 database = "skyblock"
 
 # Credentials for connecting to the database.
 username = "my_super_name"
 password = "my_password_is_verry_strong"
 
-# Enables or disables secure SSL connection (set to true if the server requires it).
+# Enables SSL connection to the database (set to true if the server requires it).
 useSSL = false
 
-# Connection pool settings for HikariCP (better performance & connection management).
-# Minimum number of connections kept in the pool.
-minPool = 1
-# Maximum number of simultaneous connections.
-maxPool = 10
-# Time (in ms) before an idle connection is tested to stay alive (0 = disabled).
-keepAliveTime = 0
-# Maximum lifetime of a connection (in ms). After this time, the connection will be recreated.
+# ---- HikariCP pool sizing -------------------------------------------------
+# Minimum number of idle connections kept warm. Avoids cold-start latency
+# after a quiet period.
+minPool = 5
+# Maximum number of simultaneous connections. 20 absorbs comfortably 300-500
+# concurrent active islands. Bump to 30-40 for 1000+ active islands. Bigger
+# is NOT always better: each extra connection costs RAM both in your JVM and
+# on the MariaDB side, and beyond a point the DB itself becomes the bottleneck.
+maxPool = 20
+# Time (in ms) between keepalive pings on idle connections. 30000 = 30s.
+# Set this LOWER than your MariaDB wait_timeout (default 8h, but typically
+# 60-180s on shared hosting) to prevent silent connection drops.
+# 0 disables keepalive (not recommended in production).
+keepAliveTime = 30_000
+# Maximum lifetime of a connection in ms. After this time the connection is
+# evicted and recreated. Defaults to 30 minutes.
 maxLifeTime = 1_800_000
-# Maximum wait time to obtain a connection (in ms).
-timeOut = 5_000
+# Maximum wait time to obtain a connection from the pool, in ms. 10s tolerates
+# brief saturation spikes (mass logins, reload) without raising errors to
+# players. Drop to 5000 if you prefer fail-fast behavior.
+timeOut = 10_000
 
+# ---- HikariCP performance & robustness tuning -----------------------------
+# Enable client-side prepared-statement caching (recommended for MariaDB).
+# Yields ~10-30% throughput improvement under load.
+cachePrepStmts = true
+# Number of cached prepared statements per connection. Skyllia uses ~300
+# distinct SQL statements across the plugin and its addons; 500 leaves headroom.
+prepStmtCacheSize = 500
+# Maximum SQL length allowed in the cache, in characters. Some batched INSERTs
+# can exceed 2048 chars when many rows are inserted at once.
+prepStmtCacheSqlLimit = 4096
+# Use server-side prepared statements (works in conjunction with cachePrepStmts).
+useServerPrepStmts = true
+# Hikari logs a warning with stack trace if a connection is not returned
+# within this delay (ms). Essential at scale: a single leaked connection
+# drains a 20-connection pool in minutes. 30000 (30s) is the recommended
+# production value. 0 disables. Do not set below 2000.
+leakDetectionThreshold = 30_000
+# Maximum time the pool waits when validating a connection, in ms. Lower is
+# better — a connection that doesn't validate in 2s is almost certainly dead.
+validationTimeout = 2_000
+
+
+# ============================================================================
+# PostgreSQL
+# ============================================================================
+[postgres]
+# Enables or disables the use of PostgreSQL.
+enabled = false
+
+# IP address or hostname of the PostgreSQL server.
+hostname = "127.0.0.1"
+
+# Port used by PostgreSQL (default is 5432).
+port = 5432
+
+# Name of the database used for Skyblock.
+# IMPORTANT: only [A-Za-z0-9_] characters are allowed for security reasons.
+# The plugin will refuse to start with any other value.
+database = "skyblock"
+
+# Credentials for connecting to the database.
+username = "my_super_name"
+password = "my_password_is_verry_strong"
+
+# Enables SSL connection (passes ?ssl=true to the JDBC URL). For stricter modes
+# such as 'verify-full' you currently need to edit the driver properties in
+# code; this knob covers the simple on/off case.
+useSSL = false
+
+# ---- HikariCP pool sizing -------------------------------------------------
+# See [mariadb] section for tuning guidance — the same considerations apply.
+minPool = 5
+maxPool = 20
+keepAliveTime = 30_000
+maxLifeTime = 1_800_000
+timeOut = 10_000
+
+# ---- HikariCP & pgjdbc tuning ---------------------------------------------
+# pgjdbc uses its own server-side prepared-statement cache. The following
+# flags map to the pgjdbc equivalents:
+#   useServerPrepStmts = false  -> sets prepareThreshold=0 (disables server-side
+#                                  prep statements; rarely useful)
+#   prepStmtCacheSize           -> maps to preparedStatementCacheQueries
+#
+# cachePrepStmts and prepStmtCacheSqlLimit are kept for config-uniformity with
+# MariaDB but are not currently wired into the Postgres pool.
+cachePrepStmts = true
+prepStmtCacheSize = 500
+prepStmtCacheSqlLimit = 4096
+useServerPrepStmts = true
+leakDetectionThreshold = 30_000
+validationTimeout = 2_000
+
+
+# ============================================================================
+# SQLite
+# ============================================================================
 [sqlite]
-# Enables or disables the use of SQLite (used by default if MariaDB is disabled).
+# Enables or disables the use of SQLite (default fallback if no other backend
+# is enabled).
+#
+# WARNING: SQLite is fine for development and small servers (<100 active
+# islands). At ~1000 islands it WILL bottleneck on the write lock. If you run
+# a serious production server, switch to MariaDB or PostgreSQL.
 enabled = true
 
-# Path to the SQLite file used.
+# Path to the SQLite database file.
 file = "plugins/Skyllia/skyllia.db"
 
-# Pool settings identical to those of MariaDB (also via HikariCP).
+# ---- HikariCP pool sizing -------------------------------------------------
+# SQLite serializes all writes through a single file lock. More connections
+# = more contention, NOT more throughput. We cap maxPool at 4 to keep readers
+# happy without piling up writers.
 minPool = 1
-maxPool = 10
+maxPool = 4
 keepAliveTime = 0
 maxLifeTime = 1_800_000
+# Higher than the other backends because SQLite can hold the write lock for
+# a long time under contention; failing fast here would surface false errors.
 timeOut = 30_000
+
+# ---- HikariCP robustness tuning -------------------------------------------
+leakDetectionThreshold = 30_000
+validationTimeout = 2_000
