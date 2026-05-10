@@ -50,7 +50,7 @@ public class AccessSubCommand implements SubCommandInterface {
         }
 
         boolean hasPermission = SkylliaAPI.getPermissionsManager()
-                .hasPermission(player, island, ACCESS_COMMAND_PERMISSION, null, ConfigLoader.general.isDebugPermission());
+                .hasPermission(player, island, ACCESS_COMMAND_PERMISSION, null, ConfigLoader.general.getDebugSettings().permission());
 
         if (!hasPermission) {
             ConfigLoader.language.sendMessage(player, "island.player.permission-denied");
@@ -67,7 +67,7 @@ public class AccessSubCommand implements SubCommandInterface {
                 for (WorldConfig worldConfig : WorldUtils.getWorldConfigs()) {
                     RegionUtils.getEntitiesInRegion(
                             Skyllia.getInstance(),
-                            ConfigLoader.general.getRegionDistance(),
+                            ConfigLoader.general.getIslandSettings().regionDistance(),
                             EntityType.PLAYER,
                             worldConfig.getWorld(),
                             island.getPosition(),

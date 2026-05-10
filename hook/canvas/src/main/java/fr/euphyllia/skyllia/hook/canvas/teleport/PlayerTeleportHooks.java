@@ -29,8 +29,7 @@ public class PlayerTeleportHooks implements Listener {
                 to,
                 island,
                 event.getCause(),
-                event.isCancelled(),
-                false
+                event.isCancelled()
         );
         playerTeleportIslandEvent.callEvent();
         if (playerTeleportIslandEvent.isCancelled()) {

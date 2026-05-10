@@ -2,6 +2,8 @@ package fr.euphyllia.skyllia.hook.canvas;
 
 import fr.euphyllia.skyllia.api.hooks.ServerHook;
 import fr.euphyllia.skyllia.hook.canvas.teleport.PlayerTeleportHooks;
+import io.papermc.paper.ServerBuildInfo;
+import net.kyori.adventure.key.Key;
 import org.bukkit.plugin.Plugin;
 
 public class CanvasHook implements ServerHook {
@@ -13,7 +15,7 @@ public class CanvasHook implements ServerHook {
 
     @Override
     public boolean isAvailable() {
-        return hasClass("io.canvasmc.canvas.Config");
+        return ServerBuildInfo.buildInfo().isBrandCompatible(Key.key("canvasmc", "canvas"));
     }
 
     @Override

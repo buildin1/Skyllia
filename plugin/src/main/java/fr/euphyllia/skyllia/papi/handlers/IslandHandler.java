@@ -1,11 +1,20 @@
 package fr.euphyllia.skyllia.papi.handlers;
 
+import fr.euphyllia.skyllia.api.SkylliaAPI;
+import fr.euphyllia.skyllia.api.service.TrustService;
 import fr.euphyllia.skyllia.api.skyblock.Island;
 import fr.euphyllia.skyllia.api.skyblock.Players;
 import fr.euphyllia.skyllia.papi.SkylliaPAPIUtils;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
 /**
  * Handles {@code %skyllia_island_*%} placeholders.
@@ -36,8 +45,21 @@ import org.jetbrains.annotations.Nullable;
  * </table>
  *
  * <p>Warp-related placeholders are handled by {@link WarpHandler}.
+ *
+ * <p>Also handles the following global / online-player placeholders:
+ * <table>
+ *   <tr><th>Placeholder</th><th>Returns</th></tr>
+ *   <tr><td>island_total</td><td>Total number of islands in the Skyblock world</td></tr>
+ *   <tr><td>island_members_online</td><td>Online members + trusted of the player's island</td></tr>
+ *   <tr><td>island_visitors_online</td><td>Online visitors (not member/trusted) on the player's island</td></tr>
+ * </table>
  */
 public class IslandHandler implements PlaceholderHandler {
+
+    @Override
+    public boolean requiresIsland() {
+        return false;
+    }
 
     private static @NotNull String ownerName(@NotNull Island island) {
         Players owner = island.getOwner();
@@ -53,6 +75,44 @@ public class IslandHandler implements PlaceholderHandler {
         return island.getCreateDate() != null ? island.getCreateDate().toString() : "";
     }
 
+    private static int countMembersOnline(@NotNull Island island, @NotNull Set<UUID> onlineIds) {
+        int count = 0;
+        for (Players member : island.getMembers()) {
+            if (onlineIds.contains(member.getMojangId())) count++;
+        }
+        TrustService trustService = SkylliaAPI.getTrustService();
+        if (trustService != null) {
+            Set<UUID> trusted = trustService.getTrusted(island.getId());
+            if (trusted != null) {
+                for (UUID id : trusted) {
+                    if (onlineIds.contains(id)) count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    private static int countVisitorsOnline(@NotNull Island island, @NotNull Set<UUID> onlineIds) {
+        UUID islandId = island.getId();
+        TrustService trustService = SkylliaAPI.getTrustService();
+        int count = 0;
+        for (Player online : Bukkit.getOnlinePlayers()) {
+            // Calculate the block X/Z directly from Pos without retrieving a Chunk object
+            Location loc = online.getLocation();
+            int chunkX = loc.getBlockX() >> 4;
+            int chunkZ = loc.getBlockZ() >> 4;
+
+            Island standing = SkylliaAPI.getIslandByChunk(chunkX, chunkZ);
+            if (standing == null || !standing.getId().equals(islandId)) continue;
+
+            UUID playerId = online.getUniqueId();
+            if (island.getMember(playerId) != null) continue;
+            if (trustService != null && trustService.isTrusted(islandId, playerId)) continue;
+            count++;
+        }
+        return count;
+    }
+
     @Override
     public @NotNull String prefix() {
         return "island";
@@ -62,6 +122,21 @@ public class IslandHandler implements PlaceholderHandler {
     public @Nullable String handle(@NotNull OfflinePlayer player,
                                    @Nullable Island island,
                                    @NotNull String key) {
+        switch (key) {
+            case "total" -> {
+                List<Island> all = SkylliaAPI.getAllIslandsValid();
+                return String.valueOf(all == null ? 0 : all.size());
+            }
+            case "members_online" -> {
+                Set<UUID> onlineIds = getOnlinePlayersId();
+                return island == null ? "0" : String.valueOf(countMembersOnline(island, onlineIds));
+            }
+            case "visitors_online" -> {
+                Set<UUID> onlineIds = getOnlinePlayersId();
+                return island == null ? "0" : String.valueOf(countVisitorsOnline(island, onlineIds));
+            }
+        }
+
         if (island == null) {
             return "";
         }
@@ -85,5 +160,13 @@ public class IslandHandler implements PlaceholderHandler {
 
             default -> null;
         };
+    }
+
+    private static Set<UUID> getOnlinePlayersId() {
+        Set<UUID> ids = new java.util.HashSet<>();
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            ids.add(p.getUniqueId());
+        }
+        return ids;
     }
 }

@@ -3,10 +3,6 @@ config-version = 4
 # Enables detailed logging in the console (for debugging purposes).
 verbose = false
 
-[settings.global.cache]
-# Cache update frequency (in seconds).
-update-timer-seconds = 30
-
 [settings.island]
 # Distance between islands (in regions, 1 region = 512x512 blocks).
 region-distance = 10
@@ -57,3 +53,25 @@ pitch = 0.0
 # Enables permissions debug mode: displays missing permissions in the console
 # when a player attempts an action without permission (useful for administrators).
 permission = false
+
+[settings.cache.ttl]
+# Duration (in seconds) before cached warp data expires. -1 = never expires, 0 = disabled.
+warps = -1
+# Duration (in seconds) before cached member name→role mappings expire. -1 = never expires, 0 = disabled.
+name-role = -1
+# Duration (in seconds) before cached player role data expires. -1 = never expires, 0 = disabled.
+role = -1
+# Duration (in seconds) before cached island data expires. -1 = never expires, 0 = disabled.
+island = -1
+# Duration (in seconds) before cached player↔island link data expires. -1 = never expires, 0 = disabled.
+player-link = -1
+# Duration (in seconds) before cached island members and ban list expire. -1 = never expires, 0 = disabled.
+members = -1
+# Duration (in seconds) before cached island state expires (disabled, private, locked, max members, size). -1 = never expires, 0 = disabled.
+state = -1
+
+[permissions]
+# Enabling the owner check also allows you to verify if the OWNER has permission (useful if you want OWNERS to not have access to everything).
+check-owner = false
+# Enables ban checking: if true, banned players will be denied access to island actions.
+check-ban = false

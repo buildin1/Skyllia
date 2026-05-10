@@ -10,21 +10,39 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Nullable;
 
 public class EssentialsSpawnHook implements SpawnHook {
+
+    private static final boolean AVAILABLE =
+            SpawnHook.hasClass("com.earth2me.essentials.spawn.EssentialsSpawn")
+                    && SpawnHook.hasClass("com.earth2me.essentials.Essentials");
+
+    private final EssentialsSpawn essentialsSpawn;
+    private final Essentials essentials;
+
+    public EssentialsSpawnHook() {
+        this.essentialsSpawn =
+                (EssentialsSpawn) Bukkit.getPluginManager().getPlugin("EssentialsSpawn");
+
+        this.essentials =
+                (Essentials) Bukkit.getPluginManager().getPlugin("Essentials");
+    }
+
     @Override
     public boolean isAvailable() {
-        return hasClass("com.earth2me.essentials.spawn.EssentialsSpawn") && hasClass("com.earth2me.essentials.Essentials");
+        return AVAILABLE
+                && essentialsSpawn != null
+                && essentials != null
+                && essentialsSpawn.isEnabled()
+                && essentials.isEnabled();
     }
 
     @Override
     public @Nullable Location getSpawnLocation(Player player) {
-        EssentialsSpawn essentialsSpawn = (EssentialsSpawn) Bukkit.getPluginManager().getPlugin("EssentialsSpawn");
-        Essentials essentials = (Essentials) Bukkit.getPluginManager().getPlugin("Essentials");
-        if (essentialsSpawn == null || essentials == null) {
+        if (!isAvailable()) {
             return null;
         }
-        if (essentialsSpawn.isEnabled() && essentials.isEnabled()) {
-            return essentialsSpawn.getSpawn(essentials.getUser(player.getUniqueId()).getGroup());
-        }
-        return null;
+
+        return essentialsSpawn.getSpawn(
+                essentials.getUser(player.getUniqueId()).getGroup()
+        );
     }
 }

@@ -37,7 +37,7 @@ public class BlockPlacePermissions implements PermissionModule {
         }
 
         final boolean hasBypass = player.hasPermission("skyllia.player.place.bypass");
-        final boolean hasPermission = hasBypass || SkylliaAPI.getPermissionsManager().hasPermission(player, island, BLOCK_PLACE, null, ConfigLoader.general.isDebugPermission());
+        final boolean hasPermission = hasBypass || SkylliaAPI.getPermissionsManager().hasPermission(player, island, BLOCK_PLACE, null, ConfigLoader.general.getDebugSettings().permission());
         if (!hasPermission) {
             //log.info("玩家 {} 没有权限 BLOCK_PLACE 进行方块放置", player.getName());
             event.setCancelled(true);

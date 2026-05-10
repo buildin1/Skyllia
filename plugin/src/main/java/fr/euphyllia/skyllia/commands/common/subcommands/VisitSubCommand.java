@@ -74,7 +74,7 @@ public class VisitSubCommand implements SubCommandInterface {
             }
 
             boolean bypass = player.hasPermission("skyllia.island.command.visit.bypass")
-                    || SkylliaAPI.getPermissionsManager().hasPermission(player, island, ISLAND_VISIT_BYPASS_PERMISSION, null, ConfigLoader.general.isDebugPermission());
+                    || SkylliaAPI.getPermissionsManager().hasPermission(player, island, ISLAND_VISIT_BYPASS_PERMISSION, null, ConfigLoader.general.getDebugSettings().permission());
 
             if (!bypass) {
                 if (island.isPrivateIsland()) {

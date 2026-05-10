@@ -9,25 +9,28 @@ public class CommandCacheExecution {
 
     private static final Map<UUID, Set<String>> COMMAND_CACHE = new ConcurrentHashMap<>();
 
+    public static boolean tryAcquire(UUID uuid, String command) {
+        Set<String> set = COMMAND_CACHE.computeIfAbsent(uuid, k -> ConcurrentHashMap.newKeySet());
+        return set.add(command);
+    }
+
     public static boolean isAlreadyExecute(UUID uuid, String command) {
-        Set<String> commands = COMMAND_CACHE.getOrDefault(uuid, null);
-        return (commands != null && commands.contains(command));
+        Set<String> commands = COMMAND_CACHE.get(uuid);
+        return commands != null && commands.contains(command);
     }
 
     public static void addCommandExecute(UUID uuid, String command) {
-        COMMAND_CACHE.compute(uuid, (key, oldSet) -> {
-            if (oldSet == null) {
-                oldSet = ConcurrentHashMap.newKeySet();
-            }
-            oldSet.add(command);
-            return oldSet;
-        });
+        COMMAND_CACHE.computeIfAbsent(uuid, k -> ConcurrentHashMap.newKeySet()).add(command);
     }
 
     public static void removeCommandExec(UUID uuid, String command) {
-        COMMAND_CACHE.computeIfPresent(uuid, (key, oldSet) -> {
-            oldSet.remove(command);
-            return oldSet;
+        COMMAND_CACHE.computeIfPresent(uuid, (key, set) -> {
+            set.remove(command);
+            return set.isEmpty() ? null : set;
         });
+    }
+
+    public static void purgePlayer(UUID uuid) {
+        COMMAND_CACHE.remove(uuid);
     }
 }

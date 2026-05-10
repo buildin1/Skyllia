@@ -114,7 +114,7 @@ public class InviteSubCommand implements SubCommandInterface {
             return;
         }
 
-        boolean allowed = SkylliaAPI.getPermissionsManager().hasPermission(ownerIsland, island, ISLAND_INVITE_PERMISSION, null, ConfigLoader.general.isDebugPermission());
+        boolean allowed = SkylliaAPI.getPermissionsManager().hasPermission(ownerIsland, island, ISLAND_INVITE_PERMISSION, null, ConfigLoader.general.getDebugSettings().permission());
         if (!allowed) {
             ConfigLoader.language.sendMessage(ownerIsland, "island.player.permission-denied");
             return;
@@ -150,7 +150,7 @@ public class InviteSubCommand implements SubCommandInterface {
                 return;
             }
 
-            boolean allowed = SkylliaAPI.getPermissionsManager().hasPermission(ownerIsland, island, ISLAND_INVITE_PERMISSION, null, ConfigLoader.general.isDebugPermission());
+            boolean allowed = SkylliaAPI.getPermissionsManager().hasPermission(ownerIsland, island, ISLAND_INVITE_PERMISSION, null, ConfigLoader.general.getDebugSettings().permission());
             if (!allowed) {
                 ConfigLoader.language.sendMessage(ownerIsland, "island.player.permission-denied");
                 return;
@@ -221,7 +221,7 @@ public class InviteSubCommand implements SubCommandInterface {
                             Map.of("%player_accept%", playerWantJoin.getName()));
                 }
 
-                if (ConfigLoader.general.isTeleportWhenAcceptingInvitation()) {
+                if (ConfigLoader.general.getIslandSettings().teleportWhenAcceptingInvitation()) {
                     WarpIsland home = islandOwner.getWarpByName("home"); // cache warps TTL 5s
                     if (home == null || home.location() == null || home.location().getWorld() == null) {
                         ConfigLoader.language.sendMessage(playerWantJoin, "island.invite.home-not-found");

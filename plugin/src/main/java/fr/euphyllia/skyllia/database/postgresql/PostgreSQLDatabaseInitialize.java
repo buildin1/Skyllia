@@ -182,8 +182,8 @@ public class PostgreSQLDatabaseInitialize extends DatabaseInitializeQuery {
         this.databaseLoader = databaseLoader;
         this.schema = schema;
         this.configVersion = ConfigLoader.database.getConfigVersion();
-        this.regionDistance = ConfigLoader.general.getRegionDistance();
-        this.maxIslands = ConfigLoader.general.getMaxIslands();
+        this.regionDistance = ConfigLoader.general.getIslandSettings().regionDistance();
+        this.maxIslands = ConfigLoader.general.getIslandSettings().maxIslands();
     }
 
     private static String sanitizeIdent(String ident) {

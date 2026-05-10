@@ -2,6 +2,8 @@ package fr.euphyllia.skyllia.hook.luminol;
 
 import fr.euphyllia.skyllia.api.hooks.ServerHook;
 import fr.euphyllia.skyllia.hook.luminol.teleport.PlayerTeleportHooks;
+import io.papermc.paper.ServerBuildInfo;
+import net.kyori.adventure.key.Key;
 import org.bukkit.plugin.Plugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,7 +18,7 @@ public class LuminolHook implements ServerHook {
 
     @Override
     public boolean isAvailable() {
-        return hasClass("me.earthme.luminol.config.ConfigManager");
+        return ServerBuildInfo.buildInfo().isBrandCompatible(Key.key("luminolmc", "luminol"));
     }
 
     @Override

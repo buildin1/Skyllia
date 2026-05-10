@@ -60,7 +60,7 @@ public class SkylliaInsightAddon implements InsightsAddon {
             int cz = chunk.z();
             int x = 0, z = 0;
             int dx = 0, dz = -1;
-            int maxI = (int) Math.pow((33 * ConfigLoader.general.getRegionDistance()), 2);
+            int maxI = (int) Math.pow((33 * ConfigLoader.general.getIslandSettings().regionDistance()), 2);
             List<Position> islandPositionWithRadius = RegionHelper.getRegionsWithinBlockRange(islandRegion, (int) Math.round(size));
             List<Position> regionCleaned = new ArrayList<>();
 

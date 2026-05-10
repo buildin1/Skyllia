@@ -37,7 +37,7 @@ public class SkyblockEvent implements Listener {
         for (WorldConfig worldConfig : WorldUtils.getWorldConfigs()) {
             RegionUtils.getEntitiesInRegion(
                     Skyllia.getInstance(),
-                    ConfigLoader.general.getRegionDistance(),
+                    ConfigLoader.general.getIslandSettings().regionDistance(),
                     EntityType.PLAYER,
                     worldConfig.getWorld(),
                     islandRegion,

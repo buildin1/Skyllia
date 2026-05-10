@@ -28,7 +28,7 @@ public class ConvertObsidianToLavaPermissions implements PermissionModule {
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onInteractEntity(final PlayerInteractEvent event) {
-        if (!ConfigLoader.general.isEnableObsidianToLavaConversion()) return;
+        if (!ConfigLoader.general.getIslandSettings().enableObsidianToLavaConversion()) return;
         if (!event.getAction().isRightClick()) return;
 
         if (event.getHand() == EquipmentSlot.OFF_HAND) return;
@@ -49,7 +49,7 @@ public class ConvertObsidianToLavaPermissions implements PermissionModule {
         }
 
         final boolean hasPermission = SkylliaAPI.getPermissionsManager().hasPermission(
-                player, island, CONVERT_OBSIDIAN_TO_LAVA, "skyllia.player.convert_obsidian_to_lava.bypass", ConfigLoader.general.isDebugPermission()
+                player, island, CONVERT_OBSIDIAN_TO_LAVA, "skyllia.player.convert_obsidian_to_lava.bypass", ConfigLoader.general.getDebugSettings().permission()
         );
         if (!hasPermission) return;
 

@@ -123,7 +123,7 @@ public class DeleteSubCommand implements SubCommandInterface {
             }
 
             // Vérification des membres
-            if (ConfigLoader.general.isPreventDeletionIfHasMembers()) {
+            if (ConfigLoader.general.getIslandSettings().preventDeletionIfHasMembers()) {
                 long memberCount = island.getMembers().stream()
                         .filter(member -> !member.getMojangId().equals(player.getUniqueId()))
                         .count();
@@ -163,7 +163,7 @@ public class DeleteSubCommand implements SubCommandInterface {
                         return;
                     }
 
-                    Skyllia.getInstance().getInterneAPI().getWorldModifier(SchematicPlugin.UNKNOWN).deleteIsland(island, world, ConfigLoader.general.getRegionDistance(), (success) -> {
+                    Skyllia.getInstance().getInterneAPI().getWorldModifier(SchematicPlugin.UNKNOWN).deleteIsland(island, world, ConfigLoader.general.getIslandSettings().regionDistance(), (success) -> {
                         if (!success) failed.set(true);
                         if (worldsLeft.decrementAndGet() == 0) {
                             finalizeDeletion(skyblockManager, island, failed.get(), player);
@@ -221,7 +221,7 @@ public class DeleteSubCommand implements SubCommandInterface {
 
     private void kickAllPlayerOnIsland(final Island island) {
         for (WorldConfig worldConfig : WorldUtils.getWorldConfigs()) {
-            RegionUtils.getEntitiesInRegion(Skyllia.getInstance(), ConfigLoader.general.getRegionDistance(), EntityType.PLAYER, worldConfig.getWorld(), island.getPosition(), island.getSize(), entity -> {
+            RegionUtils.getEntitiesInRegion(Skyllia.getInstance(), ConfigLoader.general.getIslandSettings().regionDistance(), EntityType.PLAYER, worldConfig.getWorld(), island.getPosition(), island.getSize(), entity -> {
                 Player playerInIsland = (Player) entity;
                 if (entity.hasPermission("skyllia.island.command.access.bypass")) return;
                 PlayerUtils.teleportPlayerSpawn(playerInIsland);

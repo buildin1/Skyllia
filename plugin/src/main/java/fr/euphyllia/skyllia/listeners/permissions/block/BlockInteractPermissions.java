@@ -44,7 +44,7 @@ public class BlockInteractPermissions implements PermissionModule {
         }
 
         final boolean hasBypass = player.hasPermission("skyllia.player.interact.bypass");
-        final boolean hasPermission = hasBypass || SkylliaAPI.getPermissionsManager().hasPermission(player, island, BLOCK_INTERACT, null, ConfigLoader.general.isDebugPermission());
+        final boolean hasPermission = hasBypass || SkylliaAPI.getPermissionsManager().hasPermission(player, island, BLOCK_INTERACT, null, ConfigLoader.general.getDebugSettings().permission());
         if (!hasPermission) {
             //log.info("玩家 {} 没有权限 BLOCK_INTERACT 进行 {}", player.getName(), event.getAction());
             event.setCancelled(true);

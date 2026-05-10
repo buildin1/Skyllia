@@ -207,7 +207,7 @@ public class SQLiteDatabaseInitialize extends DatabaseInitializeQuery {
     }
 
     private void initializeSpiralTable() {
-        int distancePerIsland = ConfigLoader.general.getRegionDistance();
+        int distancePerIsland = ConfigLoader.general.getIslandSettings().regionDistance();
         if (distancePerIsland <= 0) {
             logger.log(Level.FATAL,
                     "You must set a value greater than 1 for region distance per island (config/config.toml -> settings.island.region-distance). " +
@@ -217,7 +217,7 @@ public class SQLiteDatabaseInitialize extends DatabaseInitializeQuery {
 
         Runnable spiralTask = () -> {
             List<SQLiteSpiralBatchInserter.IslandData> islandDataList = new ArrayList<>();
-            for (int i = 1; i < ConfigLoader.general.getMaxIslands(); i++) {
+            for (int i = 1; i < ConfigLoader.general.getIslandSettings().maxIslands(); i++) {
                 Position position = RegionUtils.computeNewIslandRegionPosition(i);
                 islandDataList.add(new SQLiteSpiralBatchInserter.IslandData(
                         i,

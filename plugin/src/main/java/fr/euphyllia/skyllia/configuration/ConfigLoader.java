@@ -67,10 +67,9 @@ public class ConfigLoader implements IConfigRegistry {
         configManagers.add(schematicManager);
         configManagers.add(language);
         configManagers.add(permissionsV2);
+        configManagers.add(islandFlags);
 
-        logger.log(Level.INFO, "[Config] Starting to load permission defaults...");
-        reloadConfigs();   // 会触发 permissionsV2.loadConfig()，从而输出上述详细日志
-        logger.log(Level.INFO, "[Config] Permission defaults loading complete.");
+        //reloadConfigs();
 
         logger.log(Level.INFO, "[Config] Configurations loaded successfully.");
     }
@@ -91,7 +90,7 @@ public class ConfigLoader implements IConfigRegistry {
             }
             logger.log(Level.INFO, "[Config] Reload complete.");
 
-            if (general.isDebugPermission()) {
+            if (general.getDebugSettings().permission()) {
                 logger.log(Level.WARN, "!!! Warning !!!\n" +
                         "Verbose permission debugging is active.\n" +
                         "Although single hasPermission checks are very fast,\n" +

@@ -86,9 +86,9 @@ public class SkyblockManager {
         int radiusBlocks = (int) (island.getSize() / 2.0);
 
         int minRx = blockToRegion(centerX - radiusBlocks);
-        int maxRx = blockToRegion(centerX + radiusBlocks);
+        int maxRx = blockToRegion(centerX + radiusBlocks - 1);
         int minRz = blockToRegion(centerZ - radiusBlocks);
-        int maxRz = blockToRegion(centerZ + radiusBlocks);
+        int maxRz = blockToRegion(centerZ + radiusBlocks - 1);
 
         UUID id = island.getId();
 
@@ -98,10 +98,20 @@ public class SkyblockManager {
         for (int rx = minRx; rx <= maxRx; rx++) {
             for (int rz = minRz; rz <= maxRz; rz++) {
                 long k = pack(rx, rz);
-                islandByRegion.put(k, id);
+                UUID previous = islandByRegion.put(k, id);
+                if (previous != null && !previous.equals(id)) {
+                    LOGGER.debug("Region collision: ({},{}) was claimed by {}, now overwritten by {} (root={}, size={})",
+                            rx, rz, previous, id, root, island.getSize());
+                }
                 now.add(k);
             }
         }
+
+        LOGGER.debug("Reindexed island {} root=({},{}) size={} -> regions rx[{}..{}] rz[{}..{}] ({} regions)",
+                id, rootRx, rootRz, island.getSize(),
+                minRx, maxRx, minRz, maxRz,
+                (maxRx - minRx + 1) * (maxRz - minRz + 1));
+
         regionsByIsland.put(id, now);
     }
 
@@ -329,7 +339,7 @@ public class SkyblockManager {
     }
 
     private int regionRadiusFromConfig() {
-        int d = ConfigLoader.general.getRegionDistance();
+        int d = ConfigLoader.general.getIslandSettings().regionDistance();
         if (d <= 0) return 1;
         int maxRadiusBlocks = d / 2;
         return Math.max(1, (int) Math.ceil(maxRadiusBlocks / 512.0));

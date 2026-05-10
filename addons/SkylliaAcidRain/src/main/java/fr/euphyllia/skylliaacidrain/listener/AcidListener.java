@@ -66,7 +66,7 @@ public class AcidListener implements Listener {
             LivingEntity entity = entry.getValue();
             if (entity == null) {
                 trackedEntities.remove(uuid);
-                return;
+                continue;
             }
             entity.getScheduler().run(plugin, scheduledTask -> {
                 if (!entity.isDead() && entity.isValid()) {

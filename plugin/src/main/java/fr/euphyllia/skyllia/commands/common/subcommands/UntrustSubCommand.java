@@ -69,7 +69,7 @@ public class UntrustSubCommand implements SubCommandInterface {
             }
 
             boolean allowed = SkylliaAPI.getPermissionsManager()
-                    .hasPermission(player, island, ISLAND_MANAGE_TRUST_PERMISSION, null, ConfigLoader.general.isDebugPermission());
+                    .hasPermission(player, island, ISLAND_MANAGE_TRUST_PERMISSION, null, ConfigLoader.general.getDebugSettings().permission());
 
             if (!allowed) {
                 ConfigLoader.language.sendMessage(player, "island.player.permission-denied");

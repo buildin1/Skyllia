@@ -6,16 +6,17 @@ import fr.euphyllia.skyllia.api.event.players.PlayerTeleportSpawnEvent;
 import fr.euphyllia.skyllia.api.hooks.SpawnHook;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerTeleportEvent;
 
+import java.util.Map;
+
 public class PlayerUtils {
 
     public static void teleportPlayerSpawn(Player player) {
-        if (!ConfigLoader.general.isSpawnEnabled()) return;
+        if (!ConfigLoader.general.getSpawnSettings().enabled()) return;
         player.getScheduler().execute(SkylliaAPI.getPlugin(), () -> {
             if (!player.isOnline()) return;
 
@@ -46,26 +47,29 @@ public class PlayerUtils {
 
     }
 
-    // TODO: i18n support and optimise the code
     public static boolean hasPermission(Player player, String key) {
         var result = player.hasPermission(key);
 
-        if (!ConfigLoader.general.isDebugPermission())
+        if (!ConfigLoader.general.getDebugSettings().permission())
             return result;
 
-        var text = Component.text()
-                .append(Component.text("player "))
-                .append(player.name());
+        String translationKey = result
+                ? "debug.permission-has"
+                : "debug.permission-missing";
 
-        if (result) {
-            text.append(Component.text(" HAVE ").color(NamedTextColor.GREEN));
-        } else {
-            text.append(Component.text(" DOESN'T HAVE ").color(NamedTextColor.RED));
-        }
+        Map<String, String> placeholders = Map.of(
+                "%player%", player.getName(),
+                "%permission%", key
+        );
 
-        text.append(Component.text(key)).append(Component.text(" permission"));
+        Component message = ConfigLoader.language.translate(
+                player.locale(),
+                translationKey,
+                placeholders,
+                false
+        );
 
-        Bukkit.getConsoleSender().sendMessage(text.build());
+        Bukkit.getConsoleSender().sendMessage(message);
 
         return result;
     }

@@ -37,14 +37,14 @@ public class BlockBreakPermissions implements PermissionModule {
         }
 
         final boolean hasBypass = player.hasPermission("skyllia.player.break.bypass");
-        final boolean hasPermission = hasBypass || SkylliaAPI.getPermissionsManager().hasPermission(player, island, BLOCK_BREAK, null, ConfigLoader.general.isDebugPermission());
+        final boolean hasPermission = hasBypass || SkylliaAPI.getPermissionsManager().hasPermission(player, island, BLOCK_BREAK, null, ConfigLoader.general.getDebugSettings().permission());
         if (!hasPermission) {
             //log.info("玩家 {} 没有权限 BLOCK_BREAK 进行方块破坏", player.getName());
             event.setCancelled(true);
             return;
         }
-        if (!hasBypass && ListenersUtils.isBlockOutsideIsland(island, location, event)) {
-            return;
+        if (!hasBypass) {
+            ListenersUtils.isBlockOutsideIsland(island, location, event);
         }
     }
 

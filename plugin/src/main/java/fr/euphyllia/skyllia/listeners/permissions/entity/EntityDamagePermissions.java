@@ -11,6 +11,7 @@ import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.plugin.Plugin;
@@ -21,7 +22,15 @@ public class EntityDamagePermissions implements PermissionModule {
 
     @EventHandler(ignoreCancelled = true)
     public void onDamage(final EntityDamageByEntityEvent event) {
-        if (!(event.getDamager() instanceof Player player)) return;
+        Entity damager = event.getDamager();
+        Player player;
+        if (damager instanceof Player) {
+            player = (Player) damager;
+        } else if (damager instanceof Projectile projectile && projectile.getShooter() instanceof Player shooter) {
+            player = shooter;
+        } else {
+            return;
+        }
 
         final Entity target = event.getEntity();
         final Location location = target.getLocation();
@@ -36,7 +45,7 @@ public class EntityDamagePermissions implements PermissionModule {
             return;
         }
 
-        final boolean hasPermission = SkylliaAPI.getPermissionsManager().hasPermission(player, island, ENTITY_DAMAGE, "skyllia.player.entity.damage.bypass", ConfigLoader.general.isDebugPermission());
+        final boolean hasPermission = SkylliaAPI.getPermissionsManager().hasPermission(player, island, ENTITY_DAMAGE, "skyllia.player.entity.damage.bypass", ConfigLoader.general.getDebugSettings().permission());
         if (!hasPermission) {
             event.setCancelled(true);
         }

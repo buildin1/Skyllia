@@ -85,7 +85,7 @@ public class ExpelSubCommand implements SubCommandInterface {
                 return;
             }
 
-            boolean allowed = SkylliaAPI.getPermissionsManager().hasPermission(player, island, ISLAND_EXPEL_PERMISSION, null, ConfigLoader.general.isDebugPermission());
+            boolean allowed = SkylliaAPI.getPermissionsManager().hasPermission(player, island, ISLAND_EXPEL_PERMISSION, null, ConfigLoader.general.getDebugSettings().permission());
             if (!allowed) {
                 ConfigLoader.language.sendMessage(player, "island.player.permission-denied");
                 return;

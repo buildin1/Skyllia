@@ -33,7 +33,7 @@ public class BlockUseBucketPermissions implements PermissionModule {
         final Island island = SkylliaAPI.getIslandByChunk(chunkX, chunkZ);
         if (island == null) return;
 
-        final boolean hasPermission = SkylliaAPI.getPermissionsManager().hasPermission(player, island, BLOCK_USE_BUCKET, "skyllia.player.bucket.use.bypass", ConfigLoader.general.isDebugPermission());
+        final boolean hasPermission = SkylliaAPI.getPermissionsManager().hasPermission(player, island, BLOCK_USE_BUCKET, "skyllia.player.bucket.use.bypass", ConfigLoader.general.getDebugSettings().permission());
         if (!hasPermission) {
             event.setCancelled(true);
         }
@@ -54,7 +54,7 @@ public class BlockUseBucketPermissions implements PermissionModule {
             return;
         }
 
-        final boolean hasPermission = SkylliaAPI.getPermissionsManager().hasPermission(player, island, BLOCK_USE_BUCKET, "skyllia.player.bucket.use.bypass", ConfigLoader.general.isDebugPermission());
+        final boolean hasPermission = SkylliaAPI.getPermissionsManager().hasPermission(player, island, BLOCK_USE_BUCKET, "skyllia.player.bucket.use.bypass", ConfigLoader.general.getDebugSettings().permission());
         if (!hasPermission) {
             //log.info("玩家 {} 没有权限 BLOCK_USE_BUCKET 使用桶", player.getName());
             event.setCancelled(true);
