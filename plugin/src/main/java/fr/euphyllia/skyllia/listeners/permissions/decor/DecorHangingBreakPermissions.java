@@ -12,6 +12,7 @@ import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.hanging.HangingBreakByEntityEvent;
 import org.bukkit.plugin.Plugin;
@@ -23,7 +24,15 @@ public class DecorHangingBreakPermissions implements PermissionModule {
     @EventHandler(ignoreCancelled = true)
     public void onBreak(final HangingBreakByEntityEvent event) {
         final Entity remover = event.getRemover();
-        if (!(remover instanceof Player player)) return;
+        final Player player;
+        if (remover instanceof Player p) {
+            player = p;
+        } else if (remover instanceof Projectile projectile
+                && projectile.getShooter() instanceof Player shooter) {
+            player = shooter;
+        } else {
+            return;
+        }
 
         final Location location = event.getEntity().getLocation();
         if (!SkylliaAPI.isWorldSkyblock(location.getWorld()) || player.isOp()) return;
