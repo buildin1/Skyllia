@@ -34,7 +34,7 @@ public class PortalAlternativePaperEvent implements Listener {
             Material blockType = block.getType();
             WorldConfig worldConfig = ConfigLoader.worldManager.getWorldConfig(world.getName());
             if (blockType.equals(Material.NETHER_PORTAL)) {
-                if (worldConfig.getPortalEnd().equalsIgnoreCase(world.getName())) return;
+                if (worldConfig.getPortalNether().equalsIgnoreCase(world.getName())) return;
                 if (!PlayerUtils.hasPermission(player, "skyllia.use.portal.nether")) return;
                 ListenersUtils.callPlayerPrepareChangeWorldSkyblockEvent(
                         player, worldConfig, PlayerPrepareChangeWorldSkyblockEvent.PortalType.NETHER, event
