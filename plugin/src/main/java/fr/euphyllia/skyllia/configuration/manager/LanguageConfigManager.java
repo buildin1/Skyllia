@@ -200,6 +200,10 @@ public class LanguageConfigManager implements IConfigurationProvider {
         player.sendMessage(translate(player, key, placeholders));
     }
 
+    public void sendMessage(Player player, String key, Map<String, String> placeholders, boolean usePrefix) {
+        player.sendMessage(translate(player.locale(), key, placeholders, usePrefix));
+    }
+
     public void sendMessage(CommandSender sender, String key, Map<String, String> placeholders) {
         sender.sendMessage(translate(key, placeholders));
     }

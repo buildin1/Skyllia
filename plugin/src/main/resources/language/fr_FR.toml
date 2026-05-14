@@ -278,7 +278,15 @@ balance = "<yellow>Solde de l'île : </yellow><white>%amount%</white>"
 [addons.bank.player]
 player-only = "<red>Cette commande ne peut être utilisée que par un joueur."
 no-island = "<red>Vous n’avez pas d’île."
-unknown-command = "<yellow>Commande inconnue. Utiliser /is bank [deposit|withdraw|balance]"
+# TOP
+unknown-command = "<yellow>Commande inconnue. Utiliser /is bank [deposit|withdraw|balance|top]"
+no-permission-top = "<red>Vous n'avez pas la permission d'utiliser cette commande.</red>"
+invalid-page = "<red>%input% n'est pas un numéro de page valide.</red>"
+top-header = "<gold>=== Pages %page%/%max_page% avec %total% joueurs ===</gold>"
+top-empty = "<red>Aucun joueur n'a d'argent dans la banque de son île.</red>"
+top-line = "<yellow>#%rank%</yellow> <white>%owner%</white> <gray>-</gray> <white>%amount%</white>"
+top-self = "<yellow>#%rank%</yellow> <white>%owner% (vous)</white> <gray>-</gray> <white>%amount%</white>"
+top-self-unranked = "<white>%owner% (vous)</white> n'êtes pas classé pour une raison inconnue."
 
 # Deposit
 no-permission-deposit = "<red>Vous n'avez pas la permission de déposer de l'argent."

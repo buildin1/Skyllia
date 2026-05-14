@@ -6,6 +6,7 @@ import fr.euphyllia.skylliabank.api.BankGenerator;
 import fr.euphyllia.skylliabank.cache.BankPapiCache;
 import fr.euphyllia.skylliabank.commands.BankAdminCommand;
 import fr.euphyllia.skylliabank.commands.BankCommand;
+import fr.euphyllia.skylliabank.configuration.BankConfigLoader;
 import fr.euphyllia.skylliabank.database.mariadb.MariaDBBankInit;
 import fr.euphyllia.skylliabank.database.postgresql.PostgreSQLBankInit;
 import fr.euphyllia.skylliabank.database.sqlite.SQLiteBankInit;
@@ -13,9 +14,12 @@ import fr.euphyllia.skylliabank.listeners.InfoListener;
 import fr.euphyllia.skylliabank.papi.SkylliaBankExpansion;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class SkylliaBank extends JavaPlugin {
 
+    private static final Logger log = LoggerFactory.getLogger(SkylliaBank.class);
     private static BankManager bankManager;
     private static SkylliaBank instance;
     private BankPapiCache papiCache;
@@ -47,6 +51,14 @@ public final class SkylliaBank extends JavaPlugin {
         if (getServer().getPluginManager().getPlugin("Skyllia") == null) {
             getLogger().severe("Skyllia is not installed! The plugin will stop.");
             getServer().getPluginManager().disablePlugin(this);
+            return;
+        }
+
+        try {
+            BankConfigLoader.init(getDataFolder());
+        } catch (Exception e) {
+            log.error("Error while loading BankConfig", e);
+            Bukkit.getPluginManager().disablePlugin(this);
             return;
         }
 
