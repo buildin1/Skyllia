@@ -1,58 +1,90 @@
 # SkylliaInsight
 
-**SkylliaInsightAddon** is an addon for the [Insights](https://github.com/InsightsPlugin/Insights) plugin, designed to
-integrate the Skyllia platform's island management features with Insights' region limiting capabilities. This addon
-allows server administrators to monitor and enforce limits on player islands, ensuring a balanced and optimized gameplay
-experience.
+**SkylliaInsight** is an addon for the [Insights](https://modrinth.com/plugin/insights) plugin that integrates
+Skyllia islands as Insights regions. Once installed, any limit configured in Insights (tile limits, group limits,
+permission-based limits) is automatically scoped to the island the player is standing on rather than to an arbitrary
+area.
 
-## Features
+---
 
-- **Region Integration:** Seamlessly integrates Skyllia islands with Insights, enabling region-based limits on island
-  activities.
-- **Custom Limit Configurations:** Utilize Insights' powerful limits configuration to manage tile, group, and
-  permission-based restrictions on islands.
-- **Dynamic Region Detection:** Automatically detects island regions based on chunk locations, ensuring accurate limit
-  enforcement.
-- **Folia Support:** Optimized for Folia, ensuring enhanced performance on multithreaded servers.
-- **Permission-Based Access:** Control access to various functionalities with granular permissions for administrators.
+## How it works
+
+When Insights needs to resolve the region at a player's location, SkylliaInsight:
+
+1. Checks whether the world is a Skyllia skyblock world.
+2. Resolves the island at the player's chunk via `SkylliaAPI`.
+3. Returns an island region whose chunk coverage is computed from the island's center chunk and block radius
+   (`ceil(radius / 16)` chunks in each direction). The chunk list is cached per region object and only rebuilt if the
+   island is resized.
+
+The addon name used in Insights limit configurations is the Skyllia plugin name in lowercase (e.g. `skyllia`).
+
+---
 
 ## Requirements
 
-- **Minecraft Server:** Compatible with Paper/Folia servers running Minecraft version 1.20.1 or greater.
-- **Skyllia Platform:** Ensure the Skyllia plugin is installed and active on your server.
-- **Insights Plugin:** Required for region limiting and monitoring functionalities.
-- **Java:** Java 21 is required for optimal performance.
-- **Dependencies:**
-    - **SkylliaOre:** Optional, for displaying generator types.
-    - **SkylliaBankAddon:** Optional, for displaying bank-related information.
-    - **SkylliaValue:** Optional, for displaying island values (proprietary plugin).
+| Dependency                                               | Required | Notes                  |
+|----------------------------------------------------------|----------|------------------------|
+| Paper / Folia 1.20.5+                                    | ✅        | Server software        |
+| [Skyllia](https://modrinth.com/plugin/skyllia)           | ✅        | Skyblock platform      |
+| [Insights](https://modrinth.com/plugin/insights) 6.19.2+ | ✅        | Region limiting engine |
+| Java 21                                                  | ✅        |                        |
+
+---
 
 ## Installation
 
-1. **Download SkylliaInsightAddon:**
-    - Obtain the latest version of SkylliaInsightAddon from
-      the [official repository](https://github.com/Euphillya/Skyllia/tree/dev/addons/SkylliaInsight).
+1. Download the latest `SkylliaInsight.jar` from the
+   [official repository](https://github.com/Euphillya/Skyllia/tree/dev/addons/SkylliaInsights).
+2. Place the jar in `plugins/Insights/addons/`.
+3. Restart the server. Insights will load the addon automatically on startup.
 
-2. **Install Dependencies:**
-    - Ensure that the Skyllia and Insights plugins are installed and properly configured on your server.
-    - Install any optional dependencies (SkylliaOre, SkylliaBankAddon) if you wish to utilize their features.
-    - For SkylliaValue, ensure you have the proprietary plugin installed as it is required for displaying island values.
+No additional configuration is required on the SkylliaInsight side. All limit rules are defined in Insights' own
+`limits/` directory.
 
-3. **Configure the Plugin:**
-    - Place the `SkylliaInsightAddon.jar` file into your server's `plugins/Insights/addons/` directory.
-    - Ensure that the `Insights` plugin is properly configured according to your server's requirements.
+---
 
-4. **Restart the Server:**
-    - Restart your Minecraft server to load the SkylliaInsight plugin.
+## Setting up limits
 
-## Usage
+Create `.yml` files inside `plugins/Insights/limits/`. Use `enabled-addons` to scope a limit to Skyllia islands only.
 
-SkylliaInsight works in the background to integrate Skyllia islands with Insights' region limiting system.
-Administrators can manage and configure limits through the Insights configuration files.
+The addon identifier to use in `enabled-addons` is `skyllia` (Skyllia's plugin name, lowercased).
 
-### Setting Up Limits
+### Scope a limit to Skyllia islands only
 
-To set up limits for Skyllia islands, configure the `limits.yml` file in the Insights plugin directory as follows:
+```yaml
+limit:
+  type: "GROUP"
+  bypass-permission: "insights.bypass.limit.redstone"
+  name: "Redstone"
+  limit: 64
+  settings:
+    enabled-addons:
+      whitelist: true   # true = whitelist (only apply to listed addons)
+      addons:
+        - "skyllia"
+  regex: false
+  materials:
+    - "REDSTONE_WIRE"
+    - "REDSTONE_BLOCK"
+    - "HOPPER"
+    - "DISPENSER"
+    - "DROPPER"
+    - "REPEATER"
+    - "COMPARATOR"
+```
+
+### Tile limit
+
+```yaml
+limit:
+  type: "TILE"
+  bypass-permission: "insights.bypass.limit.tile"
+  name: "Tiles"
+  limit: 256
+```
+
+### Group limit
 
 ```yaml
 limit:
@@ -64,54 +96,12 @@ limit:
   materials:
     - "STONE"
     - "DIRT"
-    - "WOOD"
   entities:
     - "ARMOR_STAND"
     - "PAINTING"
 ```
 
-### Example Configurations
-
-#### Tile Limit
-
-```yaml
-limit:
-  type: "TILE"
-  bypass-permission: "insights.bypass.limit.tile"
-  name: "Tiles"
-  limit: 256
-  excluded-materials:
-    - "AIR"
-```
-
-#### Group Limit
-
-```yaml
-limit:
-  type: "GROUP"
-  bypass-permission: "insights.bypass.limit.redstone"
-  name: "Redstone"
-  limit: 64
-  regex: false
-  materials:
-    - "REDSTONE_WIRE"
-    - "REDSTONE_BLOCK"
-    - "HOPPER"
-    - "DISPENSER"
-    - "DROPPER"
-    - "TRIPWIRE_HOOK"
-    - "REDSTONE_LAMP"
-    - "STICKY_PISTON"
-    - "PISTON"
-    - "REDSTONE_TORCH"
-    - "TNT"
-    - "NOTE_BLOCK"
-    - "LEVER"
-    - "REPEATER"
-    - "COMPARATOR"
-```
-
-#### Permission Limit
+### Permission limit
 
 ```yaml
 limit:
@@ -125,51 +115,48 @@ limit:
     "PAINTING": 5
 ```
 
-## Configuration
-
-Customize the limits and how they apply to Skyllia islands by editing the `limits.yml` file in the Insights plugin
-directory. Below is an overview of the configuration options:
-
-### Basic Layout
+### Disallow placement outside any island
 
 ```yaml
 limit:
-  type: "<LIMIT_TYPE>"
-  bypass-permission: "<BYPASS_PERMISSION>"
-```
-
-- **`<LIMIT_TYPE>`:** Must be one of the following types: `TILE`, `GROUP`, `PERMISSION`.
-- **`<BYPASS_PERMISSION>`:** Specifies the permission required to bypass this limit.
-
-### Optional Settings
-
-```yaml
-limit:
+  type: "GROUP"
   settings:
-    enabled-worlds:
-      whitelist: false
-      worlds:
-        - "<WORLD>"
     enabled-addons:
-      whitelist: false
+      whitelist: true
       addons:
-        - "Skyllia"
-    disallow-placement-outside-region: <DISALLOW_OUTSIDE_REGIONS>
+        - "skyllia"
+    disallow-placement-outside-region: true
+  ...
 ```
 
-- **`<WORLD>`:** The name of a world to apply the limit to (can be a blacklist or whitelist).
-- **`<ADDON>`:** The name of an addon to apply the limit to (can be a blacklist or whitelist).
-- **`<DISALLOW_OUTSIDE_REGIONS>`:** Whether to disallow placement outside defined regions.
+---
+
+## Configuration reference
+
+| Field                                        | Description                                                                             |
+|----------------------------------------------|-----------------------------------------------------------------------------------------|
+| `type`                                       | `TILE`, `GROUP`, or `PERMISSION`                                                        |
+| `bypass-permission`                          | Permission node that lets a player bypass this limit                                    |
+| `settings.enabled-worlds.whitelist`          | `true` = only apply to listed worlds; `false` = apply to all except listed worlds       |
+| `settings.enabled-worlds.worlds`             | List of world names                                                                     |
+| `settings.enabled-addons.whitelist`          | `true` = only apply inside listed addon regions; `false` = exclude listed addon regions |
+| `settings.enabled-addons.addons`             | List of addon names (use `skyllia` for Skyllia islands)                                 |
+| `settings.disallow-placement-outside-region` | Prevents block placement when the player is not inside any matching region              |
+
+For the full Insights configuration reference, see the
+[Insights documentation](https://github.com/InsightsPlugin/Insights/wiki).
+
+---
 
 ## Support
 
-For support, please join our [Discord server](https://discord.gg/uUJQEB7XNN).
+For help, please join the [Discord server](https://discord.gg/uUJQEB7XNN).
 
 ## Contributing
 
-Contributions are welcome! Please read the [contribution guidelines](../../CONTRIBUTING.md) before submitting a pull
+Contributions are welcome! Please read the [contribution guidelines](../../CONTRIBUTING.md) before opening a pull
 request.
 
 ## License
 
-SkylliaInfo is licensed under the [MIT License](../../LICENSE).
+SkylliaInsight is licensed under the [MIT License](../../LICENSE).
