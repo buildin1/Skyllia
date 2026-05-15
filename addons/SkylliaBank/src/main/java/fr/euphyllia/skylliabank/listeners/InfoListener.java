@@ -42,6 +42,9 @@ public class InfoListener implements Listener {
 
     @EventHandler
     public void onSkyblockDeleteEvent(final SkyblockCreateEvent event) {
+        if (!BankConfigLoader.config.isResetBankAccountOnIslandDelete()) {
+            return;
+        }
         Island island = event.getIsland();
         BankAccount account = SkylliaBank.getBankManager().getOrLoadBankAccount(island.getId());
         if (account != null) {

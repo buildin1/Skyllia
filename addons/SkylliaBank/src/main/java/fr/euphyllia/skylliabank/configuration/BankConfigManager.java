@@ -16,6 +16,7 @@ public class BankConfigManager implements IConfigurationProvider {
     private Locale localBankAccount;
     private int ttlCache = 60;
     private int ttlCacheTop = 300;
+    private boolean resetBankAccountOnIslandDelete = true;
 
     private boolean vaultIslandEconomyEnabled = false;
     private String vaultCurrencyNameSingular = "SkylliaBank";
@@ -32,6 +33,7 @@ public class BankConfigManager implements IConfigurationProvider {
         changed = false;
         this.formatBankAccount = getOrSetDefault("bank-account.format", formatBankAccount, String.class);
         this.localBankAccount = Locale.of(getOrSetDefault("bank-account.locale", Locale.FRANCE.toString(), String.class));
+        this.resetBankAccountOnIslandDelete = getOrSetDefault("bank-account.reset-on-island-delete", resetBankAccountOnIslandDelete, Boolean.class);
         this.ttlCache = getOrSetDefault("cache.ttl", ttlCache, Integer.class);
         this.ttlCacheTop = getOrSetDefault("cache.ttl-top", ttlCacheTop, Integer.class);
 
@@ -111,5 +113,9 @@ public class BankConfigManager implements IConfigurationProvider {
 
     public double getVaultDefaultBalance() {
         return vaultDefaultBalance;
+    }
+
+    public boolean isResetBankAccountOnIslandDelete() {
+        return resetBankAccountOnIslandDelete;
     }
 }

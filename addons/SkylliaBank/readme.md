@@ -69,6 +69,9 @@ format = "#,##0.##"
 # Locale used for decimal/grouping separators (e.g. "fr_FR", "en_US")
 locale = "fr_FR"
 
+# If true, the island bank account will be reset (balance set to 0) when the island is deleted
+reset-on-island-delete = false
+
 [cache]
 # Time-to-live in seconds for individual island balance cache entries (PAPI only)
 ttl = 60
