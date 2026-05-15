@@ -1,9 +1,12 @@
 package fr.euphyllia.skylliabank.listeners;
 
 import fr.euphyllia.skyllia.api.event.IslandInfoEvent;
+import fr.euphyllia.skyllia.api.event.SkyblockCreateEvent;
+import fr.euphyllia.skyllia.api.skyblock.Island;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
 import fr.euphyllia.skylliabank.SkylliaBank;
 import fr.euphyllia.skylliabank.api.BankAccount;
+import fr.euphyllia.skylliabank.configuration.BankConfigLoader;
 import net.kyori.adventure.text.Component;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -27,4 +30,23 @@ public class InfoListener implements Listener {
 
         event.addLine(component);
     }
+
+    @EventHandler
+    public void onSkyblockCreateEvent(final SkyblockCreateEvent event) {
+        Island island = event.getIsland();
+        BankAccount account = SkylliaBank.getBankManager().getOrLoadBankAccount(island.getId());
+        if (account == null) {
+            SkylliaBank.getBankManager().setBalance(island.getId(), BankConfigLoader.config.getVaultDefaultBalance());
+        }
+    }
+
+    @EventHandler
+    public void onSkyblockDeleteEvent(final SkyblockCreateEvent event) {
+        Island island = event.getIsland();
+        BankAccount account = SkylliaBank.getBankManager().getOrLoadBankAccount(island.getId());
+        if (account != null) {
+            SkylliaBank.getBankManager().setBalance(island.getId(), 0);
+        }
+    }
+
 }

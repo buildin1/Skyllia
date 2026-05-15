@@ -12,7 +12,10 @@ import fr.euphyllia.skylliabank.database.postgresql.PostgreSQLBankInit;
 import fr.euphyllia.skylliabank.database.sqlite.SQLiteBankInit;
 import fr.euphyllia.skylliabank.listeners.InfoListener;
 import fr.euphyllia.skylliabank.papi.SkylliaBankExpansion;
+import fr.euphyllia.skylliabank.vault.VaultIslandEconomy;
+import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
+import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +26,7 @@ public final class SkylliaBank extends JavaPlugin {
     private static BankManager bankManager;
     private static SkylliaBank instance;
     private BankPapiCache papiCache;
+    private boolean registeredAsVaultProvider = false;
 
     public static BankManager getBankManager() {
         return bankManager;
@@ -97,6 +101,26 @@ public final class SkylliaBank extends JavaPlugin {
 
         bankManager = new BankManager(generator);
 
+        if (BankConfigLoader.config.isVaultIslandEconomyEnabled()) {
+            VaultIslandEconomy vaultIslandEconomy = new VaultIslandEconomy();
+            getServer().getServicesManager().register(
+                    Economy.class,
+                    vaultIslandEconomy,
+                    this,
+                    ServicePriority.Highest
+            );
+            registeredAsVaultProvider = true;
+            getLogger().info("Island economy mode enabled: SkylliaBank is now the Vault Economy provider.");
+            getLogger().info("Per-player economy calls will be routed to island banks.");
+        } else {
+            if (!EconomyManager.setupEconomy(this)) {
+                getLogger().severe("No economy plugin found. The plugin will stop.");
+                getServer().getPluginManager().disablePlugin(this);
+                return;
+            }
+            getLogger().info("Classic economy mode: using existing Vault Economy provider.");
+        }
+
         SkylliaAPI.registerCommands(new BankCommand(this), "bank", "money", "bal", "balance");
         SkylliaAPI.registerAdminCommands(new BankAdminCommand(this), "bank");
 
@@ -114,7 +138,11 @@ public final class SkylliaBank extends JavaPlugin {
     public void onDisable() {
         Bukkit.getAsyncScheduler().cancelTasks(this);
         Bukkit.getGlobalRegionScheduler().cancelTasks(this);
-        papiCache.clear();
+        if (papiCache != null) papiCache.clear();
+
+        if (registeredAsVaultProvider) {
+            getServer().getServicesManager().unregisterAll(this);
+        }
     }
 
     public BankPapiCache getPapiCache() {

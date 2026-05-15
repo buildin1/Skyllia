@@ -1,24 +1,29 @@
 # SkylliaBank
 
-**SkylliaBank** is a banking add-on for the [Skyllia](https://github.com/Euphillya/Skyllia) Skyblock plugin. It adds a shared island bank where players can deposit and withdraw money via their Vault economy, with full admin controls, a leaderboard system, and PlaceholderAPI support.
+**SkylliaBank** is a banking add-on for the [Skyllia](https://github.com/Euphillya/Skyllia) Skyblock plugin. It adds a shared island bank where players can deposit and withdraw money, with full admin controls, a leaderboard system, and PlaceholderAPI support.
+
+By default, the island bank works alongside an existing Vault economy plugin — players transfer money between their personal wallet and the island bank. Optionally, an **island economy mode** can be enabled in the configuration, which makes SkylliaBank register itself as the Vault Economy provider so that any plugin interacting with Vault (shops, auction houses, etc.) reads and writes the island bank directly, without needing a separate economy plugin.
 
 ---
 
 ## Features
 
-- **Island Bank Account:** Each island has a single shared bank balance, separate from players' personal wallets.
+- **Island Bank Account:** Each island has a single shared bank balance, separate from players' personal wallets (classic mode) or as the primary economy account (island economy mode).
 - **Deposit & Withdrawal:** Players can transfer money between their personal wallet and the island bank, with automatic rollback on failure.
+- **Island Economy Mode:** SkylliaBank can register itself as the Vault Economy provider. Any plugin that calls the standard Vault API (`getBalance`, `withdrawPlayer`, `depositPlayer`) will transparently operate on the player's island bank instead of a per-player wallet.
 - **Island Permission System:** Deposit and withdrawal actions are gated by Skyllia's per-island role permissions, so island owners can control who has access.
 - **Admin Commands:** Administrators can view, deposit, withdraw, or set the balance of any island's bank directly.
 - **Leaderboard (Top):** Players can consult a paginated ranking of islands sorted by bank balance, and check their own island's rank.
 - **PlaceholderAPI Integration:** Exposes placeholders to display balances and top rankings in scoreboards, holograms, or any PAPI-compatible plugin.
 - **Multi-Database Support:** Compatible with MariaDB, PostgreSQL, and SQLite. The database used is automatically inherited from the main Skyllia configuration.
-- **Async Cache:** Balance and leaderboard data are cached with configurable TTLs to avoid hammering the database, with non-blocking async refresh.
+- **Async Cache:** Balance and leaderboard data used by PlaceholderAPI are cached with configurable TTLs to avoid hammering the database, with non-blocking async refresh. Economy operations (balance checks, withdrawals, deposits) always hit the database directly to guarantee consistency.
 - **Folia Support:** Fully compatible with Folia.
 
 ---
 
 ## Requirements
+
+### Classic mode
 
 | Dependency                                                                | Required | Role                                          |
 |---------------------------------------------------------------------------|----------|-----------------------------------------------|
@@ -28,6 +33,17 @@
 | An economy plugin (e.g. EssentialsX)                                      | ✅        | Actual money provider                         |
 | [PlaceholderAPI](https://www.spigotmc.org/resources/placeholderapi.6245/) | ❌        | Optional — enables `%skybank_*%` placeholders |
 
+### Island economy mode
+
+| Dependency                                                                | Required | Role                                              |
+|---------------------------------------------------------------------------|----------|---------------------------------------------------|
+| Paper / Folia 1.20.5+                                                     | ✅        | Server software                                   |
+| [Skyllia](https://modrinth.com/plugin/skyllia)                            | ✅        | Skyblock platform                                 |
+| [Vault](https://www.spigotmc.org/resources/vault.34315/)                  | ✅        | Economy abstraction (SkylliaBank is the provider) |
+| [PlaceholderAPI](https://www.spigotmc.org/resources/placeholderapi.6245/) | ❌        | Optional — enables `%skybank_*%` placeholders     |
+
+No separate economy plugin (EssentialsX, etc.) is needed in island economy mode — SkylliaBank provides the economy itself.
+
 The database (MariaDB, PostgreSQL, or SQLite) is shared with Skyllia and requires no separate configuration.
 
 ---
@@ -35,9 +51,9 @@ The database (MariaDB, PostgreSQL, or SQLite) is shared with Skyllia and require
 ## Installation
 
 1. Download the latest `SkylliaBank.jar` from [modrinth](https://modrinth.com/plugin/skyllia/versions).
-2. Place the jar in your server's `plugins/` directory alongside Skyllia, Vault, and your economy plugin.
+2. Place the jar in your server's `plugins/` directory alongside Skyllia and Vault.
 3. Start or restart the server. SkylliaBank will auto-detect the database configured in Skyllia and create its own tables.
-4. *(Optional)* Edit `plugins/SkylliaBank/config.toml` to adjust balance formatting and cache TTLs (see [Configuration](#configuration)).
+4. *(Optional)* Edit `plugins/SkylliaBank/config.toml` to adjust balance formatting, cache TTLs, and economy mode (see [Configuration](#configuration)).
 
 ---
 
@@ -54,12 +70,53 @@ format = "#,##0.##"
 locale = "fr_FR"
 
 [cache]
-# Time-to-live in seconds for individual island balance cache entries
+# Time-to-live in seconds for individual island balance cache entries (PAPI only)
 ttl = 60
 
 # Time-to-live in seconds for the top-balances leaderboard cache
 ttl-top = 300
+
+[vault]
+# Set to true to make SkylliaBank register itself as the Vault Economy provider.
+# Any plugin that calls the Vault Economy API (shops, auction houses, etc.)
+# will then read and write the island bank of the player instead of a
+# per-player wallet. No separate economy plugin is needed in this mode.
+# Set to false (default) to use an existing economy plugin as usual.
+enable-island-economy = false
+
+# Currency name displayed by third-party plugins through Vault
+currency-name-singular = "Coin"
+currency-name-plural = "Coins"
+
+# Number of decimal digits Vault reports (-1 = no rounding)
+fractional-digits = -1
 ```
+
+---
+
+## Economy Modes
+
+### Classic mode (`enable-island-economy = false`)
+
+The default behaviour. SkylliaBank consumes an existing Vault Economy provider (EssentialsX, CMI, etc.). Players transfer money between their personal wallet and the island bank using `/is bank deposit` and `/is bank withdraw`.
+
+### Island economy mode (`enable-island-economy = true`)
+
+SkylliaBank registers itself as the Vault Economy provider at `ServicePriority.Highest`. Every Vault economy call made by any plugin is transparently routed to the island bank of the involved player:
+
+```
+ShopAdmin buys an item
+  └─▶ economy.withdrawPlayer(player, price)   [standard Vault call]
+        └─▶ VaultIslandEconomy.withdrawPlayer(player, price)
+              └─▶ looks up player's island via SkylliaAPI
+                    └─▶ BankManager.withdraw(islandId, price)
+```
+
+**Balance consistency:** economy reads (`getBalance`, `has`) and writes (`withdraw`, `deposit`) always go directly to the database — no cache is used on this path. This prevents any duplication exploit where a plugin checks `has()` and then calls `withdraw()` without verifying the result, since the database itself enforces the `balance >= amount` constraint atomically.
+
+**If a player has no island**, all read operations return `0` and all write operations return a `FAILURE` response. No money is silently lost.
+
+**Legacy Vault methods** (`String playerName` overloads, deprecated since VaultAPI 1.4) resolve the player name against online players only. Offline player lookups via `Bukkit.getOfflinePlayer(name)` are intentionally avoided to prevent blocking I/O and stale name-to-UUID mappings after a rename. If the player is offline, a `FAILURE` response is returned. No modern plugin uses these methods.
 
 ---
 
@@ -137,9 +194,9 @@ Balance and top-list results are served from an async-refreshed cache. When a va
 5. If the Vault deposit fails, the amount is automatically re-deposited into the island bank.
 
 ### Caching
-- Each island's balance is cached for `cache.ttl` seconds (default 60 s). Any deposit, withdrawal, or admin operation immediately invalidates that island's cache entry (and the top-list cache).
-- The leaderboard is cached separately for `cache.ttl-top` seconds (default 300 s).
+- The PAPI cache stores each island's balance for `cache.ttl` seconds (default 60 s) and the leaderboard for `cache.ttl-top` seconds (default 300 s). Any deposit, withdrawal, or admin operation immediately invalidates the relevant cache entries.
 - PAPI placeholder reads that hit a cold cache return a fallback value instantly and schedule a non-blocking async reload.
+- Vault Economy calls (used by shops and other plugins) **bypass the cache entirely** and always read the live database value to guarantee correctness.
 
 ---
 
@@ -154,4 +211,3 @@ Contributions are welcome! Please read the [contribution guidelines](../../CONTR
 ## License
 
 SkylliaBank is licensed under the [MIT License](../../LICENSE).
-

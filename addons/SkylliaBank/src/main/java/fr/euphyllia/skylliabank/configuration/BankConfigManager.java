@@ -12,10 +12,16 @@ public class BankConfigManager implements IConfigurationProvider {
 
     private final CommentedFileConfig config;
     private boolean changed = false;
-    private String formatBankAccount;
+    private String formatBankAccount = "#,##0.##";
     private Locale localBankAccount;
     private int ttlCache = 60;
     private int ttlCacheTop = 300;
+
+    private boolean vaultIslandEconomyEnabled = false;
+    private String vaultCurrencyNameSingular = "SkylliaBank";
+    private String vaultCurrencyNamePlural = "SkylliaBanks";
+    private int vaultFractionalDigits = -1;
+    private double vaultDefaultBalance = 0d;
 
     public BankConfigManager(CommentedFileConfig commentedFileConfig) {
         this.config = commentedFileConfig;
@@ -24,10 +30,16 @@ public class BankConfigManager implements IConfigurationProvider {
     @Override
     public void loadConfig() throws Exception {
         changed = false;
-        this.formatBankAccount = getOrSetDefault("bank-account.format", "#,##0.##", String.class);
+        this.formatBankAccount = getOrSetDefault("bank-account.format", formatBankAccount, String.class);
         this.localBankAccount = Locale.of(getOrSetDefault("bank-account.locale", Locale.FRANCE.toString(), String.class));
         this.ttlCache = getOrSetDefault("cache.ttl", ttlCache, Integer.class);
         this.ttlCacheTop = getOrSetDefault("cache.ttl-top", ttlCacheTop, Integer.class);
+
+        this.vaultIslandEconomyEnabled = getOrSetDefault("vault.enable-island-economy", false, Boolean.class);
+        this.vaultCurrencyNameSingular = getOrSetDefault("vault.currency-name-singular", vaultCurrencyNameSingular, String.class);
+        this.vaultCurrencyNamePlural = getOrSetDefault("vault.currency-name-plural", vaultCurrencyNamePlural, String.class);
+        this.vaultFractionalDigits = getOrSetDefault("vault.fractional-digits", vaultFractionalDigits, Integer.class);
+        this.vaultDefaultBalance = getOrSetDefault("vault.default-balance", vaultDefaultBalance, Double.class);
 
         if (changed) {
             TomlWriter tomlWriter = new TomlWriter();
@@ -79,5 +91,25 @@ public class BankConfigManager implements IConfigurationProvider {
 
     public int getTtlCacheTop() {
         return ttlCacheTop;
+    }
+
+    public boolean isVaultIslandEconomyEnabled() {
+        return vaultIslandEconomyEnabled;
+    }
+
+    public String getVaultCurrencyNamePlural() {
+        return vaultCurrencyNamePlural;
+    }
+
+    public String getVaultCurrencyNameSingular() {
+        return vaultCurrencyNameSingular;
+    }
+
+    public int getVaultFractionalDigits() {
+        return vaultFractionalDigits;
+    }
+
+    public double getVaultDefaultBalance() {
+        return vaultDefaultBalance;
     }
 }

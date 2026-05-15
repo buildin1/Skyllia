@@ -6,6 +6,8 @@ import fr.euphyllia.skyllia.sgbd.exceptions.DatabaseException;
 import fr.euphyllia.skyllia.sgbd.sqlite.SQLite;
 import fr.euphyllia.skyllia.sgbd.sqlite.SQLiteDatabaseLoader;
 import fr.euphyllia.skyllia.sgbd.utils.sql.SQLExecute;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SQLiteBankInit extends DatabaseInitializeQuery {
 
@@ -15,6 +17,7 @@ public class SQLiteBankInit extends DatabaseInitializeQuery {
                 balance REAL NOT NULL DEFAULT 0
             );
             """;
+    private static final Logger log = LoggerFactory.getLogger(SQLiteBankInit.class);
     private static SQLiteDatabaseLoader database;
     private static SQLiteBankGenerator sqliteBankGenerator;
 
@@ -41,6 +44,7 @@ public class SQLiteBankInit extends DatabaseInitializeQuery {
             SQLExecute.update(database, CREATE_TABLE, null);
             return true;
         } catch (DatabaseException e) {
+            log.error("Failed to initialize SQLite database for SkylliaBank", e);
             return false;
         }
     }
