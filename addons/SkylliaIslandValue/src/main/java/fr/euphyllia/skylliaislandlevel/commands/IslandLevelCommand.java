@@ -60,8 +60,8 @@ public class IslandLevelCommand implements SubCommandInterface {
         ConfigLoader.language.sendMessage(player, "addons.island-value.scan-started");
         boolean started = SkylliaIslandLevel.getInstance().getLevelManager().triggerScan(island, (score, level) -> {
             ConfigLoader.language.sendMessage(player, "addons.island-value.scan-completed", Map.of(
-                    "score", String.format("%.2f", score),
-                    "level", Long.toString(level)
+                    "%score%", String.format("%.2f", score),
+                    "%level%", Long.toString(level)
             ));
         });
 
