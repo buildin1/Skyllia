@@ -1,0 +1,17 @@
+name: SkylliaIslandLevel
+main: fr.euphyllia.skylliaislandlevel.SkylliaIslandLevel
+loader: fr.euphyllia.skylliaislandlevel.IslandLevelLoader
+version: ${version}
+api-version: 1.20.5
+folia-supported: true
+
+dependencies:
+  server:
+    Skyllia:
+      load: BEFORE
+      required: true
+      join-classpath: true
+    PlaceholderAPI:
+      join-classpath: true
+      load: BEFORE
+      required: false
