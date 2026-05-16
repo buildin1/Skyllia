@@ -150,6 +150,7 @@ modrinth {
             project(":addons:SkylliaChallenge").tasks.named<Jar>("shadowJar"),
             project(":addons:SkylliaChest").tasks.named<Jar>("shadowJar"),
             project(":addons:SkylliaAcidRain").tasks.named<Jar>("shadowJar"),
+            project(":addons:SkylliaIslandValue").tasks.named<Jar>("shadowJar"),
         )
     )
 
@@ -195,5 +196,6 @@ tasks.modrinth {
         ":addons:SkylliaChallenge:shadowJar",
         ":addons:SkylliaChest:shadowJar",
         ":addons:SkylliaAcidRain:shadowJar",
+        ":addons:SkylliaIslandValue:shadowJar"
     )
 }

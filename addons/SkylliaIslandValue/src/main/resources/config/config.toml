@@ -1,0 +1,10 @@
+[island-level]
+level-expression = "FLOOR(SQRT(score / 10))"
+min-level = 0
+timer-interval-seconds = 300
+timer-interval-seconds-top = 120
+
+[blocks]
+DIRT = 1
+GRASS_BLOCK = 2
+STONE = 3

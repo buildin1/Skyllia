@@ -5,6 +5,8 @@ import fr.euphyllia.skyllia.api.SkylliaAPI;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
 
 public class IslandLevelConfigLoader {
 
@@ -37,5 +39,11 @@ public class IslandLevelConfigLoader {
         config.loadConfig();
 
         SkylliaAPI.getConfigRegistry().registerConfig(config);
+    }
+
+    public static void unregister() {
+        if (config != null) {
+            SkylliaAPI.getConfigRegistry().unregisterConfig(config);
+        }
     }
 }
