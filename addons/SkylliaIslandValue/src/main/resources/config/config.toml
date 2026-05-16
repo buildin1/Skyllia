@@ -1,0 +1,21 @@
+[island-level]
+# Mathematical formula to calculate the level from the score.
+# Available variables: score, level, size
+# Available functions: FLOOR, SQRT, CEIL, ABS, POW, LOG, MIN, MAX, ...
+level-expression = "FLOOR(SQRT(score / 10))"
+
+# Minimum guaranteed level (no island can drop below this)
+min-level = 0
+
+# Interval (in seconds) between two automatic scans of online islands
+timer-interval-seconds = 300
+
+# Cache validity duration for the Top leaderboard (in seconds)
+timer-interval-seconds-top = 120
+
+[blocks]
+# Assign each block type a value (positive decimal number)
+# Use Bukkit names in UPPERCASE
+DIRT = 1
+GRASS_BLOCK = 2
+STONE = 3

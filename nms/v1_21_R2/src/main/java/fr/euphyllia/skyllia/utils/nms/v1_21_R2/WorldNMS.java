@@ -65,6 +65,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 public class WorldNMS extends fr.euphyllia.skyllia.api.utils.nms.WorldNMS {
 
@@ -287,6 +288,37 @@ public class WorldNMS extends fr.euphyllia.skyllia.api.utils.nms.WorldNMS {
 
         Bukkit.getPluginManager().callEvent(new WorldLoadEvent(internal.getWorld()));
         return WorldFeedback.Feedback.SUCCESS.toFeedbackWorld(internal.getWorld());
+    }
+
+    @Override
+    public Map<Material, Integer> getCountAllBlocksInChunk(World world, int chunkX, int chunkZ) {
+        Map<Material, Integer> blockCounts = new java.util.EnumMap<>(Material.class);
+        net.minecraft.server.level.ServerLevel nms = ((CraftWorld) world).getHandle();
+
+        LevelChunk chunk = nms.getChunkSource().getChunkNow(chunkX, chunkZ);
+        if (chunk == null) {
+            chunk = nms.getChunkSource().getChunk(chunkX, chunkZ, true);
+        }
+        if (chunk == null) {
+            return blockCounts;
+        }
+
+        final LevelChunkSection[] sections = chunk.getSections();
+        if (sections == null || sections.length == 0) {
+            return blockCounts;
+        }
+
+        for (LevelChunkSection section : sections) {
+            if (section == null || section.hasOnlyAir()) continue;
+
+            section.states.count((state, count) -> {
+                if (state.isAir()) return;
+                Material mat = state.getBukkitMaterial();
+                blockCounts.merge(mat, count, Integer::sum);
+            });
+        }
+
+        return blockCounts;
     }
 
     @Override

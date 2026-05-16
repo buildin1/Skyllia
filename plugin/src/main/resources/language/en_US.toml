@@ -405,6 +405,22 @@ no-permission = "<red>You do not have permission to open the island chest.</red>
 inventory-title = "<gold>%island_name%'s Island Chest</gold>"
 open = "<green>You have opened the island chest.</green>"
 
+[addons.island-value]
+no-permissions = "<red>You do not have permission to use this command."
+player-only-command = "<red>This command can only be used by a player."
+not-on-island = "<red>You do not have an island."
+already-scanning = "<yellow>A scan is already in progress for your island."
+scan-started = "<green>Scanning your island..."
+scan-completed = "<green>Scan complete! Score: <white>%score%</white> | Level: <white>%level%</white>"
+scan-start-failed = "<red>Failed to start the scan."
+level-command-usage = "<yellow>Usage: /is islevel <scan|top|rank>"
+invalid-page = "<red>%input% is not a valid page number."
+top-header = "<gold>=== Island Leaderboard — Page %page%/%max_page% (%total% islands) ===</gold>"
+top-empty = "<red>No islands are ranked yet."
+top-line = "<yellow>#%rank%</yellow> <white>%owner%</white> <gray>-</gray> Lv. <aqua>%level%</aqua> <dark_gray>(%score% pts)</dark_gray>"
+rank-self = "<yellow>#%rank%</yellow> <white>%owner% (you)</white> <gray>-</gray> Lv. <aqua>%level%</aqua> <dark_gray>(%score% pts)</dark_gray>"
+rank-self-unranked = "<white>%owner% (you)</white> <gray>are not ranked yet.</gray>"
+
 [addons.acid-island]
 water-contact = "<red>⚠ Acidic water burns you!</red>"
 rain-contact = "<dark_aqua>☔ Acid rain is eating away at your skin!</dark_aqua>"
