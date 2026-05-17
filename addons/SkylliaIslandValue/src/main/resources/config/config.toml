@@ -19,3 +19,8 @@ timer-interval-seconds-top = 120
 DIRT = 1
 GRASS_BLOCK = 2
 STONE = 3
+
+[scan-notification]
+# Type: BOSS_BAR, TITLE, ACTION_BAR, NONE
+type = "BOSS_BAR"
+boss-bar-color = "YELLOW"

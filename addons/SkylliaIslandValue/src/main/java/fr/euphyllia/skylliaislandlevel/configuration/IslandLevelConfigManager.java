@@ -24,6 +24,10 @@ public class IslandLevelConfigManager implements IConfigurationProvider {
     private int timerIntervalSeconds = 60;
     private int timerIntervalSecondsTop = 120;
 
+    private ScanNotificationConfig scanNotification = new ScanNotificationConfig(
+            ScanNotificationConfig.NotificationType.BOSS_BAR, "YELLOW"
+    );
+
     public IslandLevelConfigManager(CommentedFileConfig cfg) {
         this.config = cfg;
     }
@@ -37,6 +41,18 @@ public class IslandLevelConfigManager implements IConfigurationProvider {
         minLevel = getOrSetDefault("island-level.min-level", minLevel, Long.class);
         timerIntervalSeconds = getOrSetDefault("island-level.timer-interval-seconds", timerIntervalSeconds, Integer.class);
         timerIntervalSecondsTop = getOrSetDefault("island-level.timer-interval-seconds-top", timerIntervalSeconds, Integer.class);
+
+        String notifType = getOrSetDefault("scan-notification.type", scanNotification.type().name(), String.class);
+        String notifColor = getOrSetDefault("scan-notification.boss-bar-color", scanNotification.bossBarColor(), String.class);
+
+        ScanNotificationConfig.NotificationType type;
+        try {
+            type = ScanNotificationConfig.NotificationType.valueOf(notifType.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid scan-notification.type '{}', falling back to BOSS_BAR.", notifType);
+            type = ScanNotificationConfig.NotificationType.BOSS_BAR;
+        }
+        scanNotification = new ScanNotificationConfig(type, notifColor);
 
         if (changed) {
             TomlWriter tomlWriter = new TomlWriter();
@@ -114,5 +130,9 @@ public class IslandLevelConfigManager implements IConfigurationProvider {
 
     public int getTimerIntervalSecondsTop() {
         return timerIntervalSecondsTop;
+    }
+
+    public ScanNotificationConfig getScanNotification() {
+        return scanNotification;
     }
 }

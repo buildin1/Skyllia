@@ -427,6 +427,10 @@ top-line = "<yellow>#%rank%</yellow> <white>%owner%</white> <gray>-</gray> Nv. <
 rank-self = "<yellow>#%rank%</yellow> <white>%owner% (vous)</white> <gray>-</gray> Nv. <aqua>%level%</aqua> <dark_gray>(%score% pts)</dark_gray>"
 rank-self-unranked = "<white>%owner% (vous)</white> <gray>n'êtes pas encore classé.</gray>"
 
+[addons.island-value.notifier]
+title = "<gold>⛏ Scan en cours... <white>%done%<gray>/<white>%total% <yellow>(%percent%%)</yellow>"
+sub-title = "<gray>Veuillez patienter...</gray>"
+
 [addons.acid-island]
 water-contact = "<red>⚠ L'eau acide vous brûle !</red>"
 rain-contact = "<dark_aqua>☔ La pluie acide vous ronge la peau !</dark_aqua>"

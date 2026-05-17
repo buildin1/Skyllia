@@ -2,12 +2,14 @@ package fr.euphyllia.skylliaislandlevel.scanner;
 
 import fr.euphyllia.skyllia.api.SkylliaAPI;
 import fr.euphyllia.skyllia.api.skyblock.Island;
+import fr.euphyllia.skyllia.api.skyblock.Players;
 import fr.euphyllia.skyllia.api.skyblock.model.Position;
 import fr.euphyllia.skylliaislandlevel.SkylliaIslandLevel;
 import fr.euphyllia.skylliaislandlevel.configuration.IslandLevelConfigLoader;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.entity.Player;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,6 +17,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class IslandScanner {
 
@@ -43,41 +47,54 @@ public class IslandScanner {
         }
 
         Map<Material, Double> blockValues = IslandLevelConfigLoader.config.getBlockValues();
-
-        // DEBUG
         log.debug("[Scanner] blockValues loaded: {} entries", blockValues.size());
-
-        scanChunksRecursively(world, island, chunkCoords, 0, 0.0, blockValues, result);
-        return result;
-    }
-
-    private void scanChunksRecursively(World world, Island island, List<int[]> chunks, int index, double accumulatedScore, Map<Material, Double> blockValues, CompletableFuture<Double> resultFuture) {
-        if (index >= chunks.size()) {
-            resultFuture.complete(accumulatedScore);
-            return;
-        }
-
-        int[] coord = chunks.get(index);
-        int chunkX = coord[0];
-        int chunkZ = coord[1];
-
-        Runnable scanTask = () -> {
-            double chunkScore = 0.0;
-            try {
-                chunkScore = scoreChunk(world, chunkX, chunkZ, blockValues);
-            } catch (Throwable e) {
-                log.error("Failed to scan chunk at ({}, {}) for island '{}'", chunkX, chunkZ, island.getId(), e);
+        List<Player> onlineMembers = new ArrayList<>();
+        for (Players member : island.getMembers()) {
+            Player player = Bukkit.getPlayer(member.getMojangId());
+            if (player != null) {
+                onlineMembers.add(player);
             }
-
-            final double nextScore = accumulatedScore + chunkScore;
-            scanChunksRecursively(world, island, chunks, index + 1, nextScore, blockValues, resultFuture);
-        };
-
-        if (Bukkit.isOwnedByCurrentRegion(world, chunkX, chunkZ)) {
-            scanTask.run();
-            return;
         }
-        Bukkit.getRegionScheduler().run(plugin, world, chunkX, chunkZ, t -> scanTask.run());
+
+        ScanProgressNotifier notifier = onlineMembers.isEmpty()
+                ? null
+                : new ScanProgressNotifier(onlineMembers, IslandLevelConfigLoader.config.getScanNotification());
+
+        int total = chunkCoords.size();
+        AtomicInteger remaining = new AtomicInteger(total);
+        AtomicInteger done = new AtomicInteger(0);
+        AtomicReference<Double> totalScore = new AtomicReference<>(0.0);
+        AtomicInteger delay = new AtomicInteger(1);
+
+        for (int[] coord : chunkCoords) {
+            int chunkX = coord[0];
+            int chunkZ = coord[1];
+            Bukkit.getRegionScheduler().runDelayed(plugin, world, chunkX, chunkZ, task -> {
+                double chunkScore = 0.0;
+                try {
+                    chunkScore = scoreChunk(world, chunkX, chunkZ, blockValues);
+                } catch (Throwable e) {
+                    log.error("Failed to scan chunk at ({}, {}) for island '{}'", chunkX, chunkZ, island.getId(), e);
+                }
+
+                final double scored = chunkScore;
+                totalScore.updateAndGet(current -> current + scored);
+
+                int nowDone = done.incrementAndGet();
+
+                if (notifier != null) {
+                    notifier.update(nowDone, total);
+                }
+
+                if (remaining.decrementAndGet() == 0) {
+                    if (notifier != null) {
+                        notifier.finish();
+                    }
+                    result.complete(totalScore.get());
+                }
+            }, delay.getAndIncrement());
+        }
+        return result;
     }
 
     private double scoreChunk(World world, int chunkX, int chunkZ, Map<Material, Double> blockValues) {
