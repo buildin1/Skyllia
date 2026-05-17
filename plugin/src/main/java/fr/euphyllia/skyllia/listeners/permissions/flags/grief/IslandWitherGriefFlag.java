@@ -11,6 +11,7 @@ import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Wither;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.plugin.Plugin;
 
@@ -38,6 +39,29 @@ public class IslandWitherGriefFlag implements FlagModule {
         if (!(event.getEntity() instanceof Wither)) return;
 
         final Location location = event.getLocation();
+        if (location.getWorld() == null) return;
+        if (!SkylliaAPI.isWorldSkyblock(location.getWorld())) return;
+
+        final int chunkX = location.getBlockX() >> 4;
+        final int chunkZ = location.getBlockZ() >> 4;
+        final Island island = SkylliaAPI.getIslandByChunk(chunkX, chunkZ);
+        if (island == null) return;
+
+        if (!SkylliaAPI.getPermissionsManager().hasFlag(island, ALLOW_WITHER_GRIEF, ALLOW_MOB_GRIEF)) {
+            event.setCancelled(true);
+            return;
+        }
+
+        if (ListenersUtils.isBlockOutsideIsland(island, location, event)) {
+            return;
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onWitherBreakBlock(final EntityChangeBlockEvent event) {
+        if (!(event.getEntity() instanceof Wither)) return;
+
+        final Location location = event.getBlock().getLocation();
         if (location.getWorld() == null) return;
         if (!SkylliaAPI.isWorldSkyblock(location.getWorld())) return;
 
