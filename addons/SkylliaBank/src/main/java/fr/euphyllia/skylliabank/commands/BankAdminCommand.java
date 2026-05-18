@@ -27,12 +27,9 @@ import java.util.stream.Collectors;
 public class BankAdminCommand implements SubCommandInterface {
 
     private static final Logger log = LogManager.getLogger(BankAdminCommand.class);
-    private final Plugin plugin;
     private final Economy economy;
-    private final MiniMessage miniMessage = MiniMessage.miniMessage();
 
     public BankAdminCommand(Plugin plugin) {
-        this.plugin = plugin;
         this.economy = EconomyManager.getEconomy();
     }
 
@@ -256,22 +253,27 @@ public class BankAdminCommand implements SubCommandInterface {
         if (args.length == 2) {
             String command = args[0].toLowerCase();
             String partial = args[1].trim().toLowerCase();
-
+            List<String> playerNames = new ArrayList<>(Bukkit.getOnlinePlayers()).stream()
+                    .map(Player::getName)
+                    .filter(name -> name.toLowerCase().startsWith(partial))
+                    .sorted()
+                    .toList();
             return switch (command) {
-                case "balance", "setbalance" -> new ArrayList<>(Bukkit.getOnlinePlayers()).stream()
-                        .map(Player::getName)
-                        .filter(name -> name.toLowerCase().startsWith(partial))
-                        .sorted()
-                        .collect(Collectors.toList());
-                case "deposit", "withdraw" -> {
-                    List<String> amounts = List.of("10", "50", "100", "500", "1000");
-                    yield amounts.stream()
-                            .filter(amount -> amount.startsWith(partial))
-                            .sorted()
-                            .collect(Collectors.toList());
-                }
+                case "balance", "setbalance", "deposit", "withdraw" -> playerNames;
                 default -> List.of();
             };
+        }
+
+        if (args.length == 3) {
+            String command = args[0].toLowerCase();
+            String partial = args[2].trim().toLowerCase();
+            if (List.of("deposit", "withdraw", "setbalance").contains(command)) {
+                List<String> amounts = List.of("10", "50", "100", "500", "1000");
+                return amounts.stream()
+                        .filter(amount -> amount.startsWith(partial))
+                        .sorted()
+                        .collect(Collectors.toList());
+            }
         }
 
         return List.of();

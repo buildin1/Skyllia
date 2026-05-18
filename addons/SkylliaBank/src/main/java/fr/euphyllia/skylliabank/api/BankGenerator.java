@@ -1,5 +1,6 @@
 package fr.euphyllia.skylliabank.api;
 
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -49,4 +50,6 @@ public interface BankGenerator {
      * @return A {@link CompletableFuture} containing {@code true} if the balance was updated successfully, {@code false} otherwise.
      */
     Boolean setBalance(UUID islandId, double balance);
+
+    List<BankAccount> getTopBalances();
 }

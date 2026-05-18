@@ -278,7 +278,15 @@ balance = "<yellow>Solde de l'île : </yellow><white>%amount%</white>"
 [addons.bank.player]
 player-only = "<red>Cette commande ne peut être utilisée que par un joueur."
 no-island = "<red>Vous n’avez pas d’île."
-unknown-command = "<yellow>Commande inconnue. Utiliser /is bank [deposit|withdraw|balance]"
+# TOP
+unknown-command = "<yellow>Commande inconnue. Utiliser /is bank [deposit|withdraw|balance|top]"
+no-permission-top = "<red>Vous n'avez pas la permission d'utiliser cette commande.</red>"
+invalid-page = "<red>%input% n'est pas un numéro de page valide.</red>"
+top-header = "<gold>=== Pages %page%/%max_page% avec %total% joueurs ===</gold>"
+top-empty = "<red>Aucun joueur n'a d'argent dans la banque de son île.</red>"
+top-line = "<yellow>#%rank%</yellow> <white>%owner%</white> <gray>-</gray> <white>%amount%</white>"
+top-self = "<yellow>#%rank%</yellow> <white>%owner% (vous)</white> <gray>-</gray> <white>%amount%</white>"
+top-self-unranked = "<white>%owner% (vous)</white> n'êtes pas classé pour une raison inconnue."
 
 # Deposit
 no-permission-deposit = "<red>Vous n'avez pas la permission de déposer de l'argent."
@@ -402,6 +410,26 @@ failed = "<red>Une erreur s'est produite lors de l'ajout de %amount% dans le com
 no-permission = "<red>Votre rang ne vous permet pas d'utiliser ce coffre."
 inventory-title = "<gold>=== Coffre de l'île de %island_name% ===</gold>"
 open = "<green>Vous avez ouvert le coffre de l'île.</green>"
+
+[addons.island-value]
+no-permissions = "<red>Vous n'avez pas la permission d'utiliser cette commande."
+player-only-command = "<red>Cette commande ne peut être utilisée que par un joueur."
+not-on-island = "<red>Vous n'avez pas d'île."
+already-scanning = "<yellow>Un scan est déjà en cours pour votre île."
+scan-started = "<green>Scan de votre île en cours..."
+scan-completed = "<green>Scan terminé ! Score : <white>%score%</white> | Niveau : <white>%level%</white>"
+scan-start-failed = "<red>Impossible de démarrer le scan."
+level-command-usage = "<yellow>Usage : /is islevel <scan|top|rank>"
+invalid-page = "<red>%input% n'est pas un numéro de page valide."
+top-header = "<gold>=== Classement des îles — Page %page%/%max_page% (%total% îles) ===</gold>"
+top-empty = "<red>Aucune île n'est encore classée."
+top-line = "<yellow>#%rank%</yellow> <white>%owner%</white> <gray>-</gray> Nv. <aqua>%level%</aqua> <dark_gray>(%score% pts)</dark_gray>"
+rank-self = "<yellow>#%rank%</yellow> <white>%owner% (vous)</white> <gray>-</gray> Nv. <aqua>%level%</aqua> <dark_gray>(%score% pts)</dark_gray>"
+rank-self-unranked = "<white>%owner% (vous)</white> <gray>n'êtes pas encore classé.</gray>"
+
+[addons.island-value.notifier]
+title = "<gold>⛏ Scan en cours... <white>%done%<gray>/<white>%total% <yellow>(%percent%%)</yellow>"
+sub-title = "<gray>Veuillez patienter...</gray>"
 
 [addons.acid-island]
 water-contact = "<red>⚠ L'eau acide vous brûle !</red>"
@@ -975,3 +1003,4 @@ description = "Contrôle l'apparition des Illusionnistes."
 [debug]
 permission-has = "%player% a la permission : %permission%"
 permission-missing = "%player% n'a pas la permission : %permission%"
+

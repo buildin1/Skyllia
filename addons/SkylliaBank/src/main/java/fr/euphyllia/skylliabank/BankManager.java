@@ -3,6 +3,7 @@ package fr.euphyllia.skylliabank;
 import fr.euphyllia.skylliabank.api.BankAccount;
 import fr.euphyllia.skylliabank.api.BankGenerator;
 
+import java.util.List;
 import java.util.UUID;
 
 public class BankManager {
@@ -38,5 +39,9 @@ public class BankManager {
 
     public BankAccount getOrLoadBankAccount(UUID islandId) {
         return getBankAccount(islandId);
+    }
+
+    public List<BankAccount> getTopBalances() {
+        return dbGenerator.getTopBalances();
     }
 }

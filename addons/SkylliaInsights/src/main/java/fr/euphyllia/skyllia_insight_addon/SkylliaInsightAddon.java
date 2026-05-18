@@ -4,11 +4,11 @@ import dev.frankheijden.insights.api.addons.InsightsAddon;
 import dev.frankheijden.insights.api.addons.Region;
 import dev.frankheijden.insights.api.objects.chunk.ChunkLocation;
 import dev.frankheijden.insights.api.objects.chunk.ChunkPart;
+import fr.euphyllia.skyllia.Skyllia;
 import fr.euphyllia.skyllia.api.SkylliaAPI;
 import fr.euphyllia.skyllia.api.skyblock.Island;
 import fr.euphyllia.skyllia.api.skyblock.model.Position;
 import fr.euphyllia.skyllia.api.utils.helper.RegionHelper;
-import fr.euphyllia.skyllia.configuration.ConfigLoader;
 import org.bukkit.World;
 
 import java.util.ArrayList;
@@ -19,17 +19,17 @@ public class SkylliaInsightAddon implements InsightsAddon {
 
     @Override
     public String getPluginName() {
-        return "Skyllia";
+        return Skyllia.getInstance().getName();
     }
 
     @Override
     public String getAreaName() {
-        return "island";
+        return  Skyllia.getInstance().getName().toLowerCase();
     }
 
     @Override
     public String getVersion() {
-        return "1.0";
+        return Skyllia.getInstance().getPluginMeta().getVersion();
     }
 
     @Override
@@ -42,54 +42,39 @@ public class SkylliaInsightAddon implements InsightsAddon {
         return Optional.of(new SkylliaRegion(island, location.getWorld()));
     }
 
-    public class SkylliaRegion implements Region {
+    public static class SkylliaRegion implements Region {
 
         private final Island island;
         private final World world;
+        private List<ChunkPart> cachedParts = null;
+        private double cachedSize = -1;
 
         public SkylliaRegion(Island island, World world) {
             this.island = island;
             this.world = world;
         }
 
-        public static List<Position> spiralStartCenter(Position islandRegion, double size) {
-            List<Position> positions = new ArrayList<>();
+        private static List<ChunkPart> buildChunkParts(Island island, World world) {
+            Position islandRegion = island.getPosition();
+            double sizeInBlocks   = island.getSize();
+            Position centerChunk = RegionHelper.getCenterChunkOfRegion(islandRegion.x(), islandRegion.z());
+            int cx = centerChunk.x();
+            int cz = centerChunk.z();
 
-            Position chunk = RegionHelper.getCenterChunkOfRegion(islandRegion.x(), islandRegion.z());
-            int cx = chunk.x();
-            int cz = chunk.z();
-            int x = 0, z = 0;
-            int dx = 0, dz = -1;
-            int maxI = (int) Math.pow((33 * ConfigLoader.general.getIslandSettings().regionDistance()), 2);
-            List<Position> islandPositionWithRadius = RegionHelper.getRegionsWithinBlockRange(islandRegion, (int) Math.round(size));
-            List<Position> regionCleaned = new ArrayList<>();
+            int chunkRadius = (int) Math.ceil(sizeInBlocks / 16.0);
 
-            for (int i = 0; i < maxI; i++) {
-                if ((-size / 2 <= x) && (x <= size / 2) && (-size / 2 <= z) && (z <= size / 2)) {
-                    Position chunkPos = new Position(cx + x, cz + z);
-                    Position region = RegionHelper.getRegionFromChunk(chunkPos.x(), chunkPos.z());
-                    if (islandPositionWithRadius.contains(region)) {
-                        if (!regionCleaned.contains(region)) {
-                            regionCleaned.add(region);
-                        }
-                        positions.add(chunkPos);
-                    }
+            List<ChunkPart> parts = new ArrayList<>((2 * chunkRadius + 1) * (2 * chunkRadius + 1));
+            for (int dx = -chunkRadius; dx <= chunkRadius; dx++) {
+                for (int dz = -chunkRadius; dz <= chunkRadius; dz++) {
+                    parts.add(new ChunkPart(new ChunkLocation(world, cx + dx, cz + dz)));
                 }
-
-                if ((x == z) || ((x < 0) && (x == -z)) || ((x > 0) && (x == 1 - z))) {
-                    int temp = dx;
-                    dx = -dz;
-                    dz = temp;
-                }
-                x += dx;
-                z += dz;
             }
-            return positions;
+            return parts;
         }
 
         @Override
         public String getAddon() {
-            return getPluginName();
+            return Skyllia.getInstance().getName();
         }
 
         @Override
@@ -99,12 +84,12 @@ public class SkylliaInsightAddon implements InsightsAddon {
 
         @Override
         public List<ChunkPart> toChunkParts() {
-            List<ChunkPart> parts = new ArrayList<>();
-
-            for (Position position : spiralStartCenter(island.getPosition(), island.getSize())) {
-                parts.add(new ChunkPart(new ChunkLocation(world, position.x(), position.z())));
+            double currentSize = island.getSize();
+            if (cachedParts == null || currentSize != cachedSize) {
+                cachedParts = buildChunkParts(island, world);
+                cachedSize  = currentSize;
             }
-            return parts;
+            return cachedParts;
         }
     }
 }

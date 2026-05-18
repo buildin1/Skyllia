@@ -34,3 +34,11 @@ dependencies:
       load: BEFORE
       required: false
       join-classpath: true
+    Essentials:
+      load: BEFORE
+      required: false
+      join-classpath: true
+    EssentialsSpawn:
+      load: BEFORE
+      required: false
+      join-classpath: true

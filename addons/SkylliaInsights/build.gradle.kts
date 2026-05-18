@@ -4,9 +4,13 @@ plugins {
 
 group = "fr.euphyllia.skyllia_insight_addon";
 
+repositories {
+    maven("https://repo.jsinco.dev/releases")
+}
+
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21.3-R0.1-SNAPSHOT")
-    compileOnly(files("./libs_tmp/Insights-6.19.2.jar"))
+    compileOnly("dev.frankheijden.insights:Insights:6.21.2")
     compileOnly(project(":api"))
     compileOnly(project(":plugin"))
 }

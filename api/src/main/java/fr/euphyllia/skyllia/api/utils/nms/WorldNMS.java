@@ -3,11 +3,11 @@ package fr.euphyllia.skyllia.api.utils.nms;
 import fr.euphyllia.skyllia.api.configuration.WorldConfig;
 import fr.euphyllia.skyllia.api.skyblock.model.Position;
 import fr.euphyllia.skyllia.api.world.WorldFeedback;
-import org.bukkit.Chunk;
-import org.bukkit.Location;
-import org.bukkit.World;
-import org.bukkit.WorldCreator;
+import org.bukkit.*;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.Map;
 
 /**
  * Provides methods for interacting with the Minecraft world using NMS (net.minecraft.server) classes.
@@ -35,6 +35,8 @@ public abstract class WorldNMS {
     public WorldFeedback.FeedbackWorld createWorld(WorldCreator creator, WorldConfig worldConfig) {
         return createWorld(creator);
     }
+
+    public abstract Map<Material, Integer> getCountAllBlocksInChunk(@NotNull World world, int chunkX, int chunkZ);
 
     /**
      * Resets a chunk at the specified position in the given world.

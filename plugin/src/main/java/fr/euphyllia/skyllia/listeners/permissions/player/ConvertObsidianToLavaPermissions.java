@@ -37,6 +37,9 @@ public class ConvertObsidianToLavaPermissions implements PermissionModule {
         final Block target = event.getClickedBlock();
         if (target == null || target.getType() != Material.OBSIDIAN) return;
 
+        ItemStack handItem = player.getInventory().getItemInMainHand();
+        if (handItem.getType() != Material.BUCKET) return;
+
         final Location location = target.getLocation();
         if (!SkylliaAPI.isWorldSkyblock(location.getWorld())) return;
 
@@ -56,9 +59,6 @@ public class ConvertObsidianToLavaPermissions implements PermissionModule {
         event.setCancelled(true);
         event.setUseInteractedBlock(Event.Result.DENY);
         event.setUseItemInHand(Event.Result.DENY);
-
-        ItemStack handItem = player.getInventory().getItemInMainHand();
-        if (handItem.getType() != Material.BUCKET) return;
 
         target.setType(Material.AIR);
         handItem.setAmount(Math.max(0, handItem.getAmount() - 1));

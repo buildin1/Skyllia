@@ -281,7 +281,15 @@ balance = "<yellow>Island Bank Balance: </yellow><white>%amount%</white>"
 [addons.bank.player]
 player-only = "<red>This command can only be used by a player."
 no-island = "<red>You do not have an island."
-unknown-command = "<yellow>Unknown command. Use /is bank [deposit|withdraw|balance]"
+unknown-command = "<yellow>Unknown command. Use /is bank [deposit|withdraw|balance|top]</yellow>"
+# TOP
+no-permission-top = "<red>You do not have permission to view the bank leaderboard.</red>"
+invalid-page = "<red>%input% is not a valid page number.</red>"
+top-header = "<gold>=== Pages %page%/%max_page% with %total% joueurs ===</gold>"
+top-empty = "<red>No players are ranked yet.</red>"
+top-line = "<yellow>#%rank%</yellow> <white>%owner%</white> <gray>-</gray> <white>%amount%</white>"
+top-self = "<yellow>#%rank%</yellow> <white>%owner% (you)</white> <gray>-</gray> <white>%amount%</white>"
+top-self-unranked = "<white>%owner% (you)</white> are not ranked yet for an unknown reason."
 # Deposit
 no-permission-deposit = "<red>You do not have permission to deposit money."
 usage-deposit = "<yellow>Usage: /is bank deposit <amount>"
@@ -395,6 +403,26 @@ failed = "<red>An error occurred while adding %amount% to the island's account a
 no-permission = "<red>You do not have permission to open the island chest.</red>"
 inventory-title = "<gold>%island_name%'s Island Chest</gold>"
 open = "<green>You have opened the island chest.</green>"
+
+[addons.island-value]
+no-permissions = "<red>You do not have permission to use this command."
+player-only-command = "<red>This command can only be used by a player."
+not-on-island = "<red>You do not have an island."
+already-scanning = "<yellow>A scan is already in progress for your island."
+scan-started = "<green>Scanning your island..."
+scan-completed = "<green>Scan complete! Score: <white>%score%</white> | Level: <white>%level%</white>"
+scan-start-failed = "<red>Failed to start the scan."
+level-command-usage = "<yellow>Usage: /is islevel <scan|top|rank>"
+invalid-page = "<red>%input% is not a valid page number."
+top-header = "<gold>=== Island Leaderboard — Page %page%/%max_page% (%total% islands) ===</gold>"
+top-empty = "<red>No islands are ranked yet."
+top-line = "<yellow>#%rank%</yellow> <white>%owner%</white> <gray>-</gray> Lv. <aqua>%level%</aqua> <dark_gray>(%score% pts)</dark_gray>"
+rank-self = "<yellow>#%rank%</yellow> <white>%owner% (you)</white> <gray>-</gray> Lv. <aqua>%level%</aqua> <dark_gray>(%score% pts)</dark_gray>"
+rank-self-unranked = "<white>%owner% (you)</white> <gray>are not ranked yet.</gray>"
+
+[addons.island-value.notifier]
+title = "<gold>⛏ Scanning... <white>%done%<gray>/<white>%total% <yellow>(%percent%%)</yellow>"
+sub-title = "<gray>Please wait...</gray>"
 
 [addons.acid-island]
 water-contact = "<red>⚠ Acidic water burns you!</red>"

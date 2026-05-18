@@ -89,6 +89,7 @@ public class SQLiteIslandCustomData extends IslandCustomDataQuery {
 
     @Override
     public @Nullable <P, C> C get(@NotNull NamespacedKey namespace, @NotNull Island island, @NotNull String dataKey, @NotNull PersistentDataType<P, C> type) {
+        if (!ensureTableExists(namespace)) return null;
         String tableName = getTableName(namespace);
         String sql = String.format("""
                 SELECT data_value FROM %s
@@ -117,6 +118,7 @@ public class SQLiteIslandCustomData extends IslandCustomDataQuery {
 
     @Override
     public boolean has(@NotNull NamespacedKey namespace, @NotNull Island island, @NotNull String dataKey) {
+        if (!ensureTableExists(namespace)) return false;
         String tableName = getTableName(namespace);
         String sql = String.format("""
                 SELECT 1 FROM %s
@@ -137,6 +139,7 @@ public class SQLiteIslandCustomData extends IslandCustomDataQuery {
 
     @Override
     public <P, C> boolean has(@NotNull NamespacedKey namespace, @NotNull Island island, @NotNull String dataKey, @NotNull PersistentDataType<P, C> type) {
+        if (!ensureTableExists(namespace)) return false;
         try {
             return get(namespace, island, dataKey, type) != null;
         } catch (Exception e) {
@@ -146,6 +149,7 @@ public class SQLiteIslandCustomData extends IslandCustomDataQuery {
 
     @Override
     public @NotNull Set<String> getKeys(@NotNull NamespacedKey namespace, @NotNull Island island) {
+        if (!ensureTableExists(namespace)) return new HashSet<>();
         String tableName = getTableName(namespace);
         String sql = String.format("""
                 SELECT data_key FROM %s
@@ -168,6 +172,7 @@ public class SQLiteIslandCustomData extends IslandCustomDataQuery {
 
     @Override
     public boolean remove(@NotNull NamespacedKey namespace, @NotNull Island island, @NotNull String dataKey) {
+        if (!ensureTableExists(namespace)) return false;
         String tableName = getTableName(namespace);
         String sql = String.format("""
                 DELETE FROM %s
@@ -180,6 +185,7 @@ public class SQLiteIslandCustomData extends IslandCustomDataQuery {
 
     @Override
     public boolean clear(@NotNull NamespacedKey namespace, @NotNull Island island) {
+        if (!ensureTableExists(namespace)) return false;
         String tableName = getTableName(namespace);
         String sql = String.format("""
                 DELETE FROM %s
@@ -192,6 +198,7 @@ public class SQLiteIslandCustomData extends IslandCustomDataQuery {
 
     @Override
     public int size(@NotNull NamespacedKey namespace, @NotNull Island island) {
+        if (!ensureTableExists(namespace)) return 0;
         String tableName = getTableName(namespace);
         String sql = String.format("""
                 SELECT COUNT(*) FROM %s
