@@ -95,67 +95,112 @@ public class InterneAPI {
         final String minecraftVersion = Bukkit.getServer().getMinecraftVersion();
         switch (minecraftVersion) {
             case "1.20.5", "1.20.6" -> {
-                this.worldNMS = new fr.euphyllia.skyllia.utils.nms.v1_20_R4.WorldNMS();
-                this.playerNMS = new fr.euphyllia.skyllia.utils.nms.v1_20_R4.PlayerNMS();
-                this.biomesImpl = new fr.euphyllia.skyllia.utils.nms.v1_20_R4.BiomeNMS();
-                this.explosionEntityImpl = new fr.euphyllia.skyllia.utils.nms.v1_20_R4.ExplosionEntityImpl();
-                this.mobsSpawnImpl = new fr.euphyllia.skyllia.utils.nms.v1_20_R4.MobSpawnNMS();
+                try {
+                    String pkg = "fr.euphyllia.skyllia.utils.nms.v1_20_R4.";
+                    this.worldNMS = (WorldNMS) Class.forName(pkg + "WorldNMS").getDeclaredConstructor().newInstance();
+                    this.playerNMS = (PlayerNMS) Class.forName(pkg + "PlayerNMS").getDeclaredConstructor().newInstance();
+                    this.biomesImpl = (BiomesImpl) Class.forName(pkg + "BiomeNMS").getDeclaredConstructor().newInstance();
+                    this.explosionEntityImpl = (ExplosionEntityImpl) Class.forName(pkg + "ExplosionEntityImpl").getDeclaredConstructor().newInstance();
+                    this.mobsSpawnImpl = (MobsSpawnImpl) Class.forName(pkg + "MobSpawnNMS").getDeclaredConstructor().newInstance();
+                } catch (ReflectiveOperationException e) {
+                    throw new UnsupportedMinecraftVersionException("Failed to load NMS classes for version " + minecraftVersion + ": " + e.getMessage());
+                }
             }
             case "1.21", "1.21.1" -> {
-                this.worldNMS = new fr.euphyllia.skyllia.utils.nms.v1_21_R1.WorldNMS();
-                this.playerNMS = new fr.euphyllia.skyllia.utils.nms.v1_21_R1.PlayerNMS();
-                this.biomesImpl = new fr.euphyllia.skyllia.utils.nms.v1_21_R1.BiomeNMS();
-                this.explosionEntityImpl = new fr.euphyllia.skyllia.utils.nms.v1_21_R1.ExplosionEntityImpl();
-                this.mobsSpawnImpl = new fr.euphyllia.skyllia.utils.nms.v1_21_R1.MobSpawnNMS();
+                try {
+                    String pkg = "fr.euphyllia.skyllia.utils.nms.v1_21_R1.";
+                    this.worldNMS = (WorldNMS) Class.forName(pkg + "WorldNMS").getDeclaredConstructor().newInstance();
+                    this.playerNMS = (PlayerNMS) Class.forName(pkg + "PlayerNMS").getDeclaredConstructor().newInstance();
+                    this.biomesImpl = (BiomesImpl) Class.forName(pkg + "BiomeNMS").getDeclaredConstructor().newInstance();
+                    this.explosionEntityImpl = (ExplosionEntityImpl) Class.forName(pkg + "ExplosionEntityImpl").getDeclaredConstructor().newInstance();
+                    this.mobsSpawnImpl = (MobsSpawnImpl) Class.forName(pkg + "MobSpawnNMS").getDeclaredConstructor().newInstance();
+                } catch (ReflectiveOperationException e) {
+                    throw new UnsupportedMinecraftVersionException("Failed to load NMS classes for version " + minecraftVersion + ": " + e.getMessage());
+                }
             }
             case "1.21.2", "1.21.3" -> {
-                this.worldNMS = new fr.euphyllia.skyllia.utils.nms.v1_21_R2.WorldNMS();
-                this.playerNMS = new fr.euphyllia.skyllia.utils.nms.v1_21_R2.PlayerNMS();
-                this.biomesImpl = new fr.euphyllia.skyllia.utils.nms.v1_21_R2.BiomeNMS();
-                this.explosionEntityImpl = new fr.euphyllia.skyllia.utils.nms.v1_21_R2.ExplosionEntityImpl();
-                this.mobsSpawnImpl = new fr.euphyllia.skyllia.utils.nms.v1_21_R2.MobSpawnNMS();
+                try {
+                    String pkg = "fr.euphyllia.skyllia.utils.nms.v1_21_R2.";
+                    this.worldNMS = (WorldNMS) Class.forName(pkg + "WorldNMS").getDeclaredConstructor().newInstance();
+                    this.playerNMS = (PlayerNMS) Class.forName(pkg + "PlayerNMS").getDeclaredConstructor().newInstance();
+                    this.biomesImpl = (BiomesImpl) Class.forName(pkg + "BiomeNMS").getDeclaredConstructor().newInstance();
+                    this.explosionEntityImpl = (ExplosionEntityImpl) Class.forName(pkg + "ExplosionEntityImpl").getDeclaredConstructor().newInstance();
+                    this.mobsSpawnImpl = (MobsSpawnImpl) Class.forName(pkg + "MobSpawnNMS").getDeclaredConstructor().newInstance();
+                } catch (ReflectiveOperationException e) {
+                    throw new UnsupportedMinecraftVersionException("Failed to load NMS classes for version " + minecraftVersion + ": " + e.getMessage());
+                }
             }
             case "1.21.4" -> {
-                this.worldNMS = new fr.euphyllia.skyllia.utils.nms.v1_21_R3.WorldNMS();
-                this.playerNMS = new fr.euphyllia.skyllia.utils.nms.v1_21_R3.PlayerNMS();
-                this.biomesImpl = new fr.euphyllia.skyllia.utils.nms.v1_21_R3.BiomeNMS();
-                this.explosionEntityImpl = new fr.euphyllia.skyllia.utils.nms.v1_21_R3.ExplosionEntityImpl();
-                this.mobsSpawnImpl = new fr.euphyllia.skyllia.utils.nms.v1_21_R3.MobSpawnNMS();
+                try {
+                    String pkg = "fr.euphyllia.skyllia.utils.nms.v1_21_R3.";
+                    this.worldNMS = (WorldNMS) Class.forName(pkg + "WorldNMS").getDeclaredConstructor().newInstance();
+                    this.playerNMS = (PlayerNMS) Class.forName(pkg + "PlayerNMS").getDeclaredConstructor().newInstance();
+                    this.biomesImpl = (BiomesImpl) Class.forName(pkg + "BiomeNMS").getDeclaredConstructor().newInstance();
+                    this.explosionEntityImpl = (ExplosionEntityImpl) Class.forName(pkg + "ExplosionEntityImpl").getDeclaredConstructor().newInstance();
+                    this.mobsSpawnImpl = (MobsSpawnImpl) Class.forName(pkg + "MobSpawnNMS").getDeclaredConstructor().newInstance();
+                } catch (ReflectiveOperationException e) {
+                    throw new UnsupportedMinecraftVersionException("Failed to load NMS classes for version " + minecraftVersion + ": " + e.getMessage());
+                }
             }
             case "1.21.5" -> {
-                this.worldNMS = new fr.euphyllia.skyllia.utils.nms.v1_21_R4.WorldNMS();
-                this.playerNMS = new fr.euphyllia.skyllia.utils.nms.v1_21_R4.PlayerNMS();
-                this.biomesImpl = new fr.euphyllia.skyllia.utils.nms.v1_21_R4.BiomeNMS();
-                this.explosionEntityImpl = new fr.euphyllia.skyllia.utils.nms.v1_21_R4.ExplosionEntityImpl();
-                this.mobsSpawnImpl = new fr.euphyllia.skyllia.utils.nms.v1_21_R4.MobSpawnNMS();
+                try {
+                    String pkg = "fr.euphyllia.skyllia.utils.nms.v1_21_R4.";
+                    this.worldNMS = (WorldNMS) Class.forName(pkg + "WorldNMS").getDeclaredConstructor().newInstance();
+                    this.playerNMS = (PlayerNMS) Class.forName(pkg + "PlayerNMS").getDeclaredConstructor().newInstance();
+                    this.biomesImpl = (BiomesImpl) Class.forName(pkg + "BiomeNMS").getDeclaredConstructor().newInstance();
+                    this.explosionEntityImpl = (ExplosionEntityImpl) Class.forName(pkg + "ExplosionEntityImpl").getDeclaredConstructor().newInstance();
+                    this.mobsSpawnImpl = (MobsSpawnImpl) Class.forName(pkg + "MobSpawnNMS").getDeclaredConstructor().newInstance();
+                } catch (ReflectiveOperationException e) {
+                    throw new UnsupportedMinecraftVersionException("Failed to load NMS classes for version " + minecraftVersion + ": " + e.getMessage());
+                }
             }
             case "1.21.6", "1.21.7", "1.21.8" -> {
-                this.worldNMS = new fr.euphyllia.skyllia.utils.nms.v1_21_R5.WorldNMS();
-                this.playerNMS = new fr.euphyllia.skyllia.utils.nms.v1_21_R5.PlayerNMS();
-                this.biomesImpl = new fr.euphyllia.skyllia.utils.nms.v1_21_R5.BiomeNMS();
-                this.explosionEntityImpl = new fr.euphyllia.skyllia.utils.nms.v1_21_R5.ExplosionEntityImpl();
-                this.mobsSpawnImpl = new fr.euphyllia.skyllia.utils.nms.v1_21_R5.MobSpawnNMS();
+                try {
+                    String pkg = "fr.euphyllia.skyllia.utils.nms.v1_21_R5.";
+                    this.worldNMS = (WorldNMS) Class.forName(pkg + "WorldNMS").getDeclaredConstructor().newInstance();
+                    this.playerNMS = (PlayerNMS) Class.forName(pkg + "PlayerNMS").getDeclaredConstructor().newInstance();
+                    this.biomesImpl = (BiomesImpl) Class.forName(pkg + "BiomeNMS").getDeclaredConstructor().newInstance();
+                    this.explosionEntityImpl = (ExplosionEntityImpl) Class.forName(pkg + "ExplosionEntityImpl").getDeclaredConstructor().newInstance();
+                    this.mobsSpawnImpl = (MobsSpawnImpl) Class.forName(pkg + "MobSpawnNMS").getDeclaredConstructor().newInstance();
+                } catch (ReflectiveOperationException e) {
+                    throw new UnsupportedMinecraftVersionException("Failed to load NMS classes for version " + minecraftVersion + ": " + e.getMessage());
+                }
             }
             case "1.21.9", "1.21.10" -> {
-                this.worldNMS = new fr.euphyllia.skyllia.utils.nms.v1_21_R6.WorldNMS();
-                this.playerNMS = new fr.euphyllia.skyllia.utils.nms.v1_21_R6.PlayerNMS();
-                this.biomesImpl = new fr.euphyllia.skyllia.utils.nms.v1_21_R6.BiomeNMS();
-                this.explosionEntityImpl = new fr.euphyllia.skyllia.utils.nms.v1_21_R6.ExplosionEntityImpl();
-                this.mobsSpawnImpl = new fr.euphyllia.skyllia.utils.nms.v1_21_R6.MobSpawnNMS();
+                try {
+                    String pkg = "fr.euphyllia.skyllia.utils.nms.v1_21_R6.";
+                    this.worldNMS = (WorldNMS) Class.forName(pkg + "WorldNMS").getDeclaredConstructor().newInstance();
+                    this.playerNMS = (PlayerNMS) Class.forName(pkg + "PlayerNMS").getDeclaredConstructor().newInstance();
+                    this.biomesImpl = (BiomesImpl) Class.forName(pkg + "BiomeNMS").getDeclaredConstructor().newInstance();
+                    this.explosionEntityImpl = (ExplosionEntityImpl) Class.forName(pkg + "ExplosionEntityImpl").getDeclaredConstructor().newInstance();
+                    this.mobsSpawnImpl = (MobsSpawnImpl) Class.forName(pkg + "MobSpawnNMS").getDeclaredConstructor().newInstance();
+                } catch (ReflectiveOperationException e) {
+                    throw new UnsupportedMinecraftVersionException("Failed to load NMS classes for version " + minecraftVersion + ": " + e.getMessage());
+                }
             }
             case "1.21.11" -> {
-                this.worldNMS = new fr.euphyllia.skyllia.utils.nms.v1_21_R7.WorldNMS();
-                this.playerNMS = new fr.euphyllia.skyllia.utils.nms.v1_21_R7.PlayerNMS();
-                this.biomesImpl = new fr.euphyllia.skyllia.utils.nms.v1_21_R7.BiomeNMS();
-                this.explosionEntityImpl = new fr.euphyllia.skyllia.utils.nms.v1_21_R7.ExplosionEntityImpl();
-                this.mobsSpawnImpl = new fr.euphyllia.skyllia.utils.nms.v1_21_R7.MobSpawnNMS();
+                try {
+                    String pkg = "fr.euphyllia.skyllia.utils.nms.v1_21_R7.";
+                    this.worldNMS = (WorldNMS) Class.forName(pkg + "WorldNMS").getDeclaredConstructor().newInstance();
+                    this.playerNMS = (PlayerNMS) Class.forName(pkg + "PlayerNMS").getDeclaredConstructor().newInstance();
+                    this.biomesImpl = (BiomesImpl) Class.forName(pkg + "BiomeNMS").getDeclaredConstructor().newInstance();
+                    this.explosionEntityImpl = (ExplosionEntityImpl) Class.forName(pkg + "ExplosionEntityImpl").getDeclaredConstructor().newInstance();
+                    this.mobsSpawnImpl = (MobsSpawnImpl) Class.forName(pkg + "MobSpawnNMS").getDeclaredConstructor().newInstance();
+                } catch (ReflectiveOperationException e) {
+                    throw new UnsupportedMinecraftVersionException("Failed to load NMS classes for version " + minecraftVersion + ": " + e.getMessage());
+                }
             }
             case "26.1", "26.1.1", "26.1.2" -> {
-                this.worldNMS = new fr.euphyllia.skyllia.utils.nms.v26_1.WorldNMS();
-                this.playerNMS = new fr.euphyllia.skyllia.utils.nms.v26_1.PlayerNMS();
-                this.biomesImpl = new fr.euphyllia.skyllia.utils.nms.v26_1.BiomeNMS();
-                this.explosionEntityImpl = new fr.euphyllia.skyllia.utils.nms.v26_1.ExplosionEntityImpl();
-                this.mobsSpawnImpl = new fr.euphyllia.skyllia.utils.nms.v26_1.MobSpawnNMS();
+                try {
+                    String pkg = "fr.euphyllia.skyllia.utils.nms.v26_1.";
+                    this.worldNMS = (WorldNMS) Class.forName(pkg + "WorldNMS").getDeclaredConstructor().newInstance();
+                    this.playerNMS = (PlayerNMS) Class.forName(pkg + "PlayerNMS").getDeclaredConstructor().newInstance();
+                    this.biomesImpl = (BiomesImpl) Class.forName(pkg + "BiomeNMS").getDeclaredConstructor().newInstance();
+                    this.explosionEntityImpl = (ExplosionEntityImpl) Class.forName(pkg + "ExplosionEntityImpl").getDeclaredConstructor().newInstance();
+                    this.mobsSpawnImpl = (MobsSpawnImpl) Class.forName(pkg + "MobSpawnNMS").getDeclaredConstructor().newInstance();
+                } catch (ReflectiveOperationException e) {
+                    throw new UnsupportedMinecraftVersionException("Failed to load NMS classes for version " + minecraftVersion + ": " + e.getMessage());
+                }
             }
             default ->
                     throw new UnsupportedMinecraftVersionException("Version " + minecraftVersion + " not supported!");
