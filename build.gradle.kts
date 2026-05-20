@@ -51,6 +51,12 @@ allprojects {
     apply(plugin = "io.github.goooler.shadow")
     apply(plugin = "maven-publish")
 
+    java {
+        toolchain {
+            languageVersion.set(JavaLanguageVersion.of(21))
+        }
+    }
+
     repositories {
         mavenLocal()
         mavenCentral()
@@ -98,10 +104,6 @@ tasks.test {
 }
 
 
-java {
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
-}
 
 fun getGitCommitHash(): String {
     return try {

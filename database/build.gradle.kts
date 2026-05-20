@@ -5,8 +5,9 @@ plugins {
 group = "fr.euphyllia.skyllia"
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(21))
+    }
     withJavadocJar()
     withSourcesJar()
 }
@@ -17,7 +18,6 @@ tasks {
     }
     javadoc {
         val standardOptions = options as StandardJavadocDocletOptions
-        // Désactive les vérifications strictes sur la Javadoc
         standardOptions.addStringOption("Xdoclint:none", "-quiet")
     }
 }
