@@ -260,20 +260,19 @@ public record InternalWorldModifier(JavaPlugin plugin) implements WorldModifier 
 
         AtomicInteger toDelete = new AtomicInteger(chunks.size());
         AtomicBoolean failed = new AtomicBoolean(false);
-        AtomicInteger delay = new AtomicInteger(1);
-
 
         for (Position chunkPos : chunks) {
-            Bukkit.getRegionScheduler().runDelayed(plugin, world, chunkPos.x(), chunkPos.z(), task -> {
-                try {
-                    SkylliaAPI.getWorldNMS().resetChunk(world, chunkPos);
-                } catch (Exception e) {
-                    failed.set(true);
-                }
-                if (toDelete.decrementAndGet() == 0 && onFinish != null) {
-                    onFinish.accept(!failed.get());
-                }
-            }, delay.getAndIncrement());
+            world.getChunkAtAsync(chunkPos.x(), chunkPos.z()).thenAccept(ignored -> {
+                        try {
+                            SkylliaAPI.getWorldNMS().resetChunk(world, chunkPos);
+                        } catch (Exception e) {
+                            failed.set(true);
+                        }
+                        if (toDelete.decrementAndGet() == 0 && onFinish != null) {
+                            onFinish.accept(!failed.get());
+                        }
+                    }
+            );
         }
     }
 
