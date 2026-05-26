@@ -231,6 +231,9 @@ size-success = "The island size has been changed."
 size-failed = "The change could not be made."
 size-nan = "You did not provide a valid integer."
 max-members-nan = "The indicated number is incorrect."
+create-args-missing = "The player's name is missing."
+create-already-has-island = "This player already has an island."
+player-not-found = "Player not found."
 
 [island.admin.max-members]
 args-missing = "The command is incomplete: /skylliadmin setmaxmembers <player/uuid> <number> confirm"
