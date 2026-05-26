@@ -3,13 +3,6 @@ plugins {
     id("io.papermc.paperweight.userdev")
 }
 
-repositories {
-    maven {
-        name = "folia-inquistors-repo"
-        url = uri("https://folia-inquisitors.github.io/FoliaDevBundle/")
-    }
-}
-
 paperweight {
     paperweight.reobfArtifactConfiguration = io.papermc.paperweight.userdev.ReobfArtifactConfiguration.MOJANG_PRODUCTION
 }

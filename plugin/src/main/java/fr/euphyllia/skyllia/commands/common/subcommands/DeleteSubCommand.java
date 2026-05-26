@@ -152,7 +152,7 @@ public class DeleteSubCommand implements SubCommandInterface {
                 AtomicBoolean failed = new AtomicBoolean(false);
 
                 if (worldsLeft.get() == 0) {
-                    finalizeDeletion(skyblockManager, island, false, player);
+                    finalizeDeletion(skyblockManager, island, true, player);
                     return;
                 }
 
