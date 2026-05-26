@@ -56,11 +56,6 @@ import java.util.UUID;
  */
 public class IslandHandler implements PlaceholderHandler {
 
-    @Override
-    public boolean requiresIsland() {
-        return false;
-    }
-
     private static @NotNull String ownerName(@NotNull Island island) {
         Players owner = island.getOwner();
         return owner != null ? owner.getLastKnowName() : "";
@@ -113,6 +108,19 @@ public class IslandHandler implements PlaceholderHandler {
         return count;
     }
 
+    private static Set<UUID> getOnlinePlayersId() {
+        Set<UUID> ids = new java.util.HashSet<>();
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            ids.add(p.getUniqueId());
+        }
+        return ids;
+    }
+
+    @Override
+    public boolean requiresIsland() {
+        return false;
+    }
+
     @Override
     public @NotNull String prefix() {
         return "island";
@@ -160,13 +168,5 @@ public class IslandHandler implements PlaceholderHandler {
 
             default -> null;
         };
-    }
-
-    private static Set<UUID> getOnlinePlayersId() {
-        Set<UUID> ids = new java.util.HashSet<>();
-        for (Player p : Bukkit.getOnlinePlayers()) {
-            ids.add(p.getUniqueId());
-        }
-        return ids;
     }
 }

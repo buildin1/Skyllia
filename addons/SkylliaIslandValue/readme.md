@@ -23,9 +23,12 @@
 
 ## Overview
 
-**SkylliaIslandLevel** is an addon for the [Skyllia](https://modrinth.com/plugin/skyllia) plugin. It automatically calculates the **value** of each skyblock island by scanning its blocks, then converts that raw score into a **readable level** using a fully customizable formula.
+**SkylliaIslandLevel** is an addon for the [Skyllia](https://modrinth.com/plugin/skyllia) plugin. It automatically
+calculates the **value** of each skyblock island by scanning its blocks, then converts that raw score into a **readable
+level** using a fully customizable formula.
 
 **What this plugin does:**
+
 - Periodically scans the islands of online players
 - Assigns a value (score) to each block type according to your configuration
 - Calculates a level from a configurable mathematical formula
@@ -74,6 +77,7 @@ Every N seconds (configurable, default: **300 s**), the plugin:
 ### Data Storage
 
 Data is stored in Skyllia's **PersistentData** system (key `skylliaislandlevel:data`), under two entries:
+
 - `score` (Double) — weighted raw score
 - `level` (Long) — calculated level
 
@@ -143,13 +147,15 @@ level-expression = "FLOOR(score / 1000)"
 level-expression = "FLOOR(SQRT(score / 10) * (size / 100))"
 ```
 
-> **PlaceholderAPI integration in the formula:** You can include PAPI placeholders inside `level-expression`. They are resolved numerically for the relevant island before evaluation.
+> **PlaceholderAPI integration in the formula:** You can include PAPI placeholders inside `level-expression`. They are
+> resolved numerically for the relevant island before evaluation.
 >
 > Example: `"FLOOR(SQRT(score / 10) + %skyllia_island_members%)"`
 
 #### `timer-interval-seconds`
 
-Time between two automatic scan passes. Setting this to `0` disables automatic scanning (players will need to use `/island level scan` manually).
+Time between two automatic scan passes. Setting this to `0` disables automatic scanning (players will need to use
+`/island level scan` manually).
 
 #### `[blocks]`
 
@@ -159,7 +165,8 @@ Each entry follows the format:
 BUKKIT_NAME = value
 ```
 
-Invalid names (non-existent block in 1.20.5+) are ignored with a warning in the logs. Zero or negative values are also ignored.
+Invalid names (non-existent block in 1.20.5+) are ignored with a warning in the logs. Zero or negative values are also
+ignored.
 
 **Example of a more complete block configuration:**
 
@@ -230,7 +237,8 @@ All subcommands of this plugin are registered in Skyllia under the `/island` (or
 
 ## PlaceholderAPI
 
-If PlaceholderAPI is installed, the following placeholders are automatically available. The expansion identifier is `islandlevel`.
+If PlaceholderAPI is installed, the following placeholders are automatically available. The expansion identifier is
+`islandlevel`.
 
 ### Individual Placeholders (per player)
 
@@ -252,7 +260,9 @@ Replace `<N>` with an integer (e.g. `%islandlevel_top_1_name%` = 1st place).
 
 ### Cache Notes
 
-Values are cached to avoid repeated database reads. The cache expires according to `timer-interval-seconds-top`. If a value is missing from the cache at request time, the last known value from the database is returned immediately while an asynchronous refresh is triggered in the background.
+Values are cached to avoid repeated database reads. The cache expires according to `timer-interval-seconds-top`. If a
+value is missing from the cache at request time, the last known value from the database is returned immediately while an
+asynchronous refresh is triggered in the background.
 
 ---
 
@@ -324,19 +334,24 @@ Your version of Skyllia is too old and does not support this method. Update Skyl
 
 ### Levels are not updating
 
-Check that `timer-interval-seconds` is not set to `0`. If intentional, players must use `/island level scan` manually. Also verify that blocks with a non-zero value are defined under `[blocks]`.
+Check that `timer-interval-seconds` is not set to `0`. If intentional, players must use `/island level scan` manually.
+Also verify that blocks with a non-zero value are defined under `[blocks]`.
 
 ### A block in my config is being ignored
 
-The block name must exactly match the Bukkit name in UPPERCASE (e.g. `GRASS_BLOCK` not `GRASS`). Check the server logs on startup — invalid names are listed there.
+The block name must exactly match the Bukkit name in UPPERCASE (e.g. `GRASS_BLOCK` not `GRASS`). Check the server logs
+on startup — invalid names are listed there.
 
 ### The `level-expression` formula is invalid
 
-The plugin detects this on startup and logs an error. When the formula is invalid, the minimum level (`min-level`) is returned for all islands. Check your EvalEx syntax and test your formula on the [EvalEx Playground](https://ezylang.github.io/EvalEx/).
+The plugin detects this on startup and logs an error. When the formula is invalid, the minimum level (`min-level`) is
+returned for all islands. Check your EvalEx syntax and test your formula on
+the [EvalEx Playground](https://ezylang.github.io/EvalEx/).
 
 ### PAPI placeholders return an empty value
 
-Make sure the player actually has a Skyllia island. The expansion returns an empty string if no island is found for the player.
+Make sure the player actually has a Skyllia island. The expansion returns an empty string if no island is found for the
+player.
 
 ---
 

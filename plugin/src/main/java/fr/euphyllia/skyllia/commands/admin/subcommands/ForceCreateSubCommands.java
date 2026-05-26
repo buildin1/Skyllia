@@ -21,7 +21,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
@@ -47,6 +50,7 @@ public class ForceCreateSubCommands implements SubCommandInterface {
         String schemArg = args.length >= 2 ? args[1] : null;
 
         try {
+            // Résolution player/UUID
             UUID targetId;
             String targetName;
             Player onlineTarget = Bukkit.getPlayer(playerArg);
@@ -158,8 +162,8 @@ public class ForceCreateSubCommands implements SubCommandInterface {
                 island.setCenterLocation(center);
 
                 return Skyllia.getInstance().getInterneAPI()
-                        .getWorldModifier(SchematicPlugin.fromString(setting.plugin()))
-                        .pasteSchematicWE(center, setting)
+                        .getSchematicHook(SchematicPlugin.fromString(setting.plugin()))
+                        .paste(center, setting)
                         .thenAcceptAsync(success -> {
                             if (!success) {
                                 island.setDisable(true);
@@ -180,6 +184,7 @@ public class ForceCreateSubCommands implements SubCommandInterface {
 
                                 new SkyblockLoadEvent(island).callEvent();
 
+                                // Téléportation si le joueur est en ligne
                                 Player onlineOwner = Bukkit.getPlayer(ownerId);
                                 if (onlineOwner != null) {
                                     Location spawnLoc = center.clone().add(0, 0.5, 0);

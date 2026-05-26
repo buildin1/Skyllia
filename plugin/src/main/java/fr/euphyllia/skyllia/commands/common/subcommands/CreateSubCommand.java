@@ -137,8 +137,8 @@ public class CreateSubCommand implements SubCommandInterface {
                 island.setCenterLocation(center);
 
                 return Skyllia.getInstance().getInterneAPI()
-                        .getWorldModifier(SchematicPlugin.fromString(setting.plugin()))
-                        .pasteSchematicWE(center, setting)
+                        .getSchematicHook(SchematicPlugin.fromString(setting.plugin()))
+                        .paste(center, setting)
                         .thenAcceptAsync(success -> {
                             if (!success) {
                                 island.setDisable(true);

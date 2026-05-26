@@ -77,7 +77,7 @@ public class SkyblockCache {
     }
 
     public void putOwner(UUID islandId, Players owner) {
-        put(ownerByIsland, islandId, owner,  ConfigLoader.general.getCacheTtlSettings().members());
+        put(ownerByIsland, islandId, owner, ConfigLoader.general.getCacheTtlSettings().members());
         putRole(islandId, owner.getMojangId(), RoleType.OWNER);
     }
 
@@ -87,7 +87,7 @@ public class SkyblockCache {
 
     public void putMembers(UUID islandId, List<Players> members) {
         List<Players> copy = List.copyOf(members);
-        put(membersByIsland, islandId, copy,  ConfigLoader.general.getCacheTtlSettings().members());
+        put(membersByIsland, islandId, copy, ConfigLoader.general.getCacheTtlSettings().members());
         for (Players p : copy) {
             putRole(islandId, p.getMojangId(), p.getRoleType());
             if (p.getLastKnowName() != null) {
@@ -102,7 +102,7 @@ public class SkyblockCache {
 
     public void putBanned(UUID islandId, List<Players> banned) {
         List<Players> copy = List.copyOf(banned);
-        put(bannedByIsland, islandId, copy,  ConfigLoader.general.getCacheTtlSettings().members());
+        put(bannedByIsland, islandId, copy, ConfigLoader.general.getCacheTtlSettings().members());
         for (Players p : copy) {
             putRole(islandId, p.getMojangId(), RoleType.BAN);
         }

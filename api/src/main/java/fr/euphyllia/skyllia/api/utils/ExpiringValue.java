@@ -37,7 +37,7 @@ public final class ExpiringValue<T> {
     /**
      * Creates a new expiring value.
      *
-     * @param value the value to store
+     * @param value          the value to store
      * @param expiresAtNanos the absolute expiration time in nanoseconds
      */
     private ExpiringValue(T value, long expiresAtNanos) {
@@ -49,9 +49,9 @@ public final class ExpiringValue<T> {
      * Creates a new {@link ExpiringValue} with a given time-to-live (TTL).
      *
      * @param value the value to store
-     * @param ttl the time-to-live
-     * @param unit the time unit of the TTL
-     * @param <T> the value type
+     * @param ttl   the time-to-live
+     * @param unit  the time unit of the TTL
+     * @param <T>   the value type
      * @return a new expiring value instance
      */
     public static <T> ExpiringValue<T> of(T value, long ttl, TimeUnit unit) {
@@ -73,7 +73,7 @@ public final class ExpiringValue<T> {
      * Creates a value that never expires.
      *
      * @param value the value to store
-     * @param <T> the value type
+     * @param <T>   the value type
      * @return a non-expiring value
      */
     public static <T> ExpiringValue<T> neverExpire(T value) {

@@ -7,7 +7,6 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.LevelChunkSection;
 import org.apache.logging.log4j.LogManager;
@@ -72,19 +71,29 @@ public class BiomeNMS extends BiomesImpl {
     @Override
     public boolean setBiome(World world, int chunkX, int chunkZ, Biome biome) {
         try {
-            CraftWorld craftWorld = (CraftWorld) world;
-            ServerLevel handle = craftWorld.getHandle();
-            LevelChunk chunk = handle.getChunk(chunkX, chunkZ);
+            net.minecraft.server.level.ServerLevel nms = ((CraftWorld) world).getHandle();
+
+            LevelChunk chunk = nms.getChunkSource().getChunkNow(chunkX, chunkZ);
+
+            if (chunk == null) {
+                chunk = nms.getChunkSource().getChunk(chunkX, chunkZ, true);
+            }
+
+            if (chunk == null) {
+                return false;
+            }
+
+            final LevelChunkSection[] sections = chunk.getSections();
+            if (sections.length == 0) {
+                return false;
+            }
 
             var biomeHolder = biomeTypeToNMSCache.computeIfAbsent(biome, b -> ((CraftServer) Bukkit.getServer()).getServer().registryAccess()
                     .lookupOrThrow(Registries.BIOME)
                     .getOrThrow(ResourceKey.create(Registries.BIOME, Identifier.parse(getNameBiome(biome))))
             );
 
-
-            for (LevelChunkSection section : chunk.getSections()) {
-                if (section == null) continue;
-
+            for (LevelChunkSection section : sections) {
                 for (int x = 0; x < 4; x++) {
                     for (int y = 0; y < 4; y++) {
                         for (int z = 0; z < 4; z++) {

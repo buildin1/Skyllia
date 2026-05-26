@@ -1,8 +1,12 @@
 package fr.euphyllia.skyllia.hook;
 
+import fr.euphyllia.skyllia.api.hooks.SchematicHook;
 import fr.euphyllia.skyllia.api.hooks.ServerHook;
 import fr.euphyllia.skyllia.hook.canvas.CanvasHook;
+import fr.euphyllia.skyllia.hook.fastasyncworldedit.FAWESchematicHook;
+import fr.euphyllia.skyllia.hook.internal.InternalSchematicHook;
 import fr.euphyllia.skyllia.hook.luminol.LuminolHook;
+import fr.euphyllia.skyllia.hook.worldedit.WorldEditSchematicHook;
 import org.bukkit.plugin.Plugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,17 +21,25 @@ public class HookBootstrap {
     }
 
     public static void registerAll(Plugin skylliaPlugin) {
-        List<ServerHook> hooks = List.of(
+        List<ServerHook> serverHooks = List.of(
                 new CanvasHook(),
                 new LuminolHook()
         );
-
-        for (ServerHook hook : hooks) {
+        for (ServerHook hook : serverHooks) {
             if (!hook.isAvailable()) continue;
-
             hook.register(skylliaPlugin);
-            log.debug("Registered hook: {}", hook.name());
+            log.info("Registered server hook: {}", hook.name());
+        }
+
+        List<SchematicHook> schematicHooks = List.of(
+                new FAWESchematicHook(skylliaPlugin),
+                new WorldEditSchematicHook(skylliaPlugin),
+                new InternalSchematicHook(skylliaPlugin)
+        );
+        for (SchematicHook hook : schematicHooks) {
+            if (!hook.isAvailable()) continue;
+            log.info("Active schematic hook: {}", hook.name());
+            break;
         }
     }
-
 }
