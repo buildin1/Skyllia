@@ -231,6 +231,9 @@ size-success = "La taille de l'île a été modifiée."
 size-failed = "Le changement n'a pas pu être effectué."
 size-nan = "Vous n'avez pas indiqué un nombre entier."
 max-members-nan = "Le nombre de membres indiqué est incorrect."
+create-args-missing = "Le nom du joueur est manquant."
+create-already-has-island = "Ce joueur possède déjà une île."
+player-not-found = "Joueur introuvable."
 
 [island.admin.schematic]
 pos1-selected = "Position 1 sélectionnée."

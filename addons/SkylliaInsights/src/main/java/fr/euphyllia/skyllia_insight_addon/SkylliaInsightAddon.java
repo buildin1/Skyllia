@@ -24,7 +24,7 @@ public class SkylliaInsightAddon implements InsightsAddon {
 
     @Override
     public String getAreaName() {
-        return  Skyllia.getInstance().getName().toLowerCase();
+        return Skyllia.getInstance().getName().toLowerCase();
     }
 
     @Override
@@ -56,7 +56,7 @@ public class SkylliaInsightAddon implements InsightsAddon {
 
         private static List<ChunkPart> buildChunkParts(Island island, World world) {
             Position islandRegion = island.getPosition();
-            double sizeInBlocks   = island.getSize();
+            double sizeInBlocks = island.getSize();
             Position centerChunk = RegionHelper.getCenterChunkOfRegion(islandRegion.x(), islandRegion.z());
             int cx = centerChunk.x();
             int cz = centerChunk.z();
@@ -87,7 +87,7 @@ public class SkylliaInsightAddon implements InsightsAddon {
             double currentSize = island.getSize();
             if (cachedParts == null || currentSize != cachedSize) {
                 cachedParts = buildChunkParts(island, world);
-                cachedSize  = currentSize;
+                cachedSize = currentSize;
             }
             return cachedParts;
         }

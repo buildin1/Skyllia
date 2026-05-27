@@ -8,7 +8,6 @@ import fr.euphyllia.skyllia.api.permissions.PermissionId;
 import fr.euphyllia.skyllia.api.permissions.PermissionNode;
 import fr.euphyllia.skyllia.api.skyblock.Island;
 import fr.euphyllia.skyllia.api.skyblock.model.Position;
-import fr.euphyllia.skyllia.api.skyblock.model.SchematicPlugin;
 import fr.euphyllia.skyllia.api.utils.helper.RegionHelper;
 import fr.euphyllia.skyllia.api.utils.nms.BiomesImpl;
 import fr.euphyllia.skyllia.cache.commands.CommandCacheExecution;
@@ -121,11 +120,13 @@ public class SetBiomeSubCommand implements SubCommandInterface {
 
             if (args.length >= 2 && args[1].equalsIgnoreCase("island")) {
 
-                changeBiomeFuture = Skyllia.getInstance().getInterneAPI().getWorldModifier(SchematicPlugin.UNKNOWN).changeBiomeIsland(world, biome, island, ConfigLoader.general.getIslandSettings().regionDistance());
+                changeBiomeFuture = Skyllia.getInstance().getInterneAPI().getWorldModifier().changeBiomeIsland(world, biome, island, ConfigLoader.general.getIslandSettings().regionDistance());
                 messageToSend = "island.biome.island-success";
 
             } else {
-                changeBiomeFuture = Skyllia.getInstance().getInterneAPI().getWorldModifier(SchematicPlugin.UNKNOWN).changeBiomeChunk(player.getLocation(), biome);
+                int chunkX = playerLocation.getBlockX() >> 4;
+                int chunkZ = playerLocation.getBlockZ() >> 4;
+                changeBiomeFuture = Skyllia.getInstance().getInterneAPI().getWorldModifier().changeBiomeChunk(world, chunkX, chunkZ, biome);
                 messageToSend = "island.biome.chunk-success";
             }
 

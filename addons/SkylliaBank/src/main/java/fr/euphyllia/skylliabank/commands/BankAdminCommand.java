@@ -7,7 +7,6 @@ import fr.euphyllia.skyllia.configuration.ConfigLoader;
 import fr.euphyllia.skylliabank.EconomyManager;
 import fr.euphyllia.skylliabank.SkylliaBank;
 import fr.euphyllia.skylliabank.api.BankAccount;
-import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.milkbowl.vault.economy.Economy;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

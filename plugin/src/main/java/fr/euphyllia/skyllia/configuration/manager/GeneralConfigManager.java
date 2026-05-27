@@ -7,9 +7,12 @@ import com.electronwill.nightconfig.toml.TomlWriter;
 import fr.euphyllia.skyllia.api.configuration.IConfigurationProvider;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class GeneralConfigManager implements IConfigurationProvider {
 
+    private static final Logger log = LoggerFactory.getLogger(GeneralConfigManager.class);
     private final CommentedFileConfig config;
     private boolean changed = false;
 
@@ -19,54 +22,6 @@ public class GeneralConfigManager implements IConfigurationProvider {
     private DebugSettings debugSettings;
     private CacheTtlSettings cacheTtlSettings;
     private PermissionsSettings permissionsSettings;
-
-
-    public record Basic(int configVersion, boolean verbose) {
-    }
-
-    public record IslandSettings(
-            int regionDistance,
-            int maxIslands,
-            boolean teleportOutsideIsland,
-            boolean restrictPlayerMovement,
-            boolean enableObsidianToLavaConversion,
-            // delete
-            boolean preventDeletionIfHasMembers,
-            boolean deleteChunkPerimeterIsland,
-            // invitation
-            boolean teleportWhenAcceptingInvitation,
-            // queue
-            boolean allowBypassQueue
-    ) {
-    }
-
-    public record SpawnSettings(
-            boolean enabled,
-            String worldName,
-            double x,
-            double y,
-            double z,
-            float yaw,
-            float pitch
-    ) {
-    }
-
-    public record DebugSettings(boolean permission) {
-    }
-
-    public record CacheTtlSettings(
-            long warps,
-            long nameRole,
-            long role,
-            long island,
-            long playerLink,
-            long members,
-            long state
-    ) {
-    }
-
-    public record PermissionsSettings(boolean checkOwner, boolean checkBan) {
-    }
 
     public GeneralConfigManager(CommentedFileConfig config) {
         this.config = config;
@@ -91,7 +46,13 @@ public class GeneralConfigManager implements IConfigurationProvider {
                 getOrSetDefault("settings.island.delete.prevent-deletion-if-has-members", true, Boolean.class),
                 getOrSetDefault("settings.island.delete.chunk-perimeter-island", false, Boolean.class),
                 getOrSetDefault("settings.island.invitation.teleport-when-accepting", true, Boolean.class),
-                getOrSetDefault("settings.island.queue.allow-bypass", true, Boolean.class)
+                getOrSetDefault("settings.island.queue.allow-bypass", true, Boolean.class),
+                new ChunkProcessingSettings(
+                        getOrSetDefault("settings.island.chunk-processing.delete.threads", -1, Integer.class),
+                        getOrSetDefault("settings.island.chunk-processing.delete.delay-ms", 50, Integer.class),
+                        getOrSetDefault("settings.island.chunk-processing.biome.threads", -1, Integer.class),
+                        getOrSetDefault("settings.island.chunk-processing.biome.delay-ms", 50, Integer.class)
+                )
         );
 
         this.spawnSettings = new SpawnSettings(
@@ -196,5 +157,66 @@ public class GeneralConfigManager implements IConfigurationProvider {
         if (world == null) return null;
         return new Location(world, spawnSettings.x(), spawnSettings.y(), spawnSettings.z(),
                 spawnSettings.yaw(), spawnSettings.pitch());
+    }
+
+    public record Basic(int configVersion, boolean verbose) {
+    }
+
+    public record IslandSettings(
+            int regionDistance,
+            int maxIslands,
+            boolean teleportOutsideIsland,
+            boolean restrictPlayerMovement,
+            boolean enableObsidianToLavaConversion,
+            boolean preventDeletionIfHasMembers,
+            boolean deleteChunkPerimeterIsland,
+            boolean teleportWhenAcceptingInvitation,
+            boolean allowBypassQueue,
+            ChunkProcessingSettings chunkProcessing
+    ) {
+    }
+
+    public record ChunkProcessingSettings(
+            int deleteThreads,
+            int deleteDelayMs,
+            int biomeThreads,
+            int biomeDelayMs
+    ) {
+
+        private static int resolveThreads(int configured, String context) {
+            if (configured == -1) {
+                return Math.max(4, Runtime.getRuntime().availableProcessors() / 8);
+            }
+
+            if (configured > 0) {
+                return configured;
+            }
+
+            log.warn("Invalid chunk-processing.{}.threads value ({}), falling back to 1.", context, configured);
+            return 1;
+        }
+
+        public int resolvedDeleteThreads() {
+            return resolveThreads(deleteThreads, "delete");
+        }
+
+        public int resolvedBiomeThreads() {
+            return resolveThreads(biomeThreads, "biome");
+        }
+    }
+
+
+    public record SpawnSettings(boolean enabled, String worldName, double x, double y, double z, float yaw,
+                                float pitch) {
+    }
+
+    public record DebugSettings(boolean permission) {
+    }
+
+    public record CacheTtlSettings(long warps, long nameRole, long role, long island, long playerLink, long members,
+                                   long state) {
+    }
+
+    public record PermissionsSettings(boolean checkOwner, boolean checkBan) {
     }
 }

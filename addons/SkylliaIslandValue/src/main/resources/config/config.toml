@@ -24,3 +24,7 @@ STONE = 3
 # Type: BOSS_BAR, TITLE, ACTION_BAR, NONE
 type = "BOSS_BAR"
 boss-bar-color = "YELLOW"
+
+[scan-processing]
+threads = -1
+delay-ms = 50

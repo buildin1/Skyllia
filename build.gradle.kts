@@ -19,6 +19,7 @@ val jitpack = "https://jitpack.io"
 val mojang = "https://libraries.minecraft.net";
 var extendedclip = "https://repo.extendedclip.com/content/repositories/placeholderapi/";
 var theNextLvl = "https://repo.thenextlvl.net/releases";
+var euphyRepo = "https://repo.euphyllia.moe/repository/maven-public/"
 
 dependencies {
     implementation(project(":database"))
@@ -51,6 +52,12 @@ allprojects {
     apply(plugin = "io.github.goooler.shadow")
     apply(plugin = "maven-publish")
 
+    java {
+        toolchain {
+            languageVersion.set(JavaLanguageVersion.of(21))
+        }
+    }
+
     repositories {
         mavenLocal()
         mavenCentral()
@@ -61,6 +68,7 @@ allprojects {
         maven(jitpack)
         maven(extendedclip)
         maven(theNextLvl)
+        maven(euphyRepo)
     }
 
     dependencies {
@@ -98,10 +106,6 @@ tasks.test {
 }
 
 
-java {
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
-}
 
 fun getGitCommitHash(): String {
     return try {

@@ -28,6 +28,21 @@ prevent-deletion-if-has-members = true
 # — True: only delete chunks around the island according to its actual size (faster but potentially less clean).
 chunk-perimeter-island = false
 
+[settings.island.chunk-processing.delete]
+# Number of threads for the island deletion scheduler.
+# -1 = auto: max(4, cpu_cores / 8). Minimum is always 4.
+threads = -1
+# Delay in milliseconds between each chunk deletion.
+# Increase to reduce CPU/RAM spikes. 50ms = 1 chunk per tick.
+delay-ms = 50
+
+[settings.island.chunk-processing.biome]
+# Number of threads for the biome change scheduler.
+# -1 = auto: max(4, cpu_cores / 8). Minimum is always 4.
+threads = -1
+# Delay in milliseconds between each biome chunk operation.
+delay-ms = 50
+
 [settings.island.invitation]
 # Automatically teleports the player to the island when accepting an invitation.
 teleport-when-accepting = true

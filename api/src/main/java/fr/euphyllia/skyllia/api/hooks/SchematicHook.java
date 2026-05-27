@@ -1,10 +1,12 @@
 package fr.euphyllia.skyllia.api.hooks;
 
+import fr.euphyllia.skyllia.api.skyblock.model.SchematicSetting;
 import org.bukkit.Location;
-import org.bukkit.entity.Player;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 
-public interface SpawnHook {
+import java.util.concurrent.CompletableFuture;
+
+public interface SchematicHook {
 
     static boolean hasClass(String className) {
         try {
@@ -15,7 +17,9 @@ public interface SpawnHook {
         }
     }
 
+    String name();
+
     boolean isAvailable();
 
-    @Nullable Location getSpawnLocation(Player player);
+    CompletableFuture<Boolean> paste(@NotNull Location loc, @NotNull SchematicSetting settings);
 }

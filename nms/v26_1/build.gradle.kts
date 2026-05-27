@@ -16,11 +16,11 @@ tasks {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_25
-    targetCompatibility = JavaVersion.VERSION_25
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(25))
+    }
 }
 
 configurations.all {
-    // Temps fix - Could not find net.kyori:adventure-text-serializer-ansi:.
     exclude(group = "net.kyori", module = "adventure-text-serializer-ansi")
 }

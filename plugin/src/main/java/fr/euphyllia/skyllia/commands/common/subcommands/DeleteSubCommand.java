@@ -8,7 +8,6 @@ import fr.euphyllia.skyllia.api.skyblock.Island;
 import fr.euphyllia.skyllia.api.skyblock.Players;
 import fr.euphyllia.skyllia.api.skyblock.enums.RemovalCause;
 import fr.euphyllia.skyllia.api.skyblock.model.RoleType;
-import fr.euphyllia.skyllia.api.skyblock.model.SchematicPlugin;
 import fr.euphyllia.skyllia.api.utils.RegionUtils;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
 import fr.euphyllia.skyllia.managers.skyblock.SkyblockManager;
@@ -148,7 +147,9 @@ public class DeleteSubCommand implements SubCommandInterface {
                 AtomicBoolean failed = new AtomicBoolean(false);
 
                 if (worldsLeft.get() == 0) {
-                    finalizeDeletion(skyblockManager, island, false, player);
+                    // Aucun monde ne supprime les chunks physiquement :
+                    // la position doit rester bloquée définitivement pour éviter une réallocation sur des chunks existants.
+                    finalizeDeletion(skyblockManager, island, true, player);
                     return;
                 }
 
@@ -163,7 +164,7 @@ public class DeleteSubCommand implements SubCommandInterface {
                         return;
                     }
 
-                    Skyllia.getInstance().getInterneAPI().getWorldModifier(SchematicPlugin.UNKNOWN).deleteIsland(island, world, ConfigLoader.general.getIslandSettings().regionDistance(), (success) -> {
+                    Skyllia.getInstance().getInterneAPI().getWorldModifier().deleteIsland(island, world, ConfigLoader.general.getIslandSettings().regionDistance(), (success) -> {
                         if (!success) failed.set(true);
                         if (worldsLeft.decrementAndGet() == 0) {
                             finalizeDeletion(skyblockManager, island, failed.get(), player);

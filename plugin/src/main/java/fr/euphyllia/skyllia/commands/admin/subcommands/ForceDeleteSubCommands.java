@@ -6,7 +6,6 @@ import fr.euphyllia.skyllia.api.skyblock.Island;
 import fr.euphyllia.skyllia.api.skyblock.Players;
 import fr.euphyllia.skyllia.api.skyblock.enums.RemovalCause;
 import fr.euphyllia.skyllia.api.skyblock.model.RoleType;
-import fr.euphyllia.skyllia.api.skyblock.model.SchematicPlugin;
 import fr.euphyllia.skyllia.commands.common.subcommands.DeleteSubCommand;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
 import fr.euphyllia.skyllia.managers.skyblock.SkyblockManager;
@@ -19,10 +18,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -72,38 +68,42 @@ public class ForceDeleteSubCommands implements SubCommandInterface {
             if (isDisabled) {
                 this.updatePlayer(skyblockManager, island);
 
-                AtomicInteger worldsLeft = new AtomicInteger(ConfigLoader.worldManager.getWorldConfigs().size());
+                List<Map.Entry<String, fr.euphyllia.skyllia.api.configuration.WorldConfig>> worldsToDelete =
+                        ConfigLoader.worldManager.getWorldConfigs().entrySet().stream()
+                                .filter(entry -> entry.getValue().shouldDeleteIsland())
+                                .toList();
+                AtomicInteger worldsLeft = new AtomicInteger(worldsToDelete.size());
                 AtomicBoolean failed = new AtomicBoolean(false);
-                if (worldsLeft.get() == 0) {
-                    boolean value = skyblockManager.setLockedIsland(island, false);
 
+                if (worldsLeft.get() == 0) {
+                    // Aucun monde ne supprime les chunks physiquement :
+                    // la position doit rester bloquée définitivement pour éviter une réallocation sur des chunks existants.
+                    boolean value = skyblockManager.setLockedIsland(island, true);
                     if (value) {
                         ConfigLoader.language.sendMessage(sender, "island.delete-success");
                     } else {
-                        logger.error("Failed to unlock island {} after deletion.", island.getId());
+                        logger.error("Failed to lock island {} after deletion.", island.getId());
                     }
-
                     return;
                 } else {
-                    ConfigLoader.worldManager.getWorldConfigs().forEach((name, environnements) -> {
-                        if (environnements.shouldDeleteIsland()) {
-                            Skyllia.getInstance().getInterneAPI().getWorldModifier(SchematicPlugin.UNKNOWN)
-                                    .deleteIsland(island, Bukkit.getWorld(name), ConfigLoader.general.getIslandSettings().regionDistance(), (success) -> {
-                                        if (!success) failed.set(true);
-                                        if (worldsLeft.decrementAndGet() == 0) {
-                                            boolean value = skyblockManager.setLockedIsland(island, failed.get());
-                                            if (value) {
-                                                if (!failed.get()) {
-                                                    ConfigLoader.language.sendMessage(sender, "island.delete-success");
-                                                } else {
-                                                    ConfigLoader.language.sendMessage(sender, "island.generic.unexpected-error");
-                                                }
+                    worldsToDelete.forEach(entry -> {
+                        String name = entry.getKey();
+                        Skyllia.getInstance().getInterneAPI().getWorldModifier()
+                                .deleteIsland(island, Bukkit.getWorld(name), ConfigLoader.general.getIslandSettings().regionDistance(), (success) -> {
+                                    if (!success) failed.set(true);
+                                    if (worldsLeft.decrementAndGet() == 0) {
+                                        boolean value = skyblockManager.setLockedIsland(island, failed.get());
+                                        if (value) {
+                                            if (!failed.get()) {
+                                                ConfigLoader.language.sendMessage(sender, "island.delete-success");
                                             } else {
-                                                logger.error("Failed to unlock island {} after deletion.", island.getId());
+                                                ConfigLoader.language.sendMessage(sender, "island.generic.unexpected-error");
                                             }
+                                        } else {
+                                            logger.error("Failed to update lock state for island {} after deletion.", island.getId());
                                         }
-                                    });
-                        }
+                                    }
+                                });
                     });
                 }
             }

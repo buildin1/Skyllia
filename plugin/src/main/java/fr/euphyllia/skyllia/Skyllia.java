@@ -75,6 +75,8 @@ public class Skyllia extends JavaPlugin {
 
         ConfigLoader.reloadConfigs();
 
+        this.interneAPI.initWorldModifier();
+
         // Register commands via CommandRegistrar
         CommandRegistrar commandRegistrar = new CommandRegistrar(this);
         commandRegistrar.registerCommands();
@@ -110,6 +112,7 @@ public class Skyllia extends JavaPlugin {
         }
 
         if (this.interneAPI != null) {
+            this.interneAPI.getWorldModifier().shutdown();
             if (this.interneAPI.getDatabaseLoader() != null) {
                 this.interneAPI.getDatabaseLoader().closeDatabase();
             }
