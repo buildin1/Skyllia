@@ -23,6 +23,7 @@ public class IslandLevelConfigManager implements IConfigurationProvider {
     private long minLevel = 0L;
     private int timerIntervalSeconds = 60;
     private int timerIntervalSecondsTop = 120;
+    private ChunkProcessingSettings processingSettings;
 
     private ScanNotificationConfig scanNotification = new ScanNotificationConfig(
             ScanNotificationConfig.NotificationType.BOSS_BAR, "YELLOW"
@@ -53,6 +54,11 @@ public class IslandLevelConfigManager implements IConfigurationProvider {
             type = ScanNotificationConfig.NotificationType.BOSS_BAR;
         }
         scanNotification = new ScanNotificationConfig(type, notifColor);
+
+        processingSettings = new ChunkProcessingSettings(
+                getOrSetDefault("scan-processing.threads", -1, Integer.class),
+                getOrSetDefault("scan-processing.delay-ms", 50, Integer.class)
+        );
 
         if (changed) {
             TomlWriter tomlWriter = new TomlWriter();
@@ -134,5 +140,28 @@ public class IslandLevelConfigManager implements IConfigurationProvider {
 
     public ScanNotificationConfig getScanNotification() {
         return scanNotification;
+    }
+
+    public ChunkProcessingSettings getProcessingSettings() {
+        return processingSettings;
+    }
+
+    public record ChunkProcessingSettings(int scanThread, int scanDelayMs) {
+        private static int resolveThreads(int configured, String context) {
+            if (configured == -1) {
+                return Math.max(4, Runtime.getRuntime().availableProcessors() / 8);
+            }
+
+            if (configured > 0) {
+                return configured;
+            }
+
+            log.warn("Invalid chunk-processing.{}.threads value ({}), falling back to 1.", context, configured);
+            return 1;
+        }
+
+        public int resolvedScanThreads() {
+            return resolveThreads(scanThread, "island_scan");
+        }
     }
 }

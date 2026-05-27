@@ -6,6 +6,7 @@ import fr.euphyllia.skyllia.api.skyblock.Players;
 import fr.euphyllia.skyllia.api.skyblock.model.Position;
 import fr.euphyllia.skylliaislandlevel.SkylliaIslandLevel;
 import fr.euphyllia.skylliaislandlevel.configuration.IslandLevelConfigLoader;
+import fr.euphyllia.skylliaislandlevel.configuration.IslandLevelConfigManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -17,6 +18,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -24,9 +28,18 @@ public class IslandScanner {
 
     private static final Logger log = LoggerFactory.getLogger(IslandScanner.class);
     private final SkylliaIslandLevel plugin;
+    private final ScheduledExecutorService scanScheduler;
 
     public IslandScanner(SkylliaIslandLevel plugin) {
         this.plugin = plugin;
+        IslandLevelConfigManager.ChunkProcessingSettings cfg = IslandLevelConfigLoader.config.getProcessingSettings();
+        this.scanScheduler = Executors.newScheduledThreadPool(cfg.resolvedScanThreads(),
+                r -> {
+                    Thread t = new Thread(r, "skylliaislandvalue-scan-processor");
+                    t.setDaemon(true);
+                    t.setPriority(Thread.MIN_PRIORITY);
+                    return t;
+                });
     }
 
     public CompletableFuture<Double> scanIsland(Island island, World world) {
@@ -64,35 +77,39 @@ public class IslandScanner {
         AtomicInteger remaining = new AtomicInteger(total);
         AtomicInteger done = new AtomicInteger(0);
         AtomicReference<Double> totalScore = new AtomicReference<>(0.0);
-        AtomicInteger delay = new AtomicInteger(1);
 
-        for (int[] coord : chunkCoords) {
+        for (int i = 0; i < chunkCoords.size(); i++) {
+            int[] coord = chunkCoords.get(i);
             int chunkX = coord[0];
             int chunkZ = coord[1];
-            Bukkit.getRegionScheduler().runDelayed(plugin, world, chunkX, chunkZ, task -> {
-                double chunkScore = 0.0;
-                try {
-                    chunkScore = scoreChunk(world, chunkX, chunkZ, blockValues);
-                } catch (Throwable e) {
-                    log.error("Failed to scan chunk at ({}, {}) for island '{}'", chunkX, chunkZ, island.getId(), e);
-                }
-
-                final double scored = chunkScore;
-                totalScore.updateAndGet(current -> current + scored);
-
-                int nowDone = done.incrementAndGet();
-
-                if (notifier != null) {
-                    notifier.update(nowDone, total);
-                }
-
-                if (remaining.decrementAndGet() == 0) {
-                    if (notifier != null) {
-                        notifier.finish();
+            final long delay = (long) IslandLevelConfigLoader.config.getProcessingSettings().scanDelayMs() * i;
+            this.scanScheduler.schedule(() -> {
+                world.getChunkAtAsync(chunkX, chunkZ).thenAccept(ignored -> {
+                    double chunkScore = 0.0;
+                    try {
+                        chunkScore = scoreChunk(world, chunkX, chunkZ, blockValues);
+                    } catch (Throwable e) {
+                        log.error("Failed to scan chunk at ({}, {}) for island '{}'", chunkX, chunkZ, island.getId(), e);
                     }
-                    result.complete(totalScore.get());
-                }
-            }, delay.getAndIncrement());
+
+                    final double scored = chunkScore;
+                    totalScore.updateAndGet(current -> current + scored);
+
+                    int nowDone = done.incrementAndGet();
+
+                    if (notifier != null) {
+                        notifier.update(nowDone, total);
+                    }
+
+                    if (remaining.decrementAndGet() == 0) {
+                        if (notifier != null) {
+                            notifier.finish();
+                        }
+                        result.complete(totalScore.get());
+                    }
+                });
+            }, delay, TimeUnit.MILLISECONDS);
+
         }
         return result;
     }
