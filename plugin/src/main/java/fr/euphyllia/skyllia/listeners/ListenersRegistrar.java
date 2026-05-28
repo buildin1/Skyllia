@@ -7,10 +7,7 @@ import fr.euphyllia.skyllia.listeners.bukkitevents.blocks.GrowEvent;
 import fr.euphyllia.skyllia.listeners.bukkitevents.blocks.PistonEvent;
 import fr.euphyllia.skyllia.listeners.bukkitevents.folia.PortalAlternativeFoliaEvent;
 import fr.euphyllia.skyllia.listeners.bukkitevents.paper.PortalAlternativePaperEvent;
-import fr.euphyllia.skyllia.listeners.bukkitevents.player.JoinEvent;
-import fr.euphyllia.skyllia.listeners.bukkitevents.player.MoveEvent;
-import fr.euphyllia.skyllia.listeners.bukkitevents.player.QuitEvent;
-import fr.euphyllia.skyllia.listeners.bukkitevents.player.WorldBorderAddEvent;
+import fr.euphyllia.skyllia.listeners.bukkitevents.player.*;
 import fr.euphyllia.skyllia.listeners.permissions.block.*;
 import fr.euphyllia.skyllia.listeners.permissions.decor.DecorHangingBreakPermissions;
 import fr.euphyllia.skyllia.listeners.permissions.decor.DecorHangingPlacePermissions;
@@ -73,6 +70,7 @@ public class ListenersRegistrar {
         registerEvent(pluginManager, new GrowEvent(interneAPI));
         registerEvent(pluginManager, new MoveEvent());
         registerEvent(pluginManager, new QuitEvent());
+        registerEvent(pluginManager, new RespawnEvent(interneAPI));
 
 
         // Folia/Paper specifics
