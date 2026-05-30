@@ -7,6 +7,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.LevelChunkSection;
 import org.apache.logging.log4j.LogManager;
@@ -31,6 +32,7 @@ public class BiomeNMS extends BiomesImpl {
     private static final HashMap<Biome, Holder<net.minecraft.world.level.biome.Biome>> biomeTypeToNMSCache = new HashMap<>();
 
     @Override
+    @SuppressWarnings("removal")
     public @Nullable Biome getBiome(String biomeName) {
         biomeName = biomeName.trim().toLowerCase(Locale.ROOT);
         var biomeRegistry = RegistryAccess.registryAccess().getRegistry(RegistryKey.BIOME);
@@ -45,7 +47,6 @@ public class BiomeNMS extends BiomesImpl {
 
         Biome biome = biomeRegistry.get(NamespacedKey.minecraft(biomeName));
         if (biome != null) return biome;
-
         try {
             return Biome.valueOf(biomeName.toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException ignored) {
@@ -55,8 +56,8 @@ public class BiomeNMS extends BiomesImpl {
 
     @Override
     public List<String> getBiomeNameList() {
-        Registry<Biome> biomeRegistry = io.papermc.paper.registry.RegistryAccess.registryAccess()
-                .getRegistry(io.papermc.paper.registry.RegistryKey.BIOME);
+        Registry<Biome> biomeRegistry = RegistryAccess.registryAccess()
+                .getRegistry(RegistryKey.BIOME);
 
         List<String> list = new ArrayList<>();
         for (Biome biome : biomeRegistry) {
@@ -75,7 +76,7 @@ public class BiomeNMS extends BiomesImpl {
     @Override
     public boolean setBiome(World world, int chunkX, int chunkZ, Biome biome) {
         try {
-            net.minecraft.server.level.ServerLevel nms = ((CraftWorld) world).getHandle();
+            ServerLevel nms = ((CraftWorld) world).getHandle();
 
             LevelChunk chunk = nms.getChunkSource().getChunkNow(chunkX, chunkZ);
 

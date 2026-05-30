@@ -32,6 +32,7 @@ public class BlockBreakPermissions implements PermissionModule {
         final int chunkZ = location.getBlockZ() >> 4;
         final Island island = SkylliaAPI.getIslandByChunk(chunkX, chunkZ);
         if (island == null) {
+            //log.warn("玩家{}在{}位置岛屿无效，无法进行{}", player.getName(), player.getLocation(), event.getEventName());
             event.setCancelled(true);
             return;
         }
@@ -39,7 +40,8 @@ public class BlockBreakPermissions implements PermissionModule {
         final boolean hasBypass = player.hasPermission("skyllia.player.break.bypass");
         final boolean hasPermission = hasBypass || SkylliaAPI.getPermissionsManager().hasPermission(player, island, BLOCK_BREAK, null, ConfigLoader.general.getDebugSettings().permission());
         if (!hasPermission) {
-            //log.info("玩家 {} 没有权限 BLOCK_BREAK 进行方块破坏", player.getName());
+            //log.warn("Player= {}, Pos= {}, Chunk= {} {}, Region= {} {}, Returned island owner= {} Pos= {} Permission= BLOCK_BREAK",
+            //        player.getName(), location, chunkX,chunkZ, chunkX>>5, chunkZ>>5 , island.getOwner().getLastKnowName(), island.getPosition());
             event.setCancelled(true);
             return;
         }

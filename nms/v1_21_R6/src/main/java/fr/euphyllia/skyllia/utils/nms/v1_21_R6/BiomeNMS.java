@@ -31,6 +31,7 @@ public class BiomeNMS extends BiomesImpl {
     private static final Logger log = LogManager.getLogger(BiomeNMS.class);
 
     @Override
+    @SuppressWarnings("removal")
     public @Nullable Biome getBiome(String biomeName) {
         biomeName = biomeName.trim().toLowerCase(Locale.ROOT);
         var biomeRegistry = RegistryAccess.registryAccess().getRegistry(RegistryKey.BIOME);

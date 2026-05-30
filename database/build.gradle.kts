@@ -6,7 +6,7 @@ group = "fr.euphyllia.skyllia"
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
+        languageVersion.set(JavaLanguageVersion.of(25))
     }
     withJavadocJar()
     withSourcesJar()

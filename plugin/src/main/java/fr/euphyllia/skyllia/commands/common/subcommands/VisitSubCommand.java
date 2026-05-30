@@ -49,6 +49,12 @@ public class VisitSubCommand implements SubCommandInterface {
             ConfigLoader.language.sendMessage(sender, "island.player.player-only-command");
             return;
         }
+
+        if (!player.hasPermission("skyllia.island.command.visit")) {
+            ConfigLoader.language.sendMessage(player, "island.player.permission-denied");
+            return;
+        }
+
         if (args.length < 1) {
             ConfigLoader.language.sendMessage(player, "island.visit.args-missing");
             return;

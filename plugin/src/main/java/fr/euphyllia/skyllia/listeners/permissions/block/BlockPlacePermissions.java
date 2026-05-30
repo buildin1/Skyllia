@@ -32,6 +32,7 @@ public class BlockPlacePermissions implements PermissionModule {
         final int chunkZ = location.getBlockZ() >> 4;
         final Island island = SkylliaAPI.getIslandByChunk(chunkX, chunkZ);
         if (island == null) {
+            //log.warn("玩家{}在{}位置岛屿无效，无法进行{}", player.getName(), player.getLocation(), event.getEventName());
             event.setCancelled(true);
             return;
         }
@@ -39,7 +40,7 @@ public class BlockPlacePermissions implements PermissionModule {
         final boolean hasBypass = player.hasPermission("skyllia.player.place.bypass");
         final boolean hasPermission = hasBypass || SkylliaAPI.getPermissionsManager().hasPermission(player, island, BLOCK_PLACE, null, ConfigLoader.general.getDebugSettings().permission());
         if (!hasPermission) {
-            //log.info("玩家 {} 没有权限 BLOCK_PLACE 进行方块放置", player.getName());
+            //log.warn("玩家{}在{}岛上没有BLOCK_PLACE权限，无法进行{}", player.getName(), island.getOwner().getLastKnowName(), event.getEventName());
             event.setCancelled(true);
             return;
         }

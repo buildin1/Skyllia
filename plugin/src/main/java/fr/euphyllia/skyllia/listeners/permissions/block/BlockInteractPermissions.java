@@ -39,6 +39,7 @@ public class BlockInteractPermissions implements PermissionModule {
         final int chunkZ = location.getBlockZ() >> 4;
         final Island island = SkylliaAPI.getIslandByChunk(chunkX, chunkZ);
         if (island == null) {
+            //log.warn("玩家{}在{}位置岛屿无效，无法进行{}", player.getName(), player.getLocation(), event.getEventName());
             event.setCancelled(true);
             return;
         }
@@ -46,7 +47,8 @@ public class BlockInteractPermissions implements PermissionModule {
         final boolean hasBypass = player.hasPermission("skyllia.player.interact.bypass");
         final boolean hasPermission = hasBypass || SkylliaAPI.getPermissionsManager().hasPermission(player, island, BLOCK_INTERACT, null, ConfigLoader.general.getDebugSettings().permission());
         if (!hasPermission) {
-            //log.info("玩家 {} 没有权限 BLOCK_INTERACT 进行 {}", player.getName(), event.getAction());
+            //log.warn("Player= {}, Pos= {}, Chunk= {} {}, Region= {} {}, Returned island owner= {} Pos= {} Permission= BLOCK_INTERACT",
+            //        player.getName(), location, chunkX,chunkZ, chunkX>>5, chunkZ>>5 , island.getOwner().getLastKnowName(), island.getPosition());
             event.setCancelled(true);
             return;
         }

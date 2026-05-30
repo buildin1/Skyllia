@@ -16,6 +16,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.plugin.Plugin;
 
+import static fr.euphyllia.skyllia.api.commands.SubCommandInterface.log;
+
 public class EntityDamagePermissions implements PermissionModule {
 
     private PermissionId ENTITY_DAMAGE;
@@ -41,12 +43,14 @@ public class EntityDamagePermissions implements PermissionModule {
         final int chunkZ = location.getBlockZ() >> 4;
         final Island island = SkylliaAPI.getIslandByChunk(chunkX, chunkZ);
         if (island == null) {
+            //log.warn("玩家{}在{}位置岛屿无效，无法进行{}", player.getName(), player.getLocation(), event.getEventName());
             event.setCancelled(true);
             return;
         }
 
         final boolean hasPermission = SkylliaAPI.getPermissionsManager().hasPermission(player, island, ENTITY_DAMAGE, "skyllia.player.entity.damage.bypass", ConfigLoader.general.getDebugSettings().permission());
         if (!hasPermission) {
+            //log.warn("玩家{}在{}岛上没有ENTITY_DAMAGE权限，无法进行{}", player.getName(), island.getOwner().getLastKnowName(), event.getEventName());
             event.setCancelled(true);
         }
     }

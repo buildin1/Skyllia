@@ -16,6 +16,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.plugin.Plugin;
 
+import static fr.euphyllia.skyllia.api.commands.SubCommandInterface.log;
+
 public class ItemPickupPermissions implements PermissionModule {
 
     private PermissionId ITEM_PICKUP;
@@ -36,6 +38,8 @@ public class ItemPickupPermissions implements PermissionModule {
         final boolean hasBypass = player.hasPermission("skyllia.player.item.pickup.bypass");
         final boolean hasPermission = hasBypass || SkylliaAPI.getPermissionsManager().hasPermission(player, island, ITEM_PICKUP, null, ConfigLoader.general.getDebugSettings().permission());
         if (!hasPermission) {
+            //log.warn("Player= {}, Pos= {}, Chunk= {} {}, Region= {} {}, Returned island owner= {} Pos= {} Permission= ITEM_PICKUP",
+            //       player.getName(), location, chunkX,chunkZ, chunkX>>5, chunkZ>>5 , island.getOwner().getLastKnowName(), island.getPosition());
             event.setCancelled(true);
             return;
         }

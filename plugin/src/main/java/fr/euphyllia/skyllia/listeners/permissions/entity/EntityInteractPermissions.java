@@ -16,6 +16,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.plugin.Plugin;
 
+import static fr.euphyllia.skyllia.api.commands.SubCommandInterface.log;
+
 public class EntityInteractPermissions implements PermissionModule {
 
     private PermissionId ENTITY_INTERACT;
@@ -36,6 +38,7 @@ public class EntityInteractPermissions implements PermissionModule {
         final boolean hasBypass = player.hasPermission("skyllia.player.entity.interact.bypass");
         final boolean hasPermission = hasBypass || SkylliaAPI.getPermissionsManager().hasPermission(player, island, ENTITY_INTERACT, null, ConfigLoader.general.getDebugSettings().permission());
         if (!hasPermission) {
+            //log.warn("玩家{}在{}岛上没有ENTITY_INTERACT权限，无法进行{}", player.getName(), island.getOwner().getLastKnowName(), event.getEventName());
             event.setCancelled(true);
             return;
         }

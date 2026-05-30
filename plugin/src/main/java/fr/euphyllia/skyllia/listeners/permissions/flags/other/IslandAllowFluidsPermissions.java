@@ -13,6 +13,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.block.BlockFromToEvent;
 import org.bukkit.plugin.Plugin;
 
+import static fr.euphyllia.skyllia.api.commands.SubCommandInterface.log;
+
 public class IslandAllowFluidsPermissions implements FlagModule {
 
     private FlagId ISLAND_ALLOW_FLUIDS;
@@ -26,11 +28,13 @@ public class IslandAllowFluidsPermissions implements FlagModule {
         final int chunkZ = to.getBlockZ() >> 4;
         final Island island = SkylliaAPI.getIslandByChunk(chunkX, chunkZ);
         if (island == null) {
+            log.warn("液体{}在{}位置岛屿无效，无法进行{}", event.getBlock(), event.getToBlock().getLocation(), event.getEventName());
             event.setCancelled(true);
             return;
         }
 
         if (!SkylliaAPI.getPermissionsManager().hasFlag(island, ISLAND_ALLOW_FLUIDS)) {
+            log.warn("液体{}在{}岛上没有启用ISLAND_ALLOW_FLUIDS，无法进行{}", event.getBlock(), island.getOwner().getLastKnowName(), event.getEventName());
             event.setCancelled(true);
             return;
         }

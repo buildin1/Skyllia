@@ -30,8 +30,7 @@ public class PlayerTeleportHooks implements Listener {
                 to,
                 island,
                 event.getTeleportCause(),
-                false,
-                false    // 现在的 async 参数已无效，传 false 即可
+                false
         ).callEvent();
     }
 }

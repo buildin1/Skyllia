@@ -309,6 +309,15 @@ public class SkyblockManager {
         long key = pack(position.x(), position.z());
         UUID islandId = islandByRegion.get(key);
 
+        // Fix: Prevent wrong cached island keys returned to a new query
+        if (islandId != null) {
+            Island cachedIsland = cache.getIsland(islandId);
+            // Validate the cachedIsland position
+            if (cachedIsland != null && !cachedIsland.getPosition().equals(position)) {
+                islandByRegion.remove(key); // Clean the wrong key
+                islandId = null;            // Force query again
+            }
+        }
         if (islandId != null) {
             Island cached = cache.getIsland(islandId);
             if (cached != null) {
@@ -334,7 +343,8 @@ public class SkyblockManager {
                 .getIslandDataQuery()
                 .getIslandByPosition(position);
 
-        if (island != null) cacheIslandAndIndex(island);
+        if (island != null)
+            cacheIslandAndIndex(island);
         return island;
     }
 

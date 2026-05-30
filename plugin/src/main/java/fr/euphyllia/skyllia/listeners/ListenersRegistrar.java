@@ -4,7 +4,9 @@ import fr.euphyllia.skyllia.Skyllia;
 import fr.euphyllia.skyllia.api.InterneAPI;
 import fr.euphyllia.skyllia.api.SkylliaAPI;
 import fr.euphyllia.skyllia.listeners.bukkitevents.blocks.GrowEvent;
+import fr.euphyllia.skyllia.listeners.bukkitevents.blocks.ObsidianFormHologramListener;
 import fr.euphyllia.skyllia.listeners.bukkitevents.blocks.PistonEvent;
+import fr.euphyllia.skyllia.listeners.bukkitevents.entity.LightningVillagerTransformListener;
 import fr.euphyllia.skyllia.listeners.bukkitevents.player.JoinEvent;
 import fr.euphyllia.skyllia.listeners.bukkitevents.player.MoveEvent;
 import fr.euphyllia.skyllia.listeners.bukkitevents.player.WorldBorderAddEvent;
@@ -72,6 +74,8 @@ public class ListenersRegistrar {
         registerEvent(pluginManager, new MoveEvent());
         PortalOverrideListener portalListener = new PortalOverrideListener();
         registerEvent(pluginManager, portalListener);
+        registerEvent(pluginManager, new ObsidianFormHologramListener(plugin));
+        registerEvent(pluginManager, new LightningVillagerTransformListener());
         portalListener.startCleanupTask(); // 启动全局清理
 
         // Skyblock Events
