@@ -73,11 +73,12 @@ failed = "<red>Database update failed.</red>"
 
 [island.flag]
 usage = """<gray>Usage:</gray> <light_purple>/is flag list [filter]</light_purple>
-<gray> - </gray><light_purple>/is flag <namespace:key> [true|false]</light_purple>
-<gray> - </gray><light_purple>/is flag toggle <namespace:key></light_purple>
-<gray> - </gray><light_purple>/is flag set <namespace:key> <true|false></light_purple>"""
+<gray> - </gray><light_purple>/is flag <namespace:key> [true|false] [world]</light_purple>
+<gray> - </gray><light_purple>/is flag toggle <namespace:key> [world]</light_purple>
+<gray> - </gray><light_purple>/is flag set <namespace:key> <true|false> [world]</light_purple>"""
 value = "<white>%flag%</white> <gray>=</gray> <aqua>%value%</aqua>"
 permission-denied = "<red>You do not have permission to modify this flag.</red>"
+no-world = "<red>No skyblock world is configured.</red>"
 
 [island.flag.flag]
 invalid-format = "<red>Invalid flag format:</red> <white>%flag%</white> <gray>(expected namespace:key)</gray>"
