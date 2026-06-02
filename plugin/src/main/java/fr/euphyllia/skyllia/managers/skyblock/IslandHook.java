@@ -46,9 +46,9 @@ public class IslandHook extends Island {
     private final Map<World, Location> islandCenterLocations;
     private final ConcurrentHashMap<String, Integer> buildMinHeightCache = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Integer> buildMaxHeightCache = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, IslandFlags> islandFlagsCache = new ConcurrentHashMap<>();
     private double islandSize;
     private transient volatile CompiledPermissions compiledPermissions;
-    private final ConcurrentHashMap<String, IslandFlags> islandFlagsCache = new ConcurrentHashMap<>();
 
     /**
      * Constructs a new {@code IslandHook} instance.

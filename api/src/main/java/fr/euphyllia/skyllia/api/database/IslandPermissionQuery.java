@@ -18,7 +18,9 @@ public abstract class IslandPermissionQuery {
     @Deprecated(forRemoval = true, since = "3.x")
     public IslandFlags loadIslandFlags(UUID islandId, IslandFlagRegistry registry) {
         return this.loadIslandFlags(islandId, registry, SkylliaAPI.getRegisteredWorlds().getFirst().getWorldName());
-    };
+    }
+
+    ;
 
     public abstract IslandFlags loadIslandFlags(UUID islandId, IslandFlagRegistry registry, String worldName);
 
@@ -48,6 +50,7 @@ public abstract class IslandPermissionQuery {
         }
         return true;
     }
+
     public final boolean setFlag(UUID islandId, IslandFlagRegistry registry, FlagId id, String worldName, boolean value) {
         IslandFlags flags = loadIslandFlags(islandId, registry, worldName);
         if (flags == null) flags = new IslandFlags(registry);

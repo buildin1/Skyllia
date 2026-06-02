@@ -118,7 +118,7 @@ public interface SkylliaImplementation {
      * use {@link #isWorldSkyblock(String)} or {@link #isWorldSkyblock(World)}.
      *
      * @return An immutable list of {@link WorldConfig} representing all registered
-     *         Skyblock worlds. Returns an empty list if no worlds are configured.
+     * Skyblock worlds. Returns an empty list if no worlds are configured.
      */
     List<WorldConfig> getRegisteredWorlds();
 

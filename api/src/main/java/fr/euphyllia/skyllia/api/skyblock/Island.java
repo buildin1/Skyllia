@@ -216,7 +216,9 @@ public abstract class Island {
      */
     public abstract void invalidateIslandFlags(String worldName);
 
-    /** @deprecated Use {@link #getIslandFlags(String)} instead. */
+    /**
+     * @deprecated Use {@link #getIslandFlags(String)} instead.
+     */
     @Deprecated(forRemoval = true, since = "3.x")
     public IslandFlags getIslandFlags() {
         List<WorldConfig> worlds = SkylliaAPI.getRegisteredWorlds();
@@ -224,7 +226,9 @@ public abstract class Island {
         return getIslandFlags(worlds.getFirst().getWorldName());
     }
 
-    /** @deprecated Use {@link #invalidateIslandFlags(String)} instead. */
+    /**
+     * @deprecated Use {@link #invalidateIslandFlags(String)} instead.
+     */
     @Deprecated(forRemoval = true, since = "3.x")
     public void invalidateIslandFlags() {
         for (WorldConfig w : SkylliaAPI.getRegisteredWorlds()) {

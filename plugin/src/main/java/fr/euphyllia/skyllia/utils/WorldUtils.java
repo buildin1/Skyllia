@@ -12,6 +12,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -30,11 +31,16 @@ public final class WorldUtils {
     }
 
     public static Boolean isWorldSkyblock(String name) {
-        return ConfigLoader.worldManager.getWorldConfigs().keySet().stream().anyMatch(worldName -> worldName.equalsIgnoreCase(name));
+        for (String worldName : ConfigLoader.worldManager.getWorldConfigs().keySet()) {
+            if (worldName.equalsIgnoreCase(name)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static List<WorldConfig> getWorldConfigs() {
-        return ConfigLoader.worldManager.getWorldConfigs().values().stream().toList();
+        return new ArrayList<>(ConfigLoader.worldManager.getWorldConfigs().values());
     }
 
     public static @Nullable WorldConfig getWorldConfig(String worldName) {

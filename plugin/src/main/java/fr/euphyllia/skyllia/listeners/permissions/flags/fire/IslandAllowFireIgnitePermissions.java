@@ -20,7 +20,8 @@ public class IslandAllowFireIgnitePermissions implements FlagModule {
     @EventHandler(ignoreCancelled = true)
     public void onIgnite(final BlockIgniteEvent event) {
         final Location location = event.getBlock().getLocation();
-        if (!SkylliaAPI.isWorldSkyblock(location.getWorld())) return;
+        String worldName = location.getWorld().getName();
+        if (!SkylliaAPI.isWorldSkyblock(worldName)) return;
 
         final int chunkX = location.getBlockX() >> 4;
         final int chunkZ = location.getBlockZ() >> 4;
@@ -28,7 +29,7 @@ public class IslandAllowFireIgnitePermissions implements FlagModule {
         if (island == null) return;
 
         final boolean flagEnabled = SkylliaAPI.getPermissionsManager()
-                .hasFlag(island, ISLAND_ALLOW_FIRE);
+                .hasFlag(island, ISLAND_ALLOW_FIRE, worldName);
         if (!flagEnabled) {
             event.setCancelled(true);
             return;
