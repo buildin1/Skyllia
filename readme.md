@@ -5,7 +5,7 @@
 ### The first Skyblock plugin fully compatible with Folia
 
 [![Folia](https://img.shields.io/badge/Folia-Compatible-green.svg)](https://papermc.io/software/folia)
-[![Paper](https://img.shields.io/badge/Paper-1.20.1+-blue.svg)](https://papermc.io/)
+[![Paper](https://img.shields.io/badge/Paper-1.20.6+-blue.svg)](https://papermc.io/)
 [![Java](https://img.shields.io/badge/Java-21+-orange.svg)](https://www.oracle.com/java/)
 [![License](https://img.shields.io/badge/license-MIT-blue)](https://github.com/Euphillya/Skyllia)
 
@@ -70,15 +70,16 @@ delivers exceptional performance even with hundreds of simultaneous players.
 
 Extend Skyllia with 7 free official addons:
 
-| Addon                | Description                                        |
-|----------------------|----------------------------------------------------|
-| **SkylliaBank**      | Shared island bank system with transaction history |
-| **SkylliaOre**       | Configurable automatic ore generator               |
-| **SkylliaChallenge** | Daily/weekly challenges with rewards               |
-| **SkylliaChat**      | Per-island chat with multiple channels             |
-| **InsightsSkyllia**  | Block and entity limits per island                 |
-| **SkylliaChest**     | Share a chest across your entire island (beta)     |
-| **SkylliaAcidRain**  | The water is becoming acidic!                      |
+| Addon                  | Description                                                       |
+|------------------------|-------------------------------------------------------------------|
+| **SkylliaBank**        | Shared island bank system with transaction history                |
+| **SkylliaOre**         | Configurable automatic ore generator                              |
+| **SkylliaChallenge**   | Daily/weekly challenges with rewards                              |
+| **SkylliaChat**        | Per-island chat with multiple channels                            |
+| **InsightsSkyllia**    | Block and entity limits per island                                |
+| **SkylliaChest**       | Share a chest across your entire island (beta)                    |
+| **SkylliaAcidRain**    | The water is becoming acidic!                                     |
+| **SkylliaIslandValue** | Island value depends on the number of blocks placed on the island |
 
 ## 📋 Requirements
 
@@ -136,10 +137,10 @@ Skyllia provides a complete API to create your own addons:
 </repository>
 
 <dependency>
-<groupId>fr.euphyllia.skyllia</groupId>
-<artifactId>api</artifactId>
-<version>3.x</version>
-<scope>provided</scope>
+   <groupId>fr.euphyllia.skyllia</groupId>
+   <artifactId>api</artifactId>
+   <version>3.x</version>
+   <scope>provided</scope>
 </dependency>
 ```
 
@@ -149,8 +150,9 @@ import fr.euphyllia.skyllia.api.island.Island;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.Listener;
 
-public class MyPlugin {
+public class MyPlugin implements Listener {
 
    @EventHandler
    public void onPlayerJoin(PlayerJoinEvent event) {
@@ -185,8 +187,6 @@ See the [API documentation](#) for more information.
 /isadmin setsize <player> <size> - Modify island size
 /isadmin teleport <player>   - TP to a player's island
 ```
-
-Full list: [Player commands](#) • [Admin commands](#)
 
 ## 🤝 Contributing
 
