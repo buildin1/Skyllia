@@ -42,6 +42,7 @@ dependencies {
     implementation(project(":nms:v1_21_R6"))
     implementation(project(":nms:v1_21_R7"))
     implementation(project(":nms:v26_1"))
+    implementation(project(":nms:v26_2"))
 }
 
 allprojects {
