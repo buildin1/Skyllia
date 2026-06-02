@@ -298,9 +298,13 @@ public class FlagSubCommand implements SubCommandInterface {
 
         if (args.length == 1) {
             String partial = args[0].trim().toLowerCase(Locale.ROOT);
-            return ACTIONS.stream()
-                    .filter(a -> a.startsWith(partial))
-                    .collect(Collectors.toList());
+            List<String> list = new ArrayList<>();
+            for (String a : ACTIONS) {
+                if (a.startsWith(partial)) {
+                    list.add(a);
+                }
+            }
+            return list;
         }
 
         int offset = isAction(args[0]) ? 1 : 0;
@@ -329,12 +333,38 @@ public class FlagSubCommand implements SubCommandInterface {
 
         if (args.length == offset + 2 && !action.equals("get") && !action.equals("list") && !action.equals("toggle")) {
             String partial = args[offset + 1].trim().toLowerCase(Locale.ROOT);
-            return BOOLS.stream().filter(b -> b.startsWith(partial)).toList();
+            List<String> list = new ArrayList<>();
+            for (String b : BOOLS) {
+                if (b.startsWith(partial)) {
+                    list.add(b);
+                }
+            }
+            return list;
         }
 
         if (action.equals("auto") && args.length == 2) {
             String partial = args[1].trim().toLowerCase(Locale.ROOT);
-            return BOOLS.stream().filter(b -> b.startsWith(partial)).toList();
+            List<String> list = new ArrayList<>();
+            for (String b : BOOLS) {
+                if (b.startsWith(partial)) {
+                    list.add(b);
+                }
+            }
+            return list;
+        }
+
+
+        if (args.length == offset + 3 && !action.equals("list")) {
+            String partial = args[offset + 2].trim().toLowerCase(Locale.ROOT);
+            List<String> list = new ArrayList<>();
+            for (WorldConfig worldConfig : SkylliaAPI.getRegisteredWorlds()) {
+                String w = worldConfig.getWorldName();
+                if (w.toLowerCase(Locale.ROOT).startsWith(partial)) {
+                    list.add(w);
+                }
+            }
+            list.sort(null);
+            return list;
         }
 
         return Collections.emptyList();
