@@ -11,6 +11,7 @@ import fr.euphyllia.skyllia.listeners.ListenersUtils;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
+import org.bukkit.block.Container;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.block.Action;
@@ -27,6 +28,8 @@ public class BlockInteractPermissions implements PermissionModule {
 
         final Block clicked = event.getClickedBlock();
         if (clicked == null) return;
+
+        if (clicked.getState() instanceof Container) return; // If the block has an inventory, we let InventoryOpenPermissions handle the interaction
 
         final Player player = event.getPlayer();
         final Location location = clicked.getLocation();
