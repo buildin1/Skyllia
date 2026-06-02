@@ -94,9 +94,11 @@ public class MariaDBDatabaseInitialize extends DatabaseInitializeQuery {
 
     private static final String CREATE_ISLANDS_FLAGS_TABLE = """
             CREATE TABLE IF NOT EXISTS islands_flags (
-                island_id CHAR(36) NOT NULL,
-                words LONGBLOB NOT NULL,
-                PRIMARY KEY (`island_id`)
+                island_id  CHAR(36)     NOT NULL,
+                world_name VARCHAR(255) NOT NULL,
+                words      LONGBLOB     NOT NULL,
+                PRIMARY KEY (island_id, world_name),
+                CONSTRAINT islands_flags_FK FOREIGN KEY (island_id) REFERENCES islands (island_id) ON DELETE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
             """;
 
@@ -223,6 +225,10 @@ public class MariaDBDatabaseInitialize extends DatabaseInitializeQuery {
                 DROP PRIMARY KEY,
                 ADD PRIMARY KEY (uuid_player, cause);
                 """);
+
+        if (configVersion < 5) {
+            migrateV4ToV5();
+        }
     }
 
     private void initializeSpiralTable() {
@@ -252,5 +258,37 @@ public class MariaDBDatabaseInitialize extends DatabaseInitializeQuery {
 
     private void exec(String sql) {
         SQLExecute.update(databaseLoader, sql, null);
+    }
+
+    private void migrateV4ToV5() {
+        exec("""
+                ALTER TABLE islands_flags
+                DROP PRIMARY KEY;
+                """);
+
+        exec("""
+                ALTER TABLE islands_flags
+                ADD COLUMN IF NOT EXISTS world_name VARCHAR(255) NOT NULL DEFAULT '';
+                """);
+
+        String firstWorld = SkylliaAPI.getRegisteredWorlds().isEmpty()
+                ? ""
+                : SkylliaAPI.getRegisteredWorlds().getFirst().getWorldName();
+
+        SQLExecute.update(databaseLoader,
+                "UPDATE islands_flags SET world_name = ? WHERE world_name = '';",
+                List.of(firstWorld));
+
+        exec("""
+                ALTER TABLE islands_flags
+                ALTER COLUMN world_name DROP DEFAULT;
+                """);
+
+        exec("""
+                ALTER TABLE islands_flags
+                ADD PRIMARY KEY (island_id, world_name);
+                """);
+
+        logger.info("Migration V4 -> V5 applied: islands_flags now has per-world support.");
     }
 }

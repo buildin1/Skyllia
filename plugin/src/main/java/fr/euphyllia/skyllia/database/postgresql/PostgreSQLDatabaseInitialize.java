@@ -93,9 +93,10 @@ public class PostgreSQLDatabaseInitialize extends DatabaseInitializeQuery {
 
     private static final String CREATE_ISLANDS_FLAGS_TABLE = """
             CREATE TABLE IF NOT EXISTS %s.islands_flags (
-                island_id UUID NOT NULL REFERENCES %s.islands(island_id) ON DELETE CASCADE,
-                words BYTEA NOT NULL,
-                PRIMARY KEY (island_id)
+                island_id  UUID         NOT NULL REFERENCES %s.islands(island_id) ON DELETE CASCADE,
+                world_name VARCHAR(255) NOT NULL,
+                words      BYTEA        NOT NULL,
+                PRIMARY KEY (island_id, world_name)
             );
             """;
 
@@ -235,6 +236,10 @@ public class PostgreSQLDatabaseInitialize extends DatabaseInitializeQuery {
     }
 
     private void applyMigrations() {
+        final String s = sanitizeIdent(schema);
+        if (configVersion < 5) {
+            migrateV4ToV5(s);
+        }
     }
 
     private void initializeSpiralTable() {
@@ -271,5 +276,37 @@ public class PostgreSQLDatabaseInitialize extends DatabaseInitializeQuery {
 
     private void exec(String sql) {
         SQLExecute.update(databaseLoader, sql, null);
+    }
+
+    private void migrateV4ToV5(String s) {
+        exec("""
+                ALTER TABLE %s.islands_flags
+                DROP CONSTRAINT IF EXISTS islands_flags_pkey;
+                """.formatted(s));
+
+        exec("""
+                ALTER TABLE %s.islands_flags
+                ADD COLUMN IF NOT EXISTS world_name VARCHAR(255) NOT NULL DEFAULT '';
+                """.formatted(s));
+
+        String firstWorld = SkylliaAPI.getRegisteredWorlds().isEmpty()
+                ? ""
+                : SkylliaAPI.getRegisteredWorlds().getFirst().getWorldName();
+
+        SQLExecute.update(databaseLoader,
+                "UPDATE " + s + ".islands_flags SET world_name = ? WHERE world_name = '';",
+                List.of(firstWorld));
+
+        exec("""
+                ALTER TABLE %s.islands_flags
+                ALTER COLUMN world_name DROP DEFAULT;
+                """.formatted(s));
+
+        exec("""
+                ALTER TABLE %s.islands_flags
+                ADD CONSTRAINT islands_flags_pkey PRIMARY KEY (island_id, world_name);
+                """.formatted(s));
+
+        logger.info("Migration V4 -> V5 applied: islands_flags now has per-world support.");
     }
 }

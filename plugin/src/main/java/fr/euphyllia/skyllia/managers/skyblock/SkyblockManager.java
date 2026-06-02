@@ -2,6 +2,8 @@ package fr.euphyllia.skyllia.managers.skyblock;
 
 import com.google.common.base.Preconditions;
 import fr.euphyllia.skyllia.Skyllia;
+import fr.euphyllia.skyllia.api.SkylliaAPI;
+import fr.euphyllia.skyllia.api.configuration.WorldConfig;
 import fr.euphyllia.skyllia.api.event.PrepareSkyblockCreateEvent;
 import fr.euphyllia.skyllia.api.skyblock.Island;
 import fr.euphyllia.skyllia.api.skyblock.Players;
@@ -175,8 +177,10 @@ public class SkyblockManager {
                     }
 
                     if (ConfigLoader.islandFlags != null) {
-                        byte[] flagsBlob = ConfigLoader.islandFlags.buildDefaultFlagBlob(typeKey);
-                        permQuery.saveIslandFlags(event.getIslandId(), flagsBlob);
+                        for (WorldConfig world : SkylliaAPI.getRegisteredWorlds()) {
+                            byte[] flagsBlob = ConfigLoader.islandFlags.buildDefaultFlagBlob(typeKey, world.getWorldName());
+                            permQuery.saveIslandFlags(event.getIslandId(), flagsBlob, world.getWorldName());
+                        }
                     }
                 }
 

@@ -105,48 +105,17 @@ public class ImplPermissionsManagers implements PermissionsManagers {
         return has;
     }
 
-    /**
-     * Checks whether the given island has the specified flag enabled.
-     *
-     * @param island the island to check.
-     * @param flag   the flag to verify; if {@code null}, {@code false} is returned immediately.
-     * @return {@code true} if the flag is enabled on the island, {@code false} otherwise.
-     */
-    public boolean hasFlag(Island island, FlagId flag) {
+    @Override
+    public boolean hasFlag(Island island, FlagId flag, String worldName) {
         if (flag == null) return false;
-        return island.getIslandFlags()
+        return island.getIslandFlags(worldName)
                 .has(SkylliaAPI.getFlagRegistry(), flag);
     }
 
-    /**
-     * Checks whether the given island has either the specific flag or the fallback flag enabled.
-     *
-     * @param island   the island to check.
-     * @param specific the primary flag to verify.
-     * @param fallback the fallback flag to verify if the primary is not set.
-     * @return {@code true} if either flag is enabled on the island, {@code false} otherwise.
-     */
-    public boolean hasFlag(Island island, FlagId specific, FlagId fallback) {
-        var flags = island.getIslandFlags();
+    @Override
+    public boolean hasFlag(Island island, FlagId specific, FlagId fallback, String worldName) {
+        var flags = island.getIslandFlags(worldName);
         var registry = SkylliaAPI.getFlagRegistry();
         return flags.has(registry, specific) || flags.has(registry, fallback);
-    }
-
-    /**
-     * @deprecated Use {@link #hasFlag(Island, FlagId)} instead.
-     */
-    @Deprecated(forRemoval = true)
-    public boolean hasIslandFlag(Island island, PermissionId flag) {
-        throw new UnsupportedOperationException(
-                "hasIslandFlag(PermissionId) is removed. Use hasFlag(FlagId) with the FlagRegistry.");
-    }
-
-    /**
-     * @deprecated Use {@link #hasFlag(Island, FlagId, FlagId)} instead.
-     */
-    @Deprecated(forRemoval = true)
-    public boolean hasIslandFlag(Island island, PermissionId specific, PermissionId fallback) {
-        throw new UnsupportedOperationException(
-                "hasIslandFlag(PermissionId, PermissionId) is removed. Use hasFlag(FlagId, FlagId) with the FlagRegistry.");
     }
 }

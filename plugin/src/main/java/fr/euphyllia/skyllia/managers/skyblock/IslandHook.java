@@ -48,7 +48,7 @@ public class IslandHook extends Island {
     private final ConcurrentHashMap<String, Integer> buildMaxHeightCache = new ConcurrentHashMap<>();
     private double islandSize;
     private transient volatile CompiledPermissions compiledPermissions;
-    private transient volatile IslandFlags islandFlags;
+    private final ConcurrentHashMap<String, IslandFlags> islandFlagsCache = new ConcurrentHashMap<>();
 
     /**
      * Constructs a new {@code IslandHook} instance.
@@ -309,12 +309,12 @@ public class IslandHook extends Island {
     }
 
     @Override
-    public final IslandFlags getIslandFlags() {
-        IslandFlags local = this.islandFlags;
+    public IslandFlags getIslandFlags(String worldName) {
+        IslandFlags local = islandFlagsCache.get(worldName);
         if (local != null) return local;
 
         synchronized (this) {
-            local = this.islandFlags;
+            local = islandFlagsCache.get(worldName);
             if (local != null) return local;
 
             var flagRegistry = SkylliaAPI.getFlagRegistry();
@@ -326,18 +326,18 @@ public class IslandHook extends Island {
 
             IslandFlags loaded = null;
             if (query != null) {
-                loaded = query.loadIslandFlags(getId(), flagRegistry);
+                loaded = query.loadIslandFlags(getId(), flagRegistry, worldName);
             }
 
             local = (loaded != null) ? loaded : new IslandFlags(flagRegistry);
-            this.islandFlags = local;
+            islandFlagsCache.put(worldName, local);
             return local;
         }
     }
 
     @Override
-    public final void invalidateIslandFlags() {
-        this.islandFlags = null;
+    public void invalidateIslandFlags(String worldName) {
+        islandFlagsCache.remove(worldName);
     }
 
     @Override

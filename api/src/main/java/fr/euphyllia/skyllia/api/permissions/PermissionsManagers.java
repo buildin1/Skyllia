@@ -1,9 +1,13 @@
 package fr.euphyllia.skyllia.api.permissions;
 
+import fr.euphyllia.skyllia.api.SkylliaAPI;
+import fr.euphyllia.skyllia.api.configuration.WorldConfig;
 import fr.euphyllia.skyllia.api.skyblock.Island;
 import fr.euphyllia.skyllia.api.skyblock.model.RoleType;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
 
 /**
  * Manages permission and flag checks for Skyllia islands.
@@ -23,7 +27,7 @@ public interface PermissionsManagers {
      * @param permission the permission to verify.
      * @return {@code true} if the player has the permission, {@code false} otherwise.
      */
-    public boolean hasPermission(Player player, Island island, PermissionId permission);
+    boolean hasPermission(Player player, Island island, PermissionId permission);
 
     /**
      * Checks whether the given player has the specified permission on the island,
@@ -35,7 +39,7 @@ public interface PermissionsManagers {
      * @param bukkitPermission an optional Bukkit permission node; if the player holds it, access is granted immediately.
      * @return {@code true} if the player has the permission, {@code false} otherwise.
      */
-    public boolean hasPermission(Player player, Island island, PermissionId permission, @Nullable String bukkitPermission);
+    boolean hasPermission(Player player, Island island, PermissionId permission, @Nullable String bukkitPermission);
 
     /**
      * Checks whether the given player has the specified permission on the island,
@@ -57,24 +61,47 @@ public interface PermissionsManagers {
      * @param debug            if {@code true}, detailed resolution steps are logged at INFO level.
      * @return {@code true} if the player has the permission, {@code false} otherwise.
      */
-    public boolean hasPermission(Player player, Island island, PermissionId permission, @Nullable String bukkitPermission, boolean debug);
+    boolean hasPermission(Player player, Island island, PermissionId permission, @Nullable String bukkitPermission, boolean debug);
 
     /**
-     * Checks whether the given island has the specified flag enabled.
+     * Checks whether the given island has the specified flag enabled in the given world.
      *
-     * @param island the island to check.
-     * @param flag   the flag to verify; if {@code null}, {@code false} is returned immediately.
-     * @return {@code true} if the flag is enabled on the island, {@code false} otherwise.
+     * @param island    the island to check.
+     * @param flag      the flag to verify; if {@code null}, {@code false} is returned immediately.
+     * @param worldName the name of the world in which to check the flag.
+     * @return {@code true} if the flag is enabled on the island in the specified world, {@code false} otherwise.
      */
-    public boolean hasFlag(Island island, FlagId flag);
+    boolean hasFlag(Island island, FlagId flag, String worldName);
 
     /**
-     * Checks whether the given island has either the specific flag or the fallback flag enabled.
+     * Checks whether the given island has either the specific flag or the fallback flag enabled in the given world.
      *
-     * @param island   the island to check.
-     * @param specific the primary flag to verify.
-     * @param fallback the fallback flag to verify if the primary is not set.
-     * @return {@code true} if either flag is enabled on the island, {@code false} otherwise.
+     * @param island    the island to check.
+     * @param specific  the primary flag to verify.
+     * @param fallback  the fallback flag to verify if the primary is not set.
+     * @param worldName the name of the world in which to check the flags.
+     * @return {@code true} if either flag is enabled on the island in the specified world, {@code false} otherwise.
      */
-    public boolean hasFlag(Island island, FlagId specific, FlagId fallback);
+    boolean hasFlag(Island island, FlagId specific, FlagId fallback, String worldName);
+
+    /**
+     * @deprecated Use {@link #hasFlag(Island, FlagId, String)} instead.
+     */
+    @Deprecated(forRemoval = true, since = "3.x")
+    default boolean hasFlag(Island island, FlagId flag) {
+        List<WorldConfig> worlds = SkylliaAPI.getRegisteredWorlds();
+        if (worlds.isEmpty()) return false;
+        return this.hasFlag(island, flag, worlds.getFirst().getWorldName());
+    }
+
+    /**
+     * @deprecated Use {@link #hasFlag(Island, FlagId, FlagId, String)} instead.
+     */
+    @Deprecated(forRemoval = true, since = "3.x")
+    default boolean hasFlag(Island island, FlagId specific, FlagId fallback) {
+        List<WorldConfig> worlds = SkylliaAPI.getRegisteredWorlds();
+        if (worlds.isEmpty()) return false;
+        return this.hasFlag(island, specific, fallback, worlds.getFirst().getWorldName());
+    }
+
 }

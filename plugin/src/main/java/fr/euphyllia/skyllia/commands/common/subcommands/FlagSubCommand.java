@@ -3,6 +3,7 @@ package fr.euphyllia.skyllia.commands.common.subcommands;
 import fr.euphyllia.skyllia.Skyllia;
 import fr.euphyllia.skyllia.api.SkylliaAPI;
 import fr.euphyllia.skyllia.api.commands.SubCommandInterface;
+import fr.euphyllia.skyllia.api.configuration.WorldConfig;
 import fr.euphyllia.skyllia.api.database.IslandPermissionQuery;
 import fr.euphyllia.skyllia.api.permissions.*;
 import fr.euphyllia.skyllia.api.skyblock.Island;
@@ -154,6 +155,33 @@ public class FlagSubCommand implements SubCommandInterface {
             return;
         }
 
+        String worldName = null;
+        if (args.length - offset >= 3) {
+            String candidate = args[offset + 2];
+            if (SkylliaAPI.isWorldSkyblock(candidate)) {
+                worldName = candidate;
+            } else {
+                ConfigLoader.language.sendMessage(player, "island.flag.world.invalid", Map.of(
+                        "%world%", candidate
+                ));
+                return;
+            }
+        }
+
+        if (worldName == null) {
+            String playerWorld = player.getWorld().getName();
+            if (SkylliaAPI.isWorldSkyblock(playerWorld)) {
+                worldName = playerWorld;
+            } else {
+                List<WorldConfig> worlds = SkylliaAPI.getRegisteredWorlds();
+                if (worlds.isEmpty()) {
+                    ConfigLoader.language.sendMessage(player, "island.flag.no-world"); // Todo : add message
+                    return;
+                }
+                worldName = worlds.getFirst().getWorldName();
+            }
+        }
+
         boolean isReadOnly = action.equals("get")
                 || (action.equals("auto") && (args.length - offset < 2 || parseBool(args[offset + 1]) == null));
 
@@ -166,7 +194,7 @@ public class FlagSubCommand implements SubCommandInterface {
 
         Boolean explicitBool = (args.length - offset >= 2) ? parseBool(args[offset + 1]) : null;
 
-        boolean current = island.getIslandFlags().has(registry, fid);
+        boolean current = island.getIslandFlags(worldName).has(registry, fid);
 
         if (action.equals("get") || (action.equals("auto") && explicitBool == null)) {
             ConfigLoader.language.sendMessage(player, "island.flag.value", Map.of(
@@ -189,13 +217,13 @@ public class FlagSubCommand implements SubCommandInterface {
             next = explicitBool;
         }
 
-        boolean updated = setDbAndRuntime(island, fid, next);
+        boolean updated = setDbAndRuntime(island, fid, next, worldName);
         if (!updated) {
             ConfigLoader.language.sendMessage(player, "island.flag.update.failed");
             return;
         }
 
-        boolean finalValue = island.getIslandFlags().has(registry, fid);
+        boolean finalValue = island.getIslandFlags(worldName).has(registry, fid);
         ConfigLoader.language.sendMessage(player, "island.flag.update.success", Map.of(
                 "%flag%", toKeyString(key),
                 "%old%", String.valueOf(current),
@@ -204,7 +232,7 @@ public class FlagSubCommand implements SubCommandInterface {
     }
 
 
-    private boolean setDbAndRuntime(Island island, FlagId fid, boolean value) {
+    private boolean setDbAndRuntime(Island island, FlagId fid, boolean value, String worldName) {
         IslandPermissionQuery query = Skyllia.getInstance()
                 .getInterneAPI()
                 .getIslandQuery()
@@ -233,7 +261,7 @@ public class FlagSubCommand implements SubCommandInterface {
         }
 
         // Load flags from DB, apply all changes at once, save once
-        IslandFlags dbFlags = query.loadIslandFlags(island.getId(), registry);
+        IslandFlags dbFlags = query.loadIslandFlags(island.getId(), registry, worldName);
         if (dbFlags == null) dbFlags = new IslandFlags(registry);
 
         dbFlags.set(registry, fid, value);
@@ -242,11 +270,11 @@ public class FlagSubCommand implements SubCommandInterface {
         }
 
         byte[] blob = PermissionSetCodec.encodeLongs(dbFlags.snapshotWords());
-        boolean success = query.saveIslandFlags(island.getId(), blob);
+        boolean success = query.saveIslandFlags(island.getId(), blob, worldName);
         if (!success) return false;
 
         // Update runtime cache
-        IslandFlags flags = island.getIslandFlags();
+        IslandFlags flags = island.getIslandFlags(worldName);
         flags.ensureUpToDate(registry);
         flags.set(registry, fid, value);
         for (FlagId child : childFlags) {

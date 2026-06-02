@@ -5,6 +5,7 @@ import fr.euphyllia.skyllia.api.SkylliaAPI;
 import fr.euphyllia.skyllia.api.SkylliaImplementation;
 import fr.euphyllia.skyllia.api.commands.SubCommandInterface;
 import fr.euphyllia.skyllia.api.configuration.IConfigRegistry;
+import fr.euphyllia.skyllia.api.configuration.WorldConfig;
 import fr.euphyllia.skyllia.api.database.IslandCustomDataQuery;
 import fr.euphyllia.skyllia.api.permissions.IslandFlagRegistry;
 import fr.euphyllia.skyllia.api.permissions.PermissionRegistry;
@@ -90,6 +91,11 @@ public final class APISkyllia implements SkylliaImplementation {
     @Override
     public @NotNull Boolean isWorldSkyblock(World world) {
         return WorldUtils.isWorldSkyblock(world.getName());
+    }
+
+    @Override
+    public List<WorldConfig> getRegisteredWorlds() {
+        return WorldUtils.getWorldConfigs();
     }
 
     /**

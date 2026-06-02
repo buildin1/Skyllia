@@ -10,6 +10,7 @@ import fr.euphyllia.skyllia.api.skyblock.Island;
 import fr.euphyllia.skyllia.listeners.ListenersUtils;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
+import org.bukkit.World;
 import org.bukkit.entity.EntityType;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -46,10 +47,11 @@ public class IslandMobSpawnBossFlag implements FlagModule {
     private void handleSpawn(EntityType type, Location location, Runnable cancel) {
         FlagId specific = flagByType.get(type);
         if (specific == null) return;
-        if (!SkylliaAPI.isWorldSkyblock(location.getWorld())) return;
+        World world = location.getWorld();
+        if (!SkylliaAPI.isWorldSkyblock(world)) return;
         Island island = SkylliaAPI.getIslandByChunk(location.getBlockX() >> 4, location.getBlockZ() >> 4);
         if (island == null) return;
-        if (!SkylliaAPI.getPermissionsManager().hasFlag(island, specific, ALLOW_SPAWN_ALL_BOSS)) {
+        if (!SkylliaAPI.getPermissionsManager().hasFlag(island, specific, ALLOW_SPAWN_ALL_BOSS, world.getName())) {
             cancel.run();
             return;
         }
