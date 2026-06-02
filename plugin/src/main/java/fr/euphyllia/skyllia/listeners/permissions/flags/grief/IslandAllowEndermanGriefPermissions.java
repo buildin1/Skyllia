@@ -24,14 +24,15 @@ public class IslandAllowEndermanGriefPermissions implements FlagModule {
         if (!(event.getEntity() instanceof Enderman)) return;
 
         final Location location = event.getBlock().getLocation();
-        if (!SkylliaAPI.isWorldSkyblock(location.getWorld())) return;
+        String worldName = location.getWorld().getName();
+        if (!SkylliaAPI.isWorldSkyblock(worldName)) return;
 
         final int chunkX = location.getBlockX() >> 4;
         final int chunkZ = location.getBlockZ() >> 4;
         final Island island = SkylliaAPI.getIslandByChunk(chunkX, chunkZ);
         if (island == null) return;
 
-        if (!SkylliaAPI.getPermissionsManager().hasFlag(island, ISLAND_ALLOW_ENDERMAN_GRIEF, ISLAND_ALLOW_MOB_GRIEF)) {
+        if (!SkylliaAPI.getPermissionsManager().hasFlag(island, ISLAND_ALLOW_ENDERMAN_GRIEF, ISLAND_ALLOW_MOB_GRIEF, worldName)) {
             event.setCancelled(true);
             return;
         }

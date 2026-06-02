@@ -20,14 +20,15 @@ public class IslandAllowFluidsPermissions implements FlagModule {
     @EventHandler(ignoreCancelled = true)
     public void onFromTo(final BlockFromToEvent event) {
         final Location to = event.getToBlock().getLocation();
-        if (!SkylliaAPI.isWorldSkyblock(to.getWorld())) return;
+        String worldName = to.getWorld().getName();
+        if (!SkylliaAPI.isWorldSkyblock(worldName)) return;
 
         final int chunkX = to.getBlockX() >> 4;
         final int chunkZ = to.getBlockZ() >> 4;
         final Island island = SkylliaAPI.getIslandByChunk(chunkX, chunkZ);
         if (island == null) return;
 
-        if (!SkylliaAPI.getPermissionsManager().hasFlag(island, ISLAND_ALLOW_FLUIDS)) {
+        if (!SkylliaAPI.getPermissionsManager().hasFlag(island, ISLAND_ALLOW_FLUIDS, worldName)) {
             event.setCancelled(true);
             return;
         }

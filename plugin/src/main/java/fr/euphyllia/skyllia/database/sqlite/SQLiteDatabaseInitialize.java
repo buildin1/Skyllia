@@ -91,9 +91,11 @@ public class SQLiteDatabaseInitialize extends DatabaseInitializeQuery {
 
     private static final String CREATE_ISLANDS_FLAGS_TABLE = """
             CREATE TABLE IF NOT EXISTS islands_flags (
-                  island_id TEXT NOT NULL,
-                  words BLOB NOT NULL,
-                  PRIMARY KEY (island_id)
+                island_id  TEXT NOT NULL,
+                world_name TEXT NOT NULL,
+                words      BLOB NOT NULL,
+                PRIMARY KEY (island_id, world_name),
+                FOREIGN KEY (island_id) REFERENCES islands(island_id) ON DELETE CASCADE
             );
             """;
 
@@ -186,6 +188,9 @@ public class SQLiteDatabaseInitialize extends DatabaseInitializeQuery {
         if (!hasColumn("islands", "locked")) {
             exec("ALTER TABLE islands ADD COLUMN locked INTEGER DEFAULT 0;");
         }
+        if (!hasColumn("islands_flags", "world_name")) {
+            migrateV4ToV5();
+        }
     }
 
     private boolean hasColumn(String table, String column) {
@@ -236,5 +241,30 @@ public class SQLiteDatabaseInitialize extends DatabaseInitializeQuery {
 
     private void exec(String sql) {
         SQLExecute.update(databaseLoader, sql, null);
+    }
+
+    private void migrateV4ToV5() {
+        exec("""
+                CREATE TABLE IF NOT EXISTS islands_flags_new (
+                    island_id  TEXT NOT NULL,
+                    world_name TEXT NOT NULL,
+                    words      BLOB NOT NULL,
+                    PRIMARY KEY (island_id, world_name),
+                    FOREIGN KEY (island_id) REFERENCES islands(island_id) ON DELETE CASCADE
+                );
+                """);
+
+        String firstWorld = SkylliaAPI.getRegisteredWorlds().isEmpty()
+                ? ""
+                : SkylliaAPI.getRegisteredWorlds().getFirst().getWorldName();
+
+        SQLExecute.update(databaseLoader,
+                "INSERT INTO islands_flags_new (island_id, world_name, words) SELECT island_id, ?, words FROM islands_flags;",
+                List.of(firstWorld));
+
+        exec("DROP TABLE islands_flags;");
+        exec("ALTER TABLE islands_flags_new RENAME TO islands_flags;");
+
+        logger.info("Migration V4 -> V5 applied: islands_flags now has per-world support.");
     }
 }

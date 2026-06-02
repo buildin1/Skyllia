@@ -46,10 +46,11 @@ public class IslandMobSpawnBossFlag implements FlagModule {
     private void handleSpawn(EntityType type, Location location, Runnable cancel) {
         FlagId specific = flagByType.get(type);
         if (specific == null) return;
-        if (!SkylliaAPI.isWorldSkyblock(location.getWorld())) return;
+        String worldName = location.getWorld().getName();
+        if (!SkylliaAPI.isWorldSkyblock(worldName)) return;
         Island island = SkylliaAPI.getIslandByChunk(location.getBlockX() >> 4, location.getBlockZ() >> 4);
         if (island == null) return;
-        if (!SkylliaAPI.getPermissionsManager().hasFlag(island, specific, ALLOW_SPAWN_ALL_BOSS)) {
+        if (!SkylliaAPI.getPermissionsManager().hasFlag(island, specific, ALLOW_SPAWN_ALL_BOSS, worldName)) {
             cancel.run();
             return;
         }

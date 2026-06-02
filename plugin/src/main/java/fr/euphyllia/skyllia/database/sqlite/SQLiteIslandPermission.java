@@ -40,13 +40,13 @@ public class SQLiteIslandPermission extends IslandPermissionQuery {
     private static final String SELECT_FLAGS = """
             SELECT words
             FROM islands_flags
-            WHERE island_id = ?;
+            WHERE island_id = ? AND world_name = ?;
             """;
 
     private static final String UPSERT_FLAGS = """
-            INSERT INTO islands_flags (island_id, words)
-            VALUES (?, ?)
-            ON CONFLICT(island_id)
+            INSERT INTO islands_flags (island_id, world_name, words)
+            VALUES (?, ?, ?)
+            ON CONFLICT(island_id, world_name)
             DO UPDATE SET words = excluded.words;
             """;
 
@@ -117,12 +117,12 @@ public class SQLiteIslandPermission extends IslandPermissionQuery {
     }
 
     @Override
-    public @Nullable IslandFlags loadIslandFlags(UUID islandId, IslandFlagRegistry registry) {
-        byte[] words = SQLExecute.queryMap(databaseLoader, SELECT_FLAGS, List.of(islandId.toString()), rs -> {
+    public @Nullable IslandFlags loadIslandFlags(UUID islandId, IslandFlagRegistry registry, String worldName) {
+        byte[] words = SQLExecute.queryMap(databaseLoader, SELECT_FLAGS, List.of(islandId.toString(), worldName), rs -> {
             try {
                 if (rs.next()) return rs.getBytes("words");
             } catch (SQLException e) {
-                log.error("SQL error while loading flags for island {}", islandId, e);
+                log.error("SQL error while loading flags for island {} world {}", islandId, worldName, e);
             }
             return null;
         });
@@ -136,9 +136,9 @@ public class SQLiteIslandPermission extends IslandPermissionQuery {
     }
 
     @Override
-    public boolean saveIslandFlags(UUID islandId, byte[] wordsBlob) {
+    public boolean saveIslandFlags(UUID islandId, byte[] wordsBlob, String worldName) {
         int affected = SQLExecute.update(databaseLoader, UPSERT_FLAGS,
-                List.of(islandId.toString(), wordsBlob));
+                List.of(islandId.toString(), worldName, wordsBlob));
         return affected != 0;
     }
 

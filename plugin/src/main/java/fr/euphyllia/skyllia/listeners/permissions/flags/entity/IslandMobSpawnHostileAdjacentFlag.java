@@ -47,10 +47,11 @@ public class IslandMobSpawnHostileAdjacentFlag implements FlagModule {
         if (flagByType == null) return;
         FlagId specific = flagByType.get(type);
         if (specific == null) return;
-        if (!SkylliaAPI.isWorldSkyblock(location.getWorld())) return;
+        String worldName = location.getWorld().getName();
+        if (!SkylliaAPI.isWorldSkyblock(worldName)) return;
         Island island = SkylliaAPI.getIslandByChunk(location.getBlockX() >> 4, location.getBlockZ() >> 4);
         if (island == null) return;
-        if (!SkylliaAPI.getPermissionsManager().hasFlag(island, specific, ALLOW_SPAWN_ALL_HOSTILE_ADJACENT)) {
+        if (!SkylliaAPI.getPermissionsManager().hasFlag(island, specific, ALLOW_SPAWN_ALL_HOSTILE_ADJACENT, worldName)) {
             cancel.run();
             return;
         }

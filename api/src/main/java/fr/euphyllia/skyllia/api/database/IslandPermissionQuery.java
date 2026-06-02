@@ -1,5 +1,7 @@
 package fr.euphyllia.skyllia.api.database;
 
+import fr.euphyllia.skyllia.api.SkylliaAPI;
+import fr.euphyllia.skyllia.api.configuration.WorldConfig;
 import fr.euphyllia.skyllia.api.permissions.*;
 import fr.euphyllia.skyllia.api.skyblock.model.RoleType;
 
@@ -13,30 +15,56 @@ public abstract class IslandPermissionQuery {
      * Load the island-wide flags for a given island.
      * Returns {@code null} if no flags are stored yet (caller will use an empty {@link IslandFlags}).
      */
-    public abstract IslandFlags loadIslandFlags(UUID islandId, IslandFlagRegistry registry);
+    @Deprecated(forRemoval = true, since = "3.x")
+    public IslandFlags loadIslandFlags(UUID islandId, IslandFlagRegistry registry) {
+        return this.loadIslandFlags(islandId, registry, SkylliaAPI.getRegisteredWorlds().getFirst().getWorldName());
+    }
+
+    ;
+
+    public abstract IslandFlags loadIslandFlags(UUID islandId, IslandFlagRegistry registry, String worldName);
 
     /**
      * Persist the full flag bitset for an island.
      */
-    public abstract boolean saveIslandFlags(UUID islandId, byte[] wordsBlob);
+    @Deprecated(forRemoval = true, since = "3.x")
+    public boolean saveIslandFlags(UUID islandId, byte[] wordsBlob) {
+        for (String world : SkylliaAPI.getRegisteredWorlds().stream().map(WorldConfig::getWorldName).toList()) {
+            if (!saveIslandFlags(islandId, wordsBlob, world)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public abstract boolean saveIslandFlags(UUID islandId, byte[] wordsBlob, String worldName);
 
     /**
      * Convenience: flip a single flag and persist it.
      */
     public final boolean setFlag(UUID islandId, IslandFlagRegistry registry, FlagId id, boolean value) {
-        IslandFlags flags = loadIslandFlags(islandId, registry);
+        for (String world : SkylliaAPI.getRegisteredWorlds().stream().map(WorldConfig::getWorldName).toList()) {
+            if (!setFlag(islandId, registry, id, world, value)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public final boolean setFlag(UUID islandId, IslandFlagRegistry registry, FlagId id, String worldName, boolean value) {
+        IslandFlags flags = loadIslandFlags(islandId, registry, worldName);
         if (flags == null) flags = new IslandFlags(registry);
 
         flags.set(registry, id, value);
         byte[] blob = PermissionSetCodec.encodeLongs(flags.snapshotWords());
-        return saveIslandFlags(islandId, blob);
+        return saveIslandFlags(islandId, blob, worldName);
     }
 
     /**
      * DB write only (impl can override if it wants, but default is fine)
      */
     public boolean set(UUID islandId, RoleType role, PermissionId id, boolean value) {
-        return set(islandId, PermissionRegistryHolder.registry(), role, id, value);
+        return set(islandId, SkylliaAPI.getPermissionRegistry(), role, id, value);
     }
 
     public abstract boolean saveRole(UUID islandId, RoleType role, byte[] wordsBlob);
@@ -57,21 +85,5 @@ public abstract class IslandPermissionQuery {
         set.set(id, value);
         byte[] blob = PermissionSetCodec.encodeLongs(set.snapshotWords());
         return saveRole(islandId, role, blob);
-    }
-
-    private static final class PermissionRegistryHolder {
-        private static PermissionRegistry registry;
-
-        private PermissionRegistryHolder() {
-        }
-
-        static PermissionRegistry registry() {
-            if (registry == null) throw new IllegalStateException("PermissionRegistry not set");
-            return registry;
-        }
-
-        static void set(PermissionRegistry r) {
-            registry = r;
-        }
     }
 }

@@ -2,6 +2,7 @@ package fr.euphyllia.skyllia.api;
 
 import fr.euphyllia.skyllia.api.commands.SubCommandInterface;
 import fr.euphyllia.skyllia.api.configuration.IConfigRegistry;
+import fr.euphyllia.skyllia.api.configuration.WorldConfig;
 import fr.euphyllia.skyllia.api.database.IslandCustomDataQuery;
 import fr.euphyllia.skyllia.api.permissions.IslandFlagRegistry;
 import fr.euphyllia.skyllia.api.permissions.PermissionRegistry;
@@ -104,6 +105,22 @@ public interface SkylliaImplementation {
      * @return True if the world is a Skyblock world, false otherwise.
      */
     @NotNull Boolean isWorldSkyblock(World world);
+
+
+    /**
+     * Retrieves the list of all Skyblock world configurations registered in Skyllia.
+     * <p>
+     * A world is considered registered if it has been declared in Skyllia's
+     * configuration. This does not guarantee that the world is currently
+     * loaded or available in the server.
+     * <p>
+     * To check whether a specific world is a registered Skyblock world,
+     * use {@link #isWorldSkyblock(String)} or {@link #isWorldSkyblock(World)}.
+     *
+     * @return An immutable list of {@link WorldConfig} representing all registered
+     * Skyblock worlds. Returns an empty list if no worlds are configured.
+     */
+    List<WorldConfig> getRegisteredWorlds();
 
     /**
      * Gets the current location TPS.

@@ -1,5 +1,7 @@
 package fr.euphyllia.skyllia.api.skyblock;
 
+import fr.euphyllia.skyllia.api.SkylliaAPI;
+import fr.euphyllia.skyllia.api.configuration.WorldConfig;
 import fr.euphyllia.skyllia.api.exceptions.MaxIslandSizeExceedException;
 import fr.euphyllia.skyllia.api.permissions.CompiledPermissions;
 import fr.euphyllia.skyllia.api.permissions.IslandFlags;
@@ -195,9 +197,44 @@ public abstract class Island {
 
     public abstract void invalidateCompiledPermissions();
 
-    public abstract IslandFlags getIslandFlags();
+    /**
+     * Returns the compiled flag set for this island in the specified world.
+     * <p>
+     * If no flags are stored yet for that world, an empty {@link IslandFlags} is returned.
+     * </p>
+     *
+     * @param worldName The name of the world.
+     * @return The {@link IslandFlags} for the given world, never {@code null}.
+     */
+    public abstract IslandFlags getIslandFlags(String worldName);
 
-    public abstract void invalidateIslandFlags();
+    /**
+     * Invalidates the cached flags for the specified world,
+     * forcing a reload from the database on the next call to {@link #getIslandFlags(String)}.
+     *
+     * @param worldName The name of the world.
+     */
+    public abstract void invalidateIslandFlags(String worldName);
+
+    /**
+     * @deprecated Use {@link #getIslandFlags(String)} instead.
+     */
+    @Deprecated(forRemoval = true, since = "3.x")
+    public IslandFlags getIslandFlags() {
+        List<WorldConfig> worlds = SkylliaAPI.getRegisteredWorlds();
+        if (worlds.isEmpty()) return new IslandFlags(SkylliaAPI.getFlagRegistry());
+        return getIslandFlags(worlds.getFirst().getWorldName());
+    }
+
+    /**
+     * @deprecated Use {@link #invalidateIslandFlags(String)} instead.
+     */
+    @Deprecated(forRemoval = true, since = "3.x")
+    public void invalidateIslandFlags() {
+        for (WorldConfig w : SkylliaAPI.getRegisteredWorlds()) {
+            invalidateIslandFlags(w.getWorldName());
+        }
+    }
 
     /**
      * Gets the center {@link Location} of the island in the specified world.
