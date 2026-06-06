@@ -1008,3 +1008,20 @@ description = "Contrôle l'apparition des Illusionnistes."
 permission-has = "%player% a la permission : %permission%"
 permission-missing = "%player% n'a pas la permission : %permission%"
 
+[addons.backup.player]
+player-only = "<red>Cette commande ne peut être utilisée que par un joueur."
+disabled = "<red>Les backups joueurs sont désactivés sur ce serveur."
+cooldown = "<red>Veuillez attendre <yellow>%minutes%m %seconds%s</yellow> avant de demander un nouveau backup."
+started = "<green>Backup de votre île en cours, veuillez patienter..."
+success = "<green>Backup créé : <white>%file%"
+uploading = "<gray>Envoi du backup vers le serveur distant..."
+failed = "<red>Le backup a échoué. Veuillez contacter un administrateur."
+no-permission = "<red>Vous n'avez pas la permission de faire un backup de votre île."
+
+[addons.backup.admin]
+usage = "<yellow>Usage : /isadmin backup <joueur|all>"
+started = "<green>Backup de l'île de <white>%player%</white> en cours..."
+success = "<green>Backup créé pour <white>%player%</white> : <white>%file%"
+failed = "<red>Le backup de l'île de <white>%player%</white> a échoué."
+all-started = "<green>Backup de TOUTES les îles en cours, cela peut prendre du temps..."
+all-done = "<green>Terminé : <white>%count%</white> îles sauvegardées."
