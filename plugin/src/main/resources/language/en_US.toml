@@ -1001,3 +1001,21 @@ description = "Controls Illusioner spawning."
 [debug]
 permission-has = "%player% HAVE %permission% permission"
 permission-missing = "%player% DOESN'T HAVE %permission% permission"
+
+[addons.backup.player]
+player-only = "<red>This command can only be used by a player."
+disabled = "<red>Player backups are disabled on this server."
+cooldown = "<red>Please wait <yellow>%minutes%m %seconds%s</yellow> before requesting another backup."
+started = "<green>Starting backup of your island, please wait..."
+success = "<green>Backup created: <white>%file%"
+uploading = "<gray>Uploading backup to remote server..."
+failed = "<red>Backup failed. Please contact an administrator."
+no-permission = "<red>You do not have permission to backup your island."
+
+[addons.backup.admin]
+usage = "<yellow>Usage: /isadmin backup <player|all>"
+started = "<green>Starting backup for <white>%player%</white>'s island..."
+success = "<green>Backup created for <white>%player%</white>: <white>%file%"
+failed = "<red>Backup failed for <white>%player%</white>'s island."
+all-started = "<green>Starting backup of ALL islands, this may take a while..."
+all-done = "<green>Done: <white>%count%</white> islands backed up."

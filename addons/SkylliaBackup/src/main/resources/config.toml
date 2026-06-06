@@ -1,0 +1,22 @@
+[backup]
+# Directory where backup ZIPs are stored (absolute path or relative to the server root)
+# Example for a NAS mount: "/mnt/nas/minecraft-backups"
+folder = "plugins/SkylliaBackup/backups"
+
+# Maximum number of backups kept per island (0 = unlimited)
+max-per-island = 5
+
+# Allow players to create a backup of their own island via /is backup
+allow-player-backup = true
+
+# Cooldown in seconds between two player-triggered backups (0 = disabled)
+# 3600 = 1 hour
+player-cooldown-seconds = 3600
+
+[upload]
+# HTTP endpoint to upload backup ZIPs to (leave empty to disable)
+# Example: "http://my-server:3000/upload"
+url = ""
+
+# Bearer token sent in the Authorization header (leave empty if none)
+token = ""
