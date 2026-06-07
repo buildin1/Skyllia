@@ -56,15 +56,17 @@ public class BankAdminCommand implements SubCommandInterface {
         UUID islandId = island.getId();
 
         BankAccount bankAccount = SkylliaBank.getBankManager().getBankAccount(islandId);
+        String name = offlinePlayer.getName();
 
         if (bankAccount != null) {
+            String balance = economy.format(bankAccount.balance());
             ConfigLoader.language.sendMessage(sender, "addons.bank.admin.island-balance", Map.of(
-                    "{player_name}", offlinePlayer.getName(),
-                    "{amount}", economy.format(bankAccount.balance())
+                    "{player_name}", name, "%player_name%", name,
+                    "{amount}", balance, "%amount%", balance
             ));
         } else {
             ConfigLoader.language.sendMessage(sender, "addons.bank.admin.island-error-balance", Map.of(
-                    "{player_name}", offlinePlayer.getName()
+                    "{player_name}", name, "%player_name%", name
             ));
         }
     }
@@ -106,14 +108,17 @@ public class BankAdminCommand implements SubCommandInterface {
         UUID islandId = island.getId();
         boolean success = SkylliaBank.getBankManager().deposit(islandId, amount);
 
+        String name = offlinePlayer.getName();
         if (success) {
             ConfigLoader.language.sendMessage(sender, "addons.bank.admin.deposit-success", Map.of(
                     "%amount%", economy.format(amount),
-                    "{player_name}", offlinePlayer.getName()
+                    "{player_name}", name,
+                    "%player_name%", name
             ));
         } else {
             ConfigLoader.language.sendMessage(sender, "addons.bank.admin.deposit-error", Map.of(
-                    "{player_name}", offlinePlayer.getName()
+                    "{player_name}", name,
+                    "%player_name%", name
             ));
         }
     }
@@ -155,14 +160,17 @@ public class BankAdminCommand implements SubCommandInterface {
         UUID islandId = island.getId();
         boolean success = SkylliaBank.getBankManager().withdraw(islandId, amount);
 
+        String name = offlinePlayer.getName();
         if (success) {
             ConfigLoader.language.sendMessage(sender, "addons.bank.admin.success-withdraw", Map.of(
                     "%amount%", economy.format(amount),
-                    "{player_name}", offlinePlayer.getName()
+                    "{player_name}", name,
+                    "%player_name%", name
             ));
         } else {
             ConfigLoader.language.sendMessage(sender, "addons.bank.admin.error-withdraw", Map.of(
-                    "{player_name}", offlinePlayer.getName()
+                    "{player_name}", name,
+                    "%player_name%", name
             ));
         }
     }
@@ -203,14 +211,17 @@ public class BankAdminCommand implements SubCommandInterface {
         UUID islandId = island.getId();
         boolean success = SkylliaBank.getBankManager().setBalance(islandId, amount);
 
+        String name = offlinePlayer.getName();
         if (success) {
             ConfigLoader.language.sendMessage(sender, "addons.bank.admin.set-balance-success", Map.of(
-                    "{player_name}", offlinePlayer.getName(),
+                    "{player_name}", name,
+                    "%player_name%", name,
                     "%amount%", economy.format(amount)
             ));
         } else {
             ConfigLoader.language.sendMessage(sender, "addons.bank.admin.set-balance-error", Map.of(
-                    "{player_name}", offlinePlayer.getName()
+                    "{player_name}", name,
+                    "%player_name%", name
             ));
         }
     }
@@ -252,11 +263,14 @@ public class BankAdminCommand implements SubCommandInterface {
         if (args.length == 2) {
             String command = args[0].toLowerCase();
             String partial = args[1].trim().toLowerCase();
-            List<String> playerNames = new ArrayList<>(Bukkit.getOnlinePlayers()).stream()
-                    .map(Player::getName)
-                    .filter(name -> name.toLowerCase().startsWith(partial))
-                    .sorted()
-                    .toList();
+            List<String> playerNames = new ArrayList<>();
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                String name = player.getName();
+                if (name.toLowerCase().startsWith(partial)) {
+                    playerNames.add(name);
+                }
+            }
+            playerNames.sort(null);
             return switch (command) {
                 case "balance", "setbalance", "deposit", "withdraw" -> playerNames;
                 default -> List.of();
@@ -268,10 +282,13 @@ public class BankAdminCommand implements SubCommandInterface {
             String partial = args[2].trim().toLowerCase();
             if (List.of("deposit", "withdraw", "setbalance").contains(command)) {
                 List<String> amounts = List.of("10", "50", "100", "500", "1000");
-                return amounts.stream()
-                        .filter(amount -> amount.startsWith(partial))
-                        .sorted()
-                        .collect(Collectors.toList());
+                List<String> list = new ArrayList<>();
+                for (String amount : amounts) {
+                    if (amount.startsWith(partial)) {
+                        list.add(amount);
+                    }
+                }
+                return list;
             }
         }
 

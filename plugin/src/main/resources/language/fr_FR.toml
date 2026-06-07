@@ -333,17 +333,17 @@ invalid-amount = "<red>Montant invalide."
 invalid-amount-positive = "<red>Le montant doit être positif."
 invalid-amount-negative = "<red>Le montant doit être négatif."
 
-island-balance = "<green>Solde de l'île de {player_name} : %amount%"
-island-error-balance = "<red>Impossible de récupérer le solde de l'île de {player_name}."
+island-balance = "<green>Solde de l'île de %player_name% : %amount%"
+island-error-balance = "<red>Impossible de récupérer le solde de l'île de %player_name%."
 
-deposit-success = "<green>Déposé %amount% sur le solde de l'ile de {player_name}"
-deposit-error = "<red>Une erreur s'est produite lors du dépôt sur le solde de l'ile de {player_name}."
+deposit-success = "<green>Déposé %amount% sur le solde de l'ile de %player_name%"
+deposit-error = "<red>Une erreur s'est produite lors du dépôt sur le solde de l'ile de %player_name%."
 
-success-withdraw = "<green>Retiré %amount% du solde de l'ile de {player_name}"
-error-withdraw = "<red>Une erreur s'est produite lors du retrait du solde de l'ile de {player_name}."
+success-withdraw = "<green>Retiré %amount% du solde de l'ile de %player_name%"
+error-withdraw = "<red>Une erreur s'est produite lors du retrait du solde de l'ile de %player_name%."
 
-set-balance-success = "<green>Le solde de l'île de {player_name} a été défini sur %amount%"
-set-balance-error = "<red>Une erreur s'est produite lors de la définition du solde de l'île de {player_name}."
+set-balance-success = "<green>Le solde de l'île de %player_name% a été défini sur %amount%"
+set-balance-error = "<red>Une erreur s'est produite lors de la définition du solde de l'île de %player_name%."
 
 [addons.ore.display]
 title = "<gold>=== Générateur ===</gold>"
