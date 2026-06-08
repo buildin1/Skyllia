@@ -198,6 +198,9 @@ banned = "Vous êtes banni de l'île."
 success = "Vous avez été téléporté sur l'île de %player%."
 no-island-location = "Aucune île n'a été trouvée à cet endroit."
 
+[island.visit.set]
+success = "Le point de visite de votre île a été défini à votre position actuelle."
+
 [island.generic]
 unexpected-error = "Une erreur est survenue. Veuillez contacter un administrateur."
 location-unsafe = "La position n'est pas sécurisée ! Téléportation impossible."
@@ -503,6 +506,10 @@ description = "Autorise à modifier le biome de l'île ou d'un chunk."
 [island.permission.command.set_home]
 name = "Définir le home"
 description = "Autorise à déplacer le point de retour principal de l'île."
+
+[island.permission.command.set_visit]
+name = "Définir le point de visite"
+description = "Autorise à définir le point d'arrivée des visiteurs de l'île."
 
 [island.permission.command.set_warp]
 name = "Créer un warp"

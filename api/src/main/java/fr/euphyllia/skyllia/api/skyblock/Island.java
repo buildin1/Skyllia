@@ -78,6 +78,36 @@ public abstract class Island {
     public abstract @Nullable WarpIsland getWarpByName(String name);
 
     /**
+     * Gets the visit warp of the island.
+     * <p>
+     * Returns the warp named {@code "visit"} if it has been explicitly set via
+     * {@code /is setvisit}, or falls back to the {@code "home"} warp if no visit
+     * point has been defined. Returns {@code null} if neither exists.
+     * </p>
+     *
+     * @return The visit {@link WarpIsland}, or {@code null} if none is set.
+     */
+    public @Nullable WarpIsland getVisit() {
+        WarpIsland visit = getWarpByName("visit");
+        if (visit != null) return visit;
+        return getWarpByName("home");
+    }
+
+    /**
+     * Sets the visit warp of the island to the given location.
+     * <p>
+     * This is a convenience method equivalent to calling
+     * {@code addWarps("visit", location, false)}.
+     * </p>
+     *
+     * @param location The {@link Location} to use as the visit point.
+     * @return {@code true} if successfully saved, {@code false} otherwise.
+     */
+    public boolean setVisit(Location location) {
+        return addWarps("visit", location, false);
+    }
+
+    /**
      * Adds a warp to the island.
      *
      * @param name        The name of the warp.
