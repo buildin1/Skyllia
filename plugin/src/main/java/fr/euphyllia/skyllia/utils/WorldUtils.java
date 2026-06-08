@@ -81,7 +81,8 @@ public final class WorldUtils {
         return switch (block.getType()) {
             case LAVA, FIRE, SOUL_FIRE, MAGMA_BLOCK,
                  SWEET_BERRY_BUSH, WITHER_ROSE,
-                 CACTUS, POWDER_SNOW -> true;
+                 CACTUS, POWDER_SNOW,
+                 NETHER_PORTAL, END_PORTAL, END_GATEWAY -> true;
             default -> false;
         };
     }
