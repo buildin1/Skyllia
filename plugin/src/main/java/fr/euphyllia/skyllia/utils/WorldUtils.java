@@ -56,14 +56,13 @@ public final class WorldUtils {
     public static boolean isSafeLocation(Location location) {
         Block feet = location.getBlock();
         Block head = feet.getRelative(BlockFace.UP);
-        Block aboveHead = head.getRelative(BlockFace.UP);
         Block ground = feet.getRelative(BlockFace.DOWN);
 
         if (!feet.isPassable() || !head.isPassable()) {
             return false;
         }
 
-        if (!aboveHead.isPassable()) {
+        if (isDangerous(feet) || isDangerous(head)) {
             return false;
         }
 
@@ -71,6 +70,19 @@ public final class WorldUtils {
             return false;
         }
 
+        if (isDangerous(ground)) {
+            return false;
+        }
+
         return true;
+    }
+
+    private static boolean isDangerous(Block block) {
+        return switch (block.getType()) {
+            case LAVA, FIRE, SOUL_FIRE, MAGMA_BLOCK,
+                 SWEET_BERRY_BUSH, WITHER_ROSE,
+                 CACTUS, POWDER_SNOW -> true;
+            default -> false;
+        };
     }
 }
