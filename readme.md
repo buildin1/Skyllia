@@ -49,7 +49,7 @@ delivers exceptional performance even with hundreds of simultaneous players.
 - **6 predefined roles** — Owner, Co-Owner, Moderator, Member, Visitor, Ban
 - **50+ granular permissions** — Full control per role
 - **Temporary trust** — Configurable guest access
-- **Modular system** — Create your own roles
+- **Modular system** — Create your own permission
 
 ### 🎯 Advanced Features
 
@@ -64,7 +64,7 @@ delivers exceptional performance even with hundreds of simultaneous players.
 - **PlaceholderAPI** — Variables for scoreboard, tab, etc.
 - **Vault** — Economy support (via SkylliaBank)
 - **WorldEdit/FAWE** — High-performance schematics
-- **Insights** — Block limits (via InsightsSkyllia)
+- **Insights** — Block limits (via SkylliaInsights)
 
 ## 🎮 Official Addons
 
@@ -76,7 +76,7 @@ Extend Skyllia with 7 free official addons:
 | **SkylliaOre**         | Configurable automatic ore generator                              |
 | **SkylliaChallenge**   | Daily/weekly challenges with rewards                              |
 | **SkylliaChat**        | Per-island chat with multiple channels                            |
-| **InsightsSkyllia**    | Block and entity limits per island                                |
+| **SkylliaInsights**    | Block and entity limits per island                                |
 | **SkylliaChest**       | Share a chest across your entire island (beta)                    |
 | **SkylliaAcidRain**    | The water is becoming acidic!                                     |
 | **SkylliaIslandValue** | Island value depends on the number of blocks placed on the island |
@@ -84,7 +84,7 @@ Extend Skyllia with 7 free official addons:
 ## 📋 Requirements
 
 - **Server**: Folia 1.20.6+ or Paper 1.20.6+
-- **Java**: 25 or higher (since 3.0-42)
+- **Java**: 21
 - **RAM**: 4GB minimum, 8GB+ recommended
 - **Database** (optional): MariaDB 10.5+ or PostgreSQL 12+ (prefer PostgreSQL for large servers)
 
