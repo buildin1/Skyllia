@@ -1026,3 +1026,46 @@ success = "<green>Backup created for <white>%player%</white>: <white>%file%"
 failed = "<red>Backup failed for <white>%player%</white>'s island."
 all-started = "<green>Starting backup of ALL islands, this may take a while..."
 all-done = "<green>Done: <white>%count%</white> islands backed up."
+
+[addons.skylliaextra.player.setdescription]
+player-only = "<red>This command can only be executed by a player."
+no-island = "<red>You don't have an island!"
+no-permission = "<red>You do not have permission to use this command."
+permission-denied = "<red>Your island role does not allow you to change the description."
+usage = "<yellow>Usage: <white>/is setdescription <description> <yellow>| Use <white>reset <yellow>to clear."
+reset = "<green>Island description has been reset."
+success = "<green>Island description set to: <white>%description%"
+failed = "<red>Failed to save the island description. Please try again."
+
+[addons.skylliaextra.player.setname]
+player-only = "<red>This command can only be executed by a player."
+no-island = "<red>You don't have an island!"
+no-permission = "<red>You do not have permission to use this command."
+permission-denied = "<red>Your island role does not allow you to change the name."
+usage = "<yellow>Usage: <white>/is setname <name> <yellow>| Use <white>reset <yellow>to clear."
+reset = "<green>Island name has been reset."
+success = "<green>Island name set to: <white>%name%"
+failed = "<red>Failed to save the island name. Please try again."
+
+[addons.skylliaextra.admin.setname]
+no-permission = "<red>You do not have permission to use this command."
+usage = "<yellow>Usage: <white>/isadmin setname <player> <name> <yellow>| Use <white>reset <yellow>to clear."
+player-not-found = "<red>Player <white>%player%</white> not found."
+no-island = "<red>This player does not have an island."
+reset = "<green>Island name for <white>%player%</white> has been reset."
+success = "<green>Island name for <white>%player%</white> set to: <white>%name%"
+failed = "<red>Failed to save the island name."
+
+[addons.skylliaextra.admin.setdescription]
+no-permission = "<red>You do not have permission to use this command."
+usage = "<yellow>Usage: <white>/isadmin setdescription <player> <description> <yellow>| Use <white>reset <yellow>to clear."
+player-not-found = "<red>Player <white>%player%</white> not found."
+no-island = "<red>This player does not have an island."
+reset = "<green>Island description for <white>%player%</white> has been reset."
+success = "<green>Island description for <white>%player%</white> set to: <white>%description%"
+failed = "<red>Failed to save the island description."
+
+[addons.skylliaextra.display]
+title = "<gray>--- Island Extra Info ---</gray>"
+name = "<aqua>Name:</aqua> <white>%name%</white>"
+description = "<aqua>Description:</aqua> <white>%description%</white>"

@@ -1032,3 +1032,46 @@ success = "<green>Backup créé pour <white>%player%</white> : <white>%file%"
 failed = "<red>Le backup de l'île de <white>%player%</white> a échoué."
 all-started = "<green>Backup de TOUTES les îles en cours, cela peut prendre du temps..."
 all-done = "<green>Terminé : <white>%count%</white> îles sauvegardées."
+
+[addons.skylliaextra.player.setdescription]
+player-only = "<red>Cette commande ne peut être exécutée que par un joueur."
+no-island = "<red>Vous n'avez pas d'île !"
+no-permission = "<red>Vous n'avez pas la permission d'utiliser cette commande."
+permission-denied = "<red>Votre rôle sur l'île ne vous permet pas de modifier la description."
+usage = "<yellow>Utilisation : <white>/is setdescription <description> <yellow>| Utilisez <white>reset <yellow>pour effacer."
+reset = "<green>La description de l'île a été réinitialisée."
+success = "<green>Description de l'île définie : <white>%description%"
+failed = "<red>Impossible de sauvegarder la description de l'île. Veuillez réessayer."
+
+[addons.skylliaextra.player.setname]
+player-only = "<red>Cette commande ne peut être exécutée que par un joueur."
+no-island = "<red>Vous n'avez pas d'île !"
+no-permission = "<red>Vous n'avez pas la permission d'utiliser cette commande."
+permission-denied = "<red>Votre rôle sur l'île ne vous permet pas de modifier le nom."
+usage = "<yellow>Utilisation : <white>/is setname <nom> <yellow>| Utilisez <white>reset <yellow>pour effacer."
+reset = "<green>Le nom de l'île a été réinitialisé."
+success = "<green>Nom de l'île défini : <white>%name%"
+failed = "<red>Impossible de sauvegarder le nom de l'île. Veuillez réessayer."
+
+[addons.skylliaextra.admin.setdescription]
+no-permission = "<red>Vous n'avez pas la permission d'utiliser cette commande."
+usage = "<yellow>Utilisation : <white>/isadmin setdescription <joueur> <description> <yellow>| Utilisez <white>reset <yellow>pour effacer."
+player-not-found = "<red>Joueur <white>%player%</white> introuvable."
+no-island = "<red>Ce joueur n'a pas d'île."
+reset = "<green>La description de l'île de <white>%player%</white> a été réinitialisée."
+success = "<green>Description de l'île de <white>%player%</white> définie : <white>%description%"
+failed = "<red>Impossible de sauvegarder la description de l'île."
+
+[addons.skylliaextra.admin.setname]
+no-permission = "<red>Vous n'avez pas la permission d'utiliser cette commande."
+usage = "<yellow>Utilisation : <white>/isadmin setname <joueur> <nom> <yellow>| Utilisez <white>reset <yellow>pour effacer."
+player-not-found = "<red>Joueur <white>%player%</white> introuvable."
+no-island = "<red>Ce joueur n'a pas d'île."
+reset = "<green>Le nom de l'île de <white>%player%</white> a été réinitialisé."
+success = "<green>Nom de l'île de <white>%player%</white> défini : <white>%name%"
+failed = "<red>Impossible de sauvegarder le nom de l'île."
+
+[addons.skylliaextra.display]
+title = "<gray>--- Extra information d'île ---</gray>"
+name = "<aqua>Nom :</aqua> <white>%name%</white>"
+description = "<aqua>Description :</aqua> <white>%description%</white>"

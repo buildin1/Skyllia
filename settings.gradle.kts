@@ -23,6 +23,7 @@ include("addons:SkylliaChest")
 include("addons:SkylliaAcidRain")
 include("addons:SkylliaIslandValue")
 include("addons:SkylliaBackup")
+include("addons:SkylliaExtra")
 // Hook
 include("hook:worldedit")
 include("hook:fastasyncworldedit")
