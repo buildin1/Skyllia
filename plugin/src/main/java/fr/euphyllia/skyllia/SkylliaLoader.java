@@ -19,29 +19,29 @@ public class SkylliaLoader implements PluginLoader {
         resolver.addRepository(new RemoteRepository.Builder("thenextlvl", "default", "https://repo.thenextlvl.net/releases").build());
 
         // Maven Repository Dependencies
-        resolver.addDependency(new Dependency(new DefaultArtifact("org.apache.logging.log4j:log4j-core:2.25.3"), null));
-        resolver.addDependency(new Dependency(new DefaultArtifact("org.apache.logging.log4j:log4j-api:2.25.3"), null));
-        resolver.addDependency(new Dependency(new DefaultArtifact("net.kyori:adventure-text-minimessage:4.26.1"), null));
-        resolver.addDependency(new Dependency(new DefaultArtifact("net.kyori:adventure-text-serializer-legacy:4.26.1"), null));
-        resolver.addDependency(new Dependency(new DefaultArtifact("com.electronwill.night-config:toml:3.8.3"), null));
+        resolver.addDependency(new Dependency(new DefaultArtifact("org.apache.logging.log4j:log4j-core:2.26.0"), null));
+        resolver.addDependency(new Dependency(new DefaultArtifact("org.apache.logging.log4j:log4j-api:2.26.0"), null));
+        resolver.addDependency(new Dependency(new DefaultArtifact("net.kyori:adventure-text-minimessage:5.1.1"), null));
+        resolver.addDependency(new Dependency(new DefaultArtifact("net.kyori:adventure-text-serializer-legacy:5.1.1"), null));
+        resolver.addDependency(new Dependency(new DefaultArtifact("com.electronwill.night-config:toml:3.9.0"), null));
 
         // HikariCP dependency
         resolver.addDependency(new Dependency(new DefaultArtifact("com.zaxxer:HikariCP:7.0.2"), null));
 
         // MariaDB dependency
-        resolver.addDependency(new Dependency(new DefaultArtifact("org.mariadb.jdbc:mariadb-java-client:3.5.7"), null));
+        resolver.addDependency(new Dependency(new DefaultArtifact("org.mariadb.jdbc:mariadb-java-client:3.5.8"), null));
 
         // SQLite dependency
-        resolver.addDependency(new Dependency(new DefaultArtifact("org.xerial:sqlite-jdbc:3.51.2.0"), null));
+        resolver.addDependency(new Dependency(new DefaultArtifact("org.xerial:sqlite-jdbc:3.53.2.0"), null));
 
         // PostgreSQL dependency
-        resolver.addDependency(new Dependency(new DefaultArtifact("org.postgresql:postgresql:42.7.10"), null));
+        resolver.addDependency(new Dependency(new DefaultArtifact("org.postgresql:postgresql:42.7.11"), null));
 
         // Mojang Repo
         resolver.addDependency(new Dependency(new DefaultArtifact("com.mojang:brigadier:1.0.18"), null));
 
         // thenextlvl Repo
-        resolver.addDependency(new Dependency(new DefaultArtifact("dev.faststats.metrics:bukkit:0.18.1"), null));
+        resolver.addDependency(new Dependency(new DefaultArtifact("dev.faststats.metrics:bukkit:0.25.1"), null));
 
         classpathBuilder.addLibrary(resolver);
     }

@@ -1,6 +1,6 @@
 name: SkylliaIslandLevel
 main: fr.euphyllia.skylliaislandlevel.SkylliaIslandLevel
-loader: fr.euphyllia.skylliaislandlevel.IslandLevelLoader
+loader: fr.euphyllia.skylliaislandlevel.SkylliaIslandLevelLoader
 version: ${version}
 api-version: 1.20.6
 folia-supported: true

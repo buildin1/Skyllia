@@ -177,7 +177,7 @@ public class AcidListener implements Listener {
                 Sound sound;
 
                 if (key != null) {
-                    sound = Bukkit.getUnsafe().get(RegistryKey.SOUND_EVENT, key);
+                    sound = Registry.SOUNDS.get(key);
                     if (sound != null) {
                         entity.getWorld().playSound(entity.getLocation(), sound, SoundCategory.HOSTILE, 0.6f, 0.8f);
                     }

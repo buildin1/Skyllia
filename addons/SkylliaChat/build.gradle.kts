@@ -5,7 +5,7 @@ plugins {
 group = "fr.euphyllia.skylliachat";
 
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:1.21.3-R0.1-SNAPSHOT")
+    compileOnly("io.papermc.paper:paper-api:1.20.6-R0.1-SNAPSHOT")
     compileOnly(project(":api"))
     compileOnly(project(":plugin"))
 }
