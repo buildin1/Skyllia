@@ -4,6 +4,8 @@ main: fr.euphyllia.skylliabackup.SkylliaBackup
 api-version: 1.20.6
 folia-supported: true
 description: "Island backup addon for Skyllia — creates .mca ZIPs and optionally uploads them."
+authors:
+  - Euphyllia
 
 dependencies:
   server:

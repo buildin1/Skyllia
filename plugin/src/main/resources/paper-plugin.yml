@@ -1,12 +1,13 @@
 name: Skyllia
 version: ${version}
 main: fr.euphyllia.skyllia.Skyllia
-api-version: 1.20.1
-author: Euphyllia
+api-version: 1.20.6
 description: "First Skyblock plugin on Folia"
 folia-supported: true
 canvas-supported: true
 loader: fr.euphyllia.skyllia.SkylliaLoader
+authors:
+  - Euphyllia
 
 dependencies:
   server:
