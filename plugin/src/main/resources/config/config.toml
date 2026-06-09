@@ -85,6 +85,12 @@ members = -1
 # Duration (in seconds) before cached island state expires (disabled, private, locked, max members, size). -1 = never expires, 0 = disabled.
 state = -1
 
+[settings.update-checker]
+# Enables automatic update checking from Modrinth.
+enabled = true
+# Interval between checks, in minutes. Default: 60 (every hour).
+interval-minutes = 60
+
 [permissions]
 # Enabling the owner check also allows you to verify if the OWNER has permission (useful if you want OWNERS to not have access to everything).
 check-owner = false

@@ -1069,3 +1069,7 @@ failed = "<red>Failed to save the island description."
 title = "<gray>--- Island Extra Info ---</gray>"
 name = "<aqua>Name:</aqua> <white>%name%</white>"
 description = "<aqua>Description:</aqua> <white>%description%</white>"
+
+[update-checker]
+update-available-one = "<gold>Skyllia is <red>1 version behind</red>! Latest: <green>%version%</green>. Download it here: <aqua><click:open_url:'%url%'>%url%</click></aqua>"
+update-available-many = "<gold>Skyllia is <red>%behind% versions behind</red>! Latest: <green>%version%</green>. Download it here: <aqua><click:open_url:'%url%'>%url%</click></aqua>"

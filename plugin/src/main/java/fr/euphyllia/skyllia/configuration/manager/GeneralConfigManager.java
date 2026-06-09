@@ -23,6 +23,8 @@ public class GeneralConfigManager implements IConfigurationProvider {
     private CacheTtlSettings cacheTtlSettings;
     private PermissionsSettings permissionsSettings;
 
+    private UpdateCheckerSettings updateCheckerSettings;
+
     public GeneralConfigManager(CommentedFileConfig config) {
         this.config = config;
         loadConfig();
@@ -82,6 +84,11 @@ public class GeneralConfigManager implements IConfigurationProvider {
         this.permissionsSettings = new PermissionsSettings(
                 getOrSetDefault("permissions.check-owner", false, Boolean.class),
                 getOrSetDefault("permissions.check-ban", false, Boolean.class)
+        );
+
+        this.updateCheckerSettings = new UpdateCheckerSettings(
+                getOrSetDefault("settings.update-checker.enabled",        true,  Boolean.class),
+                getOrSetDefault("settings.update-checker.interval-minutes", 60L, Long.class)
         );
 
         if (changed) {
@@ -151,6 +158,10 @@ public class GeneralConfigManager implements IConfigurationProvider {
         return permissionsSettings;
     }
 
+    public UpdateCheckerSettings getUpdateCheckerSettings() {
+        return updateCheckerSettings;
+    }
+
     public Location getSpawnLocation() {
         if (!spawnSettings.enabled()) return null;
         var world = Bukkit.getWorld(spawnSettings.worldName());
@@ -218,5 +229,9 @@ public class GeneralConfigManager implements IConfigurationProvider {
     }
 
     public record PermissionsSettings(boolean checkOwner, boolean checkBan) {
+    }
+
+    public record UpdateCheckerSettings(boolean enabled, long intervalMinutes) {
+
     }
 }

@@ -1075,3 +1075,7 @@ failed = "<red>Impossible de sauvegarder le nom de l'île."
 title = "<gray>--- Extra information d'île ---</gray>"
 name = "<aqua>Nom :</aqua> <white>%name%</white>"
 description = "<aqua>Description :</aqua> <white>%description%</white>"
+
+[update-checker]
+update-available-one = "<gold>Skyllia est en retard d'<red>1 version</red> ! Dernière version : <green>%version%</green>. Télécharge-la ici : <aqua><click:open_url:'%url%'>%url%</click></aqua>"
+update-available-many = "<gold>Skyllia est en retard de <red>%behind% versions</red> ! Dernière version : <green>%version%</green>. Télécharge-la ici : <aqua><click:open_url:'%url%'>%url%</click></aqua>"

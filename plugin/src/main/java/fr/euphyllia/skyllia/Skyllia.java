@@ -1,7 +1,8 @@
 package fr.euphyllia.skyllia;
 
+import dev.faststats.ErrorTracker;
+import dev.faststats.bukkit.BukkitContext;
 import dev.faststats.bukkit.BukkitMetrics;
-import dev.faststats.core.ErrorTracker;
 import fr.euphyllia.skyllia.api.InterneAPI;
 import fr.euphyllia.skyllia.api.SkylliaAPI;
 import fr.euphyllia.skyllia.api.commands.SubCommandRegistry;
@@ -13,6 +14,7 @@ import fr.euphyllia.skyllia.hook.HookBootstrap;
 import fr.euphyllia.skyllia.listeners.ListenersRegistrar;
 import fr.euphyllia.skyllia.papi.SkylliaExpansion;
 import fr.euphyllia.skyllia.sgbd.exceptions.DatabaseException;
+import fr.euphyllia.skyllia.utils.UpdateCheckerTask;
 import net.md_5.bungee.api.ChatColor;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -32,7 +34,10 @@ public class Skyllia extends JavaPlugin {
     private InterneAPI interneAPI;
     private SubCommandRegistry commandRegistry;
     private SubCommandRegistry adminCommandRegistry;
-    private BukkitMetrics fastStatsMetrics;
+    private final BukkitContext context = new BukkitContext.Factory(this, "f329c2c0e1c9562dffebed9b6786d4c9")
+            .errorTrackerService(ERROR_TRACKER)
+            .create();
+    private BStatsMetrics bStatsMetrics;
 
     public static Skyllia getInstance() {
         return instance;
@@ -41,6 +46,7 @@ public class Skyllia extends JavaPlugin {
     @Override
     public void onEnable() {
         instance = this;
+        context.ready();
         printStartupBanner();
         File oldConfig = new File(getDataFolder(), "config.toml");
         if (oldConfig.exists()) {
@@ -91,8 +97,7 @@ public class Skyllia extends JavaPlugin {
 
         checkDisabledConfig();
 
-        new BStatsMetrics(this, 20874);
-        initializeFastStats();
+        bStatsMetrics = new BStatsMetrics(this, 20874);
 
         ConfigLoader.permissionsV2.compileNow();
         ConfigLoader.islandFlags.compileNow();
@@ -100,16 +105,19 @@ public class Skyllia extends JavaPlugin {
         if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
             new SkylliaExpansion(this).register();
         }
+
+        if (ConfigLoader.general.getUpdateCheckerSettings().enabled()) {
+            UpdateCheckerTask.start(this);
+        }
     }
 
     @Override
     public void onDisable() {
+        context.shutdown();
+        bStatsMetrics.shutdown();
+
         Bukkit.getAsyncScheduler().cancelTasks(this);
         Bukkit.getGlobalRegionScheduler().cancelTasks(this);
-
-        if (fastStatsMetrics != null) {
-            fastStatsMetrics.shutdown();
-        }
 
         if (this.interneAPI != null) {
             this.interneAPI.getWorldModifier().shutdown();
@@ -208,19 +216,5 @@ public class Skyllia extends JavaPlugin {
         int textLength = ChatColor.stripColor(text).length();
         int padding = (lineWidth - textLength) / 2;
         return " ".repeat(Math.max(0, padding)) + text;
-    }
-
-    private void initializeFastStats() {
-        try {
-            this.fastStatsMetrics = BukkitMetrics.factory()
-                    .token("f329c2c0e1c9562dffebed9b6786d4c9")
-                    .errorTracker(ERROR_TRACKER)
-                    .debug(false)
-                    .create(this);
-            this.fastStatsMetrics.ready();
-            logger.info("[FastStats] initialized");
-        } catch (Exception exception) {
-            logger.log(Level.FATAL, exception, exception);
-        }
     }
 }
