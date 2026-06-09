@@ -31,6 +31,7 @@ import fr.euphyllia.skyllia.listeners.permissions.player.ConvertObsidianToLavaPe
 import fr.euphyllia.skyllia.listeners.permissions.player.ItemDropPermissions;
 import fr.euphyllia.skyllia.listeners.permissions.player.ItemPickupPermissions;
 import fr.euphyllia.skyllia.listeners.permissions.player.TeleportPermissions;
+import fr.euphyllia.skyllia.listeners.skyblockevents.PortalTeleportListener;
 import fr.euphyllia.skyllia.listeners.skyblockevents.SkyblockEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -81,6 +82,7 @@ public class ListenersRegistrar {
 
         // Skyblock Events
         registerEvent(pluginManager, new SkyblockEvent(interneAPI));
+        registerEvent(pluginManager, new PortalTeleportListener());
 
         // Permissions Listeners
         var moduleManager = SkylliaAPI.getPermissionModuleManager();

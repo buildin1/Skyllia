@@ -94,8 +94,7 @@ public class VisitSubCommand implements SubCommandInterface {
                 }
             }
 
-            WarpIsland warpIsland = Optional.ofNullable(island.getWarpByName("visit"))
-                    .orElse(island.getWarpByName("home"));
+            WarpIsland warpIsland = island.getVisit();
 
             player.getScheduler().execute(plugin, () -> {
                 Location loc;
@@ -136,11 +135,14 @@ public class VisitSubCommand implements SubCommandInterface {
         if (args.length == 1) {
             String partial = args[0].trim().toLowerCase();
             var onlinePlayers = Bukkit.getOnlinePlayers();
-            return onlinePlayers.stream()
-                    .map(CommandSender::getName)
-                    .filter(name -> name.toLowerCase().startsWith(partial))
-                    .sorted()
-                    .collect(Collectors.toList());
+            List<String> list = new ArrayList<>();
+            for (Player onlinePlayer : onlinePlayers) {
+                String name = onlinePlayer.getName();
+                if (name.toLowerCase().startsWith(partial)) {
+                    list.add(name);
+                }
+            }
+            return list;
         }
         return Collections.emptyList();
     }

@@ -9,21 +9,30 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class SkylliaSchematicHookResolver {
 
-    private final FAWESchematicHook fawe;
-    private final WorldEditSchematicHook we;
+    private final SchematicHook fawe;
+    private final SchematicHook we;
     private final InternalSchematicHook internal;
 
     public SkylliaSchematicHookResolver(JavaPlugin plugin) {
-        this.fawe = new FAWESchematicHook(plugin);
-        this.we = new WorldEditSchematicHook(plugin);
         this.internal = new InternalSchematicHook(plugin);
+        this.fawe = tryLoad(() -> new FAWESchematicHook(plugin));
+        this.we   = tryLoad(() -> new WorldEditSchematicHook(plugin));
+    }
+
+    private SchematicHook tryLoad(java.util.function.Supplier<SchematicHook> supplier) {
+        try {
+            SchematicHook hook = supplier.get();
+            return hook.isAvailable() ? hook : null;
+        } catch (NoClassDefFoundError | Exception e) {
+            return null;
+        }
     }
 
     public SchematicHook resolve(SchematicPlugin requested) {
         return switch (requested) {
-            case WORLD_EDIT -> fawe.isAvailable() ? fawe : we.isAvailable() ? we : internal;
-            case INTERNAL -> internal;
-            case UNKNOWN -> fawe.isAvailable() ? fawe : we.isAvailable() ? we : internal;
+            case WORLD_EDIT -> fawe != null ? fawe : we != null ? we : internal;
+            case INTERNAL   -> internal;
+            case UNKNOWN    -> fawe != null ? fawe : we != null ? we : internal;
         };
     }
 }
