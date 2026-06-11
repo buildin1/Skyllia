@@ -41,7 +41,7 @@ public class SkylliaLoader implements PluginLoader {
         resolver.addDependency(new Dependency(new DefaultArtifact("com.mojang:brigadier:1.0.18"), null));
 
         // thenextlvl Repo
-        resolver.addDependency(new Dependency(new DefaultArtifact("dev.faststats.metrics:bukkit:0.25.1"), null));
+        resolver.addDependency(new Dependency(new DefaultArtifact("dev.faststats.metrics:bukkit:0.26.0"), null));
 
         classpathBuilder.addLibrary(resolver);
     }

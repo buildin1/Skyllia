@@ -19,10 +19,13 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.bukkit.Bukkit;
+import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 @SuppressWarnings("UnstableApiUsage")
 public class Skyllia extends JavaPlugin {
@@ -93,8 +96,6 @@ public class Skyllia extends JavaPlugin {
         new ListenersRegistrar(this, interneAPI).registerListeners();
 
         HookBootstrap.registerAll(this);
-
-        checkDisabledConfig();
 
         bStatsMetrics = new BStatsMetrics(this, 20874);
 
@@ -172,43 +173,29 @@ public class Skyllia extends JavaPlugin {
         }
     }
 
-    private void checkDisabledConfig() {
-        /* Since 1.20.3, there is a gamerule that allows you to increase the number of ticks between entering a portal and teleporting.
-          This makes the configuration possibly useless.
-          BUT just in case, I leave the message enabled by default.
-         */
-        if (SkylliaAPI.isFolia() && !ConfigLoader.worldManager.isSuppressWarnNetherEndWorld()) {
-            if (Bukkit.getAllowNether()) {
-                logger.log(Level.WARN, "Disable nether in server.properties to disable nether portals!");
-            }
-            if (Bukkit.getAllowEnd()) {
-                logger.log(Level.WARN, "Disable end in bukkit.yml to disable end portals!");
-            }
-        }
-    }
-
     private void printStartupBanner() {
-        String pluginName = getPluginMeta().getName();
-        String pluginVersion = getPluginMeta().getVersion();
-        String description = getPluginMeta().getDescription();
-        String serverType = Bukkit.getName();
-        String serverVersion = Bukkit.getVersion();
-        String threadModel = (SkylliaAPI.isFolia() ? "Multi" : "Single");
-        int cpuCores = Runtime.getRuntime().availableProcessors();
+        final String VIOLET = "§d";
+        final String GRAY   = "§7";
+        final String WHITE  = "§f";
+        final String SEP    = VIOLET + "━".repeat(50);
 
-        String violet = "§d";
-        String gray = "§7";
-        String white = "§f";
-        String separator = violet + "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━";
+        String[][] info = {
+                {"Version",      getPluginMeta().getVersion()},
+                {"Server",       Bukkit.getName() + WHITE + " (" + VIOLET + Bukkit.getVersion() + WHITE + ")"},
+                {"Thread Model", SkylliaAPI.isFolia() ? "Multi" : "Single"},
+                {"CPU Cores",    String.valueOf(Runtime.getRuntime().availableProcessors())},
+        };
 
-        Bukkit.getConsoleSender().sendMessage(separator);
-        Bukkit.getConsoleSender().sendMessage(violet + center(pluginName + " - " + description, 50));
-        Bukkit.getConsoleSender().sendMessage(separator);
-        Bukkit.getConsoleSender().sendMessage(gray + " » " + white + "Version: " + violet + pluginVersion);
-        Bukkit.getConsoleSender().sendMessage(gray + " » " + white + "Server: " + violet + serverType + white + " (" + violet + serverVersion + white + ")");
-        Bukkit.getConsoleSender().sendMessage(gray + " » " + white + "Thread Model: " + violet + threadModel);
-        Bukkit.getConsoleSender().sendMessage(gray + " » " + white + "CPU Cores: " + violet + cpuCores);
-        Bukkit.getConsoleSender().sendMessage(separator);
+        List<String> lines = new ArrayList<>();
+        lines.add(SEP);
+        lines.add(VIOLET + center(getPluginMeta().getName() + " - " + getPluginMeta().getDescription(), 50));
+        lines.add(SEP);
+        for (String[] entry : info)
+            lines.add(GRAY + " » " + WHITE + entry[0] + ": " + VIOLET + entry[1]);
+        lines.add(SEP);
+
+        ConsoleCommandSender console = Bukkit.getConsoleSender();
+        lines.forEach(console::sendMessage);
     }
 
     private String center(String text, int lineWidth) {

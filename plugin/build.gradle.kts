@@ -10,7 +10,7 @@ dependencies {
     compileOnly("net.kyori:adventure-text-minimessage:4.26.1")
     compileOnly("net.kyori:adventure-text-serializer-legacy:4.26.1")
     compileOnly("me.clip:placeholderapi:2.11.6")
-    compileOnly("dev.faststats.metrics:bukkit:0.25.1")
+    compileOnly("dev.faststats.metrics:bukkit:0.26.0")
     compileOnly(project(":api"))
     compileOnly(project(":database"))
     compileOnly(project(":hook:worldedit"))

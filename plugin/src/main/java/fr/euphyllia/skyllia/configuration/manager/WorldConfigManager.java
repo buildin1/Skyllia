@@ -20,7 +20,6 @@ public class WorldConfigManager implements IConfigurationProvider {
      */
     private final Map<String, WorldConfig> worldConfigs = new HashMap<>();
     private final CommentedFileConfig config;
-    private boolean suppressWarnNetherEndWorld = false;
     private boolean changed = false;
 
     public WorldConfigManager(CommentedFileConfig config) {
@@ -31,7 +30,7 @@ public class WorldConfigManager implements IConfigurationProvider {
     @Override
     public void loadConfig() {
         changed = false;
-        this.suppressWarnNetherEndWorld = getOrSetDefault("suppress-warning-nether-end", false, Boolean.class);
+        config.remove("suppress-warning-nether-end");
 
         worldConfigs.clear();
 
@@ -125,9 +124,5 @@ public class WorldConfigManager implements IConfigurationProvider {
 
     public Map<String, WorldConfig> getWorldConfigs() {
         return worldConfigs;
-    }
-
-    public boolean isSuppressWarnNetherEndWorld() {
-        return suppressWarnNetherEndWorld;
     }
 }
