@@ -5,7 +5,6 @@ import fr.euphyllia.skyllia.api.InterneAPI;
 import fr.euphyllia.skyllia.api.SkylliaAPI;
 import fr.euphyllia.skyllia.listeners.bukkitevents.blocks.GrowEvent;
 import fr.euphyllia.skyllia.listeners.bukkitevents.blocks.PistonEvent;
-import fr.euphyllia.skyllia.listeners.bukkitevents.folia.PortalAlternativeFoliaEvent;
 import fr.euphyllia.skyllia.listeners.bukkitevents.paper.PortalAlternativePaperEvent;
 import fr.euphyllia.skyllia.listeners.bukkitevents.player.*;
 import fr.euphyllia.skyllia.listeners.permissions.block.*;
@@ -75,9 +74,6 @@ public class ListenersRegistrar {
 
 
         // Folia/Paper specifics
-        if (SkylliaAPI.isFolia()) {
-            registerEvent(pluginManager, new PortalAlternativeFoliaEvent(interneAPI));
-        }
         registerEvent(pluginManager, new PortalAlternativePaperEvent());
 
         // Skyblock Events

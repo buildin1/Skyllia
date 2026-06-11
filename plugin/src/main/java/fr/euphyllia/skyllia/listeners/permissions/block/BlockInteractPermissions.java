@@ -29,7 +29,8 @@ public class BlockInteractPermissions implements PermissionModule {
         final Block clicked = event.getClickedBlock();
         if (clicked == null) return;
 
-        if (clicked.getState() instanceof Container) return; // If the block has an inventory, we let InventoryOpenPermissions handle the interaction
+        if (clicked.getState() instanceof Container)
+            return; // If the block has an inventory, we let InventoryOpenPermissions handle the interaction
 
         final Player player = event.getPlayer();
         final Location location = clicked.getLocation();

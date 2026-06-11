@@ -32,9 +32,9 @@ public class UpdateCheckerTask {
             "Euphillya/Skyllia (modrinth.com/plugin/skyllia)";
     private static final String VERSION_PREFIX = "3.0-";
     private static final Pattern VERSION_PATTERN = Pattern.compile("\"version_number\"\\s*:\\s*\"(3\\.0-\\d+)\"");
-    private static volatile UpdateInfo cachedUpdate = null;
     private static final boolean DEBUG_UPDATE_CHECKER = false;
     private static final String DEBUG_VERSION = "3.0-1";
+    private static volatile UpdateInfo cachedUpdate = null;
 
     private UpdateCheckerTask() {
     }

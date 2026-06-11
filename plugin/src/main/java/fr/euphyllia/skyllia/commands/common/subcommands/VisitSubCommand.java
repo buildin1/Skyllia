@@ -27,7 +27,6 @@ import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class VisitSubCommand implements SubCommandInterface {
 

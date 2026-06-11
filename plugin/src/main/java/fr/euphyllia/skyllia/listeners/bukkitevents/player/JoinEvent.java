@@ -40,6 +40,7 @@ public class JoinEvent implements Listener {
                 () -> UpdateCheckerTask.notifyIfUpdateAvailable(player),
                 null, 40L);
     }
+
     @EventHandler(priority = EventPriority.LOW)
     public void onPlayerJoin(final PlayerJoinEvent event) {
         final Player player = event.getPlayer();

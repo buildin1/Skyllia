@@ -16,7 +16,7 @@ public class SkylliaSchematicHookResolver {
     public SkylliaSchematicHookResolver(JavaPlugin plugin) {
         this.internal = new InternalSchematicHook(plugin);
         this.fawe = tryLoad(() -> new FAWESchematicHook(plugin));
-        this.we   = tryLoad(() -> new WorldEditSchematicHook(plugin));
+        this.we = tryLoad(() -> new WorldEditSchematicHook(plugin));
     }
 
     private SchematicHook tryLoad(java.util.function.Supplier<SchematicHook> supplier) {
@@ -31,8 +31,8 @@ public class SkylliaSchematicHookResolver {
     public SchematicHook resolve(SchematicPlugin requested) {
         return switch (requested) {
             case WORLD_EDIT -> fawe != null ? fawe : we != null ? we : internal;
-            case INTERNAL   -> internal;
-            case UNKNOWN    -> fawe != null ? fawe : we != null ? we : internal;
+            case INTERNAL -> internal;
+            case UNKNOWN -> fawe != null ? fawe : we != null ? we : internal;
         };
     }
 }

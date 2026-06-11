@@ -87,7 +87,7 @@ public class GeneralConfigManager implements IConfigurationProvider {
         );
 
         this.updateCheckerSettings = new UpdateCheckerSettings(
-                getOrSetDefault("settings.update-checker.enabled",        true,  Boolean.class),
+                getOrSetDefault("settings.update-checker.enabled", true, Boolean.class),
                 getOrSetDefault("settings.update-checker.interval-minutes", 60L, Long.class)
         );
 
