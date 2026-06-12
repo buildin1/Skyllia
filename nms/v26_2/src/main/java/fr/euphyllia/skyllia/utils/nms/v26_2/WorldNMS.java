@@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableList;
 import fr.euphyllia.skyllia.api.configuration.WorldConfig;
 import fr.euphyllia.skyllia.api.skyblock.model.Position;
 import fr.euphyllia.skyllia.api.world.WorldFeedback;
+import io.papermc.paper.FeatureHooks;
 import io.papermc.paper.world.PaperWorldLoader;
 import io.papermc.paper.world.migration.WorldFolderMigration;
 import net.minecraft.core.BlockPos;
@@ -120,7 +121,7 @@ public class WorldNMS extends fr.euphyllia.skyllia.api.utils.nms.WorldNMS {
             default -> throw new IllegalArgumentException("Illegal dimension (" + creator.environment() + ")");
         };
 
-        final ResourceKey<net.minecraft.world.level.Level> dimensionKey = PaperWorldLoader.dimensionKey(creator.key());
+        final ResourceKey<net.minecraft.world.level.Level> dimensionKey = CraftNamespacedKey.toResourceKey(Registries.DIMENSION, creator.key());
         WorldLoader.DataLoadContext context = console.worldLoaderContext;
         RegistryAccess.Frozen registryAccess = context.datapackDimensions();
         net.minecraft.core.Registry<LevelStem> contextLevelStemRegistry = registryAccess.lookupOrThrow(Registries.LEVEL_STEM);
@@ -283,7 +284,7 @@ public class WorldNMS extends fr.euphyllia.skyllia.api.utils.nms.WorldNMS {
         }
 
         boolean hasAnyPlayer = false;
-        for (Entity entity : nms.getChunkEntities(chunkX, chunkZ)) {
+        for (Entity entity : FeatureHooks.getChunkEntities(nms, chunkX, chunkZ)) {
             if (entity instanceof Player) {
                 hasAnyPlayer = true;
             } else {

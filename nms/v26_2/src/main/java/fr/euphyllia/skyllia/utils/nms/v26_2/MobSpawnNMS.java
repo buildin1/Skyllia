@@ -123,7 +123,8 @@ public class MobSpawnNMS implements MobsSpawnImpl {
                 Map.entry(EntityType.VILLAGER, "villager"),
                 Map.entry(EntityType.WANDERING_TRADER, "wandering_villager"),
                 Map.entry(EntityType.ARMADILLO, "armadillo"),
-                Map.entry(EntityType.CAMEL, "camel")
+                Map.entry(EntityType.CAMEL, "camel"),
+                Map.entry(EntityType.SULFUR_CUBE, "sulfure_cube")
         );
     }
 
