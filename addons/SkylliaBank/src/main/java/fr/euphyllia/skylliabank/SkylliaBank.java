@@ -46,12 +46,6 @@ public final class SkylliaBank extends JavaPlugin {
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
-        if (!EconomyManager.setupEconomy(this)) {
-            getLogger().severe("No economy plugin found. The plugin will stop.");
-            getServer().getPluginManager().disablePlugin(this);
-            return;
-        }
-
         if (getServer().getPluginManager().getPlugin("Skyllia") == null) {
             getLogger().severe("Skyllia is not installed! The plugin will stop.");
             getServer().getPluginManager().disablePlugin(this);
