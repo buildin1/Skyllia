@@ -178,8 +178,8 @@ modrinth {
         "26.1",
         "26.1.1",
         "26.1.2",
-        "26.2-rc-2",
-        "26.2"
+        "26.2-rc-2"//,
+        //"26.2"
     )
 
     loaders.addAll("folia", "paper", "purpur")
