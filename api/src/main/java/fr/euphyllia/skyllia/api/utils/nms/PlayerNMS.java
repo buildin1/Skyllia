@@ -16,5 +16,7 @@ public abstract class PlayerNMS {
      * @param warningTime   Sets the warning time that causes the screen to be tinted red when a contracting border will reach the player within the specified time.
      */
     @Deprecated(forRemoval = true, since = "3.0")
-    public abstract void setOwnWorldBorder(JavaPlugin main, Player player, @NotNull Location centerBorder, double borderSize, int warningBlocks, int warningTime);
+    void setOwnWorldBorder(JavaPlugin main, Player player, @NotNull Location centerBorder, double borderSize, int warningBlocks, int warningTime) {
+        throw new UnsupportedOperationException("Stop using this method. Use player.setWorldBorder() instead.");
+    }
 }

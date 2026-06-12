@@ -42,6 +42,7 @@ dependencies {
     implementation(project(":nms:v1_21_R6"))
     implementation(project(":nms:v1_21_R7"))
     implementation(project(":nms:v26_1"))
+    implementation(project(":nms:v26_2"))
 }
 
 allprojects {
@@ -176,7 +177,9 @@ modrinth {
         "1.21.11",
         "26.1",
         "26.1.1",
-        "26.1.2"
+        "26.1.2",
+        "26.2-rc-2",
+        "26.2"
     )
 
     loaders.addAll("folia", "paper", "purpur")
