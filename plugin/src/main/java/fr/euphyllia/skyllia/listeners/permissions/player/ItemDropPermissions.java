@@ -8,8 +8,10 @@ import fr.euphyllia.skyllia.api.permissions.modules.PermissionModule;
 import fr.euphyllia.skyllia.api.skyblock.Island;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
 import fr.euphyllia.skyllia.listeners.ListenersUtils;
+import fr.euphyllia.skyllia.utils.PlayerUtils;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.player.PlayerDropItemEvent;
@@ -23,23 +25,24 @@ public class ItemDropPermissions implements PermissionModule {
     @EventHandler(ignoreCancelled = true)
     public void onDrop(final PlayerDropItemEvent event) {
         final Player player = event.getPlayer();
-        final Location location = player.getLocation();
+        final World world = player.getWorld();
 
-        if (!SkylliaAPI.isWorldSkyblock(location.getWorld())) return;
+        final int bx = Location.locToBlock(player.getX());
+        final int by = Location.locToBlock(player.getY());
+        final int bz = Location.locToBlock(player.getZ());
 
-        final int chunkX = location.getBlockX() >> 4;
-        final int chunkZ = location.getBlockZ() >> 4;
-        final Island island = SkylliaAPI.getIslandByChunk(chunkX, chunkZ);
+        final Island island = ListenersUtils.islandAtBlock(world, bx, bz);
         if (island == null) return;
 
-        final boolean hasBypass = player.hasPermission("skyllia.player.item.drop.bypass");
-        final boolean hasPermission = hasBypass || SkylliaAPI.getPermissionsManager().hasPermission(player, island, ITEM_DROP, null, ConfigLoader.general.getDebugSettings().permission());
+        final boolean hasBypass = PlayerUtils.hasPermission(player, "skyllia.player.item.drop.bypass");
+        final boolean hasPermission = hasBypass || SkylliaAPI.getPermissionsManager()
+                .hasPermission(player, island, ITEM_DROP, null, ConfigLoader.general.getDebugSettings().permission());
         if (!hasPermission) {
             event.setCancelled(true);
             return;
         }
-        if (!hasBypass && ListenersUtils.isBlockOutsideIsland(island, location, event)) {
-            return;
+        if (!hasBypass) {
+            ListenersUtils.isBlockOutsideIsland(island, world, bx, by, bz, event);
         }
     }
 
