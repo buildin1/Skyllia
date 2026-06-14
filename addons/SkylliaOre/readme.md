@@ -43,10 +43,10 @@ generators:
 
 - **generator_default**: The default generator to be used if no specific generator is found in the database.
 - **generators**: A list of generator configurations.
-    - **name**: The name of the generator.
-    - **replace_block**: The list of blocks to be replaced by the generator.
-    - **world**: The list of worlds where the generator is active.
-    - **block_chance**: The list of blocks to generate with their respective chances.
+  - **name**: The name of the generator.
+  - **replace_block**: The list of blocks to be replaced by the generator.
+  - **world**: The list of worlds where the generator is active.
+  - **block_chance**: The list of blocks to generate with their respective chances.
 
 ### Detailed Example
 
@@ -78,6 +78,7 @@ In this example, the default generator is set to "test". The generator named "te
 ### Commands
 
 - `/skylliaadmin generator <player> <generator>`: Change the generator for a specific player.
+- `/skylliaadmin generator reload`: Reload the `config.yml` from disk and clear the generator caches. The new generator definitions take effect immediately, without restarting the server.
 
 ### Note on Generator Change
 
@@ -86,6 +87,7 @@ When changing the generator, there is a delay of approximately 30 seconds before
 ### Permissions
 
 - `skylliaore.use`: Permission to use the `/skylliaadmin generator` command.
+- `skylliaore.reload`: Permission to use the `/skylliaadmin generator reload` command.
 
 ## Support
 

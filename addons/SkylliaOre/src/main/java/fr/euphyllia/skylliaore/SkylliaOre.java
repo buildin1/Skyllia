@@ -121,6 +121,14 @@ public final class SkylliaOre extends JavaPlugin {
         config.loadConfiguration(getConfig());
     }
 
+
+    public void reloadPlugin() {
+        reloadConfig();
+        config = new DefaultConfig();
+        config.loadConfiguration(getConfig());
+        oreCache.clearAll();
+    }
+
     private OreGenerator initializeDatabase() {
         try {
             if (ConfigLoader.database.getMariaDBConfig() != null) {

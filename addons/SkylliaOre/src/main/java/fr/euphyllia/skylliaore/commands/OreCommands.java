@@ -33,8 +33,24 @@ public class OreCommands implements SubCommandInterface {
     @Override
     public void onExecute(@NotNull Plugin plugin, @NotNull CommandSender sender, @NotNull String[] args) {
         if (!PlayerUtils.hasPermission(sender, "skylliaore.use")) return;
+
+        if (args.length >= 1 && args[0].equalsIgnoreCase("reload")) {
+            if (!PlayerUtils.hasPermission(sender, "skylliaore.reload")) {
+                sender.sendMessage(Component.text("You don't have permission to reload SkylliaOre.").color(NamedTextColor.RED));
+                return;
+            }
+            try {
+                this.plugin.reloadPlugin();
+                sender.sendMessage(Component.text("SkylliaOre configuration reloaded successfully.").color(NamedTextColor.GREEN));
+            } catch (Exception exception) {
+                sender.sendMessage(Component.text("An error occurred while reloading the configuration: " + exception.getMessage()).color(NamedTextColor.RED));
+            }
+            return;
+        }
+
         if (args.length < 2) {
             sender.sendMessage(Component.text("Usage: /skylliaadmin generator <player> <generator>").color(NamedTextColor.RED));
+            sender.sendMessage(Component.text("       /skylliaadmin generator reload").color(NamedTextColor.RED));
             return;
         }
 
@@ -66,8 +82,11 @@ public class OreCommands implements SubCommandInterface {
         if (args.length == 1) {
             String partial = args[0].trim().toLowerCase();
 
-            return new ArrayList<>(Bukkit.getOnlinePlayers()).stream()
+            List<String> suggestions = new ArrayList<>(Bukkit.getOnlinePlayers()).stream()
                     .map(Player::getName)
+                    .collect(Collectors.toList());
+            suggestions.add("reload");
+            return suggestions.stream()
                     .filter(name -> name.toLowerCase().startsWith(partial))
                     .sorted()
                     .collect(Collectors.toList());
