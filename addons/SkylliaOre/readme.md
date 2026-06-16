@@ -12,7 +12,7 @@ This plugin manages custom block generators for SkyBlock islands, with support f
 ## Installation
 
 1. Clone the Skyllia repository and follow the instructions to install Skyllia.
-2. (Optional) Ensure Oraxen/Nexo or CraftEngine is installed and configured on your server if you want to use custom blocks from Oraxen.
+2. (Optional) Ensure Oraxen/Nexo or CraftEngine is installed and configured on your server if you want to use custom blocks.
 3. Place the `SkylliaOre.jar` file in your server's `plugins` directory.
 4. Start your server to generate the default configuration files.
 
