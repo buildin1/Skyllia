@@ -1,10 +1,10 @@
 package fr.euphyllia.skyllia.database.mariadb;
 
 import fr.euphyllia.skyllia.api.SkylliaAPI;
+import fr.euphyllia.skyllia.api.coordinate.RegionCoordinate;
 import fr.euphyllia.skyllia.api.database.IslandDataQuery;
 import fr.euphyllia.skyllia.api.event.SkyblockLoadEvent;
 import fr.euphyllia.skyllia.api.skyblock.Island;
-import fr.euphyllia.skyllia.api.skyblock.model.Position;
 import fr.euphyllia.skyllia.managers.skyblock.IslandHook;
 import fr.euphyllia.skyllia.sgbd.utils.model.DatabaseLoader;
 import fr.euphyllia.skyllia.sgbd.utils.sql.SQLExecute;
@@ -189,7 +189,7 @@ public class MariaDBIslandData extends IslandDataQuery {
     }
 
     @Override
-    public @Nullable Island getIslandByPosition(Position position) {
+    public @Nullable Island getIslandByRegion(RegionCoordinate position) {
         if (position == null) return null;
 
         return SQLExecute.queryMap(
@@ -266,7 +266,7 @@ public class MariaDBIslandData extends IslandDataQuery {
         double size = resultSet.getDouble("size");
         Timestamp timestamp = resultSet.getTimestamp("create_time");
 
-        Position position = new Position(regionX, regionZ);
+        RegionCoordinate position = new RegionCoordinate(regionX, regionZ);
         return new IslandHook(UUID.fromString(islandId), maxMembers, position, size, timestamp);
     }
 }

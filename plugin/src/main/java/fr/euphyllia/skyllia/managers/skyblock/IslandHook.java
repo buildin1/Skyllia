@@ -2,6 +2,7 @@ package fr.euphyllia.skyllia.managers.skyblock;
 
 import fr.euphyllia.skyllia.Skyllia;
 import fr.euphyllia.skyllia.api.SkylliaAPI;
+import fr.euphyllia.skyllia.api.coordinate.RegionCoordinate;
 import fr.euphyllia.skyllia.api.event.SkyblockChangeSizeEvent;
 import fr.euphyllia.skyllia.api.event.SkyblockCreateWarpEvent;
 import fr.euphyllia.skyllia.api.event.SkyblockDeleteEvent;
@@ -12,7 +13,6 @@ import fr.euphyllia.skyllia.api.permissions.PermissionRegistry;
 import fr.euphyllia.skyllia.api.skyblock.Island;
 import fr.euphyllia.skyllia.api.skyblock.Players;
 import fr.euphyllia.skyllia.api.skyblock.model.HeightType;
-import fr.euphyllia.skyllia.api.skyblock.model.Position;
 import fr.euphyllia.skyllia.api.skyblock.model.WarpIsland;
 import fr.euphyllia.skyllia.api.utils.helper.RegionHelper;
 import org.bukkit.Bukkit;
@@ -42,7 +42,7 @@ public class IslandHook extends Island {
     private final Skyllia plugin;
     private final UUID islandId;
     private final Timestamp createDate;
-    private final Position position;
+    private final RegionCoordinate position;
     private final int maxMemberInIsland;
     private final Map<World, Location> islandCenterLocations;
     private final ConcurrentHashMap<String, Integer> buildMinHeightCache = new ConcurrentHashMap<>();
@@ -63,7 +63,7 @@ public class IslandHook extends Island {
      */
     public IslandHook(UUID islandId,
                       int maxMembers,
-                      Position position,
+                      RegionCoordinate position,
                       double size,
                       Timestamp date) {
         this.plugin = Skyllia.getInstance();
@@ -258,7 +258,7 @@ public class IslandHook extends Island {
      * {@inheritDoc}
      */
     @Override
-    public Position getPosition() {
+    public RegionCoordinate getRegionCoordinate() {
         return this.position;
     }
 

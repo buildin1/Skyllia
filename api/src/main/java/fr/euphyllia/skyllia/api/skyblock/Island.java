@@ -2,6 +2,7 @@ package fr.euphyllia.skyllia.api.skyblock;
 
 import fr.euphyllia.skyllia.api.SkylliaAPI;
 import fr.euphyllia.skyllia.api.configuration.WorldConfig;
+import fr.euphyllia.skyllia.api.coordinate.RegionCoordinate;
 import fr.euphyllia.skyllia.api.exceptions.MaxIslandSizeExceedException;
 import fr.euphyllia.skyllia.api.permissions.CompiledPermissions;
 import fr.euphyllia.skyllia.api.permissions.IslandFlags;
@@ -10,6 +11,7 @@ import fr.euphyllia.skyllia.api.skyblock.model.Position;
 import fr.euphyllia.skyllia.api.skyblock.model.WarpIsland;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -157,14 +159,14 @@ public abstract class Island {
     public abstract boolean setPrivateIsland(boolean privateIsland);
 
     /**
-     * Gets the list of all members in the island (from the database).
+     * Gets the list of all members on the island (from the database).
      *
      * @return A {@link List} of {@link Players}.
      */
     public abstract List<Players> getMembers();
 
     /**
-     * Gets the list of all banned members in the island.
+     * Gets the list of all banned members on the island.
      *
      * @return A {@link List} of {@link Players} who are banned.
      */
@@ -203,11 +205,33 @@ public abstract class Island {
     public abstract boolean updateMember(Players member);
 
     /**
-     * Gets the position (region-based) of the island.
+     * Gets the region-based coordinate of the island.
      *
-     * @return A {@link Position} object representing the island's coordinates.
+     * @return A {@link RegionCoordinate} representing the island's region coordinates.
+     * @since 3.x
      */
-    public abstract Position getPosition();
+    public abstract RegionCoordinate getRegionCoordinate();
+
+    /**
+     * Gets the region coordinate of the island.
+     * <p>
+     * This method is deprecated because {@link Position} was historically
+     * used for multiple coordinate types (regions, chunks, etc.), making
+     * its purpose ambiguous.
+     * </p>
+     * <p>
+     * Use {@link #getRegionCoordinate()} instead.
+     * </p>
+     *
+     * @return The island's region coordinate.
+     * @deprecated since 3.x, replaced by {@link #getRegionCoordinate()}.
+     */
+    @Deprecated(forRemoval = true, since = "3.x")
+    @ApiStatus.ScheduledForRemoval(inVersion = "4.x")
+    public Position getPosition() {
+        RegionCoordinate coordinate = getRegionCoordinate();
+        return new Position(coordinate.x(), coordinate.z());
+    }
 
     /**
      * Gets the maximum number of members allowed on the island.
@@ -251,6 +275,7 @@ public abstract class Island {
      * @deprecated Use {@link #getIslandFlags(String)} instead.
      */
     @Deprecated(forRemoval = true, since = "3.x")
+    @ApiStatus.ScheduledForRemoval(inVersion = "4.x")
     public IslandFlags getIslandFlags() {
         List<WorldConfig> worlds = SkylliaAPI.getRegisteredWorlds();
         if (worlds.isEmpty()) return new IslandFlags(SkylliaAPI.getFlagRegistry());
@@ -261,6 +286,7 @@ public abstract class Island {
      * @deprecated Use {@link #invalidateIslandFlags(String)} instead.
      */
     @Deprecated(forRemoval = true, since = "3.x")
+    @ApiStatus.ScheduledForRemoval(inVersion = "4.x")
     public void invalidateIslandFlags() {
         for (WorldConfig w : SkylliaAPI.getRegisteredWorlds()) {
             invalidateIslandFlags(w.getWorldName());

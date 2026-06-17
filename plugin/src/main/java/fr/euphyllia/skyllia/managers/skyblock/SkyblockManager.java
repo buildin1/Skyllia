@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import fr.euphyllia.skyllia.Skyllia;
 import fr.euphyllia.skyllia.api.SkylliaAPI;
 import fr.euphyllia.skyllia.api.configuration.WorldConfig;
+import fr.euphyllia.skyllia.api.coordinate.RegionCoordinate;
 import fr.euphyllia.skyllia.api.event.PrepareSkyblockCreateEvent;
 import fr.euphyllia.skyllia.api.skyblock.Island;
 import fr.euphyllia.skyllia.api.skyblock.Players;
@@ -19,6 +20,7 @@ import org.apache.logging.log4j.Logger;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -76,7 +78,7 @@ public class SkyblockManager {
     }
 
     private void reindexIslandCoverage(Island island) {
-        Position root = island.getPosition();
+        RegionCoordinate root = island.getRegionCoordinate();
         if (root == null) return;
 
         int rootRx = root.x();
@@ -307,7 +309,7 @@ public class SkyblockManager {
         return priv;
     }
 
-    public @Nullable Island getIslandByPosition(int rx, int rz) {
+    public @Nullable Island getIslandByRegion(int rx, int rz) {
         long key = pack(rx, rz);
         UUID islandId = islandByRegion.get(key);
 
@@ -326,9 +328,9 @@ public class SkyblockManager {
             }
         }
 
-        Position position = new Position(rx, rz);
+        RegionCoordinate position = new RegionCoordinate(rx, rz);
         Island island = plugin.getInterneAPI()
-                .getIslandQuery().getIslandDataQuery().getIslandByPosition(position);
+                .getIslandQuery().getIslandDataQuery().getIslandByRegion(position);
         if (island != null) cacheIslandAndIndex(island);
         return island;
     }
@@ -346,12 +348,22 @@ public class SkyblockManager {
     }
 
     public @Nullable Island getIslandByChunk(int chunkX, int chunkZ) {
-        return getIslandByPosition(chunkToRegion(chunkX), chunkToRegion(chunkZ));
+        return getIslandByRegion(chunkToRegion(chunkX), chunkToRegion(chunkZ));
     }
 
-    public @Nullable Island getIslandByPosition(Position position) {
+    public @Nullable Island getIslandByRegion(RegionCoordinate region) {
+        if (region == null) return null;
+        return getIslandByRegion(region.x(), region.z());
+    }
+
+    /**
+     * @deprecated Use {@link #getIslandByRegion(RegionCoordinate)} instead.
+     */
+    @Deprecated(forRemoval = true, since = "3.x")
+    @ApiStatus.ScheduledForRemoval(inVersion = "4.x")
+    public @Nullable Island getIslandByRegion(Position position) {
         if (position == null) return null;
-        return getIslandByPosition(position.x(), position.z());
+        return getIslandByRegion(position.x(), position.z());
     }
 
 
