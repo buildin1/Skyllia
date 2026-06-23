@@ -75,11 +75,11 @@ allprojects {
     }
 
     dependencies {
-        compileOnly("org.apache.maven.resolver:maven-resolver-api:2.0.16")
-        compileOnly("org.apache.logging.log4j:log4j-api:2.25.3")
-        compileOnly("org.apache.logging.log4j:log4j-core:2.25.3")
-        compileOnly("org.mariadb.jdbc:mariadb-java-client:3.5.7")
-        compileOnly("com.zaxxer:HikariCP:7.0.2")
+        compileOnly("org.apache.maven.resolver:maven-resolver-api:2.0.18")
+        compileOnly("org.apache.logging.log4j:log4j-api:2.26.0")
+        compileOnly("org.apache.logging.log4j:log4j-core:2.26.0")
+        compileOnly("org.mariadb.jdbc:mariadb-java-client:3.5.9")
+        compileOnly("com.zaxxer:HikariCP:7.1.0")
         compileOnly("org.xerial:sqlite-jdbc:3.51.2.0")
         compileOnly("org.jetbrains:annotations:26.1.0")
         compileOnly("com.electronwill.night-config:toml:3.8.3")
