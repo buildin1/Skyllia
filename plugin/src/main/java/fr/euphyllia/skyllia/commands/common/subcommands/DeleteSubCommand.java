@@ -151,9 +151,7 @@ public class DeleteSubCommand implements SubCommandInterface {
                 AtomicBoolean failed = new AtomicBoolean(false);
 
                 if (worldsLeft.get() == 0) {
-                    // Aucun monde ne supprime les chunks physiquement :
-                    // la position doit rester bloquée définitivement pour éviter une réallocation sur des chunks existants.
-                    finalizeDeletion(skyblockManager, island, true, player);
+                    finalizeDeletion(skyblockManager, island, false, player);
                     return;
                 }
 

@@ -1,6 +1,7 @@
 package fr.euphyllia.skyllia.commands.admin.subcommands;
 
 import fr.euphyllia.skyllia.api.commands.SubCommandInterface;
+import fr.euphyllia.skyllia.api.event.skyllia.SkylliaReloadEvent;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
 import fr.euphyllia.skyllia.utils.PlayerUtils;
 import org.bukkit.command.CommandSender;
@@ -19,6 +20,7 @@ public class ReloadSubCommands implements SubCommandInterface {
             return;
         }
 
+        new SkylliaReloadEvent().callEvent();
         ConfigLoader.reloadConfigs();
         ConfigLoader.permissionsV2.compileNow();
         ConfigLoader.islandFlags.compileNow();

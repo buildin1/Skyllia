@@ -91,7 +91,8 @@ Extend Skyllia with 7 free official addons:
 
 ### Compatible plugins (optional)
 
-- [WorldEdit](https://modrinth.com/plugin/worldedit) (recommended) or [FastAsyncWorldEdit](https://modrinth.com/plugin/fastasyncworldedit)
+- [WorldEdit](https://modrinth.com/plugin/worldedit) (recommended)
+  or [FastAsyncWorldEdit](https://modrinth.com/plugin/fastasyncworldedit)
 - [Vault](https://www.spigotmc.org/resources/vault.34315/) (for SkylliaBank)
 - [PlaceholderAPI](https://modrinth.com/plugin/placeholderapi) (for placeholders)
 - [LuckPerms](https://modrinth.com/plugin/luckperms) (for server permissions)
@@ -139,10 +140,10 @@ Skyllia provides a complete API to create your own addons:
 </repository>
 
 <dependency>
-  <groupId>fr.euphyllia.skyllia</groupId>
-  <artifactId>api</artifactId>
-  <version>3.x</version>
-  <scope>provided</scope>
+<groupId>fr.euphyllia.skyllia</groupId>
+<artifactId>api</artifactId>
+<version>3.x</version>
+<scope>provided</scope>
 </dependency>
 ```
 
@@ -206,4 +207,5 @@ Skyllia is open source, you can contribute via:
 
 ## 📜 License
 
-Skyllia is licensed under the MIT License. For more details, see the [LICENSE](https://github.com/Euphillya/Skyllia/blob/ver/3.x/LICENSE) file in the GitHub repository.
+Skyllia is licensed under the MIT License. For more details, see
+the [LICENSE](https://github.com/Euphillya/Skyllia/blob/ver/3.x/LICENSE) file in the GitHub repository.

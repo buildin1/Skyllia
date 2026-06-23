@@ -2,9 +2,9 @@ package fr.euphyllia.skyllia.api.language;
 
 import net.kyori.adventure.text.Component;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.bukkit.entity.Player;
 
 import java.util.Locale;
 import java.util.Map;
