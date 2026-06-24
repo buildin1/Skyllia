@@ -1,6 +1,7 @@
 package fr.euphyllia.skyllia;
 
 import dev.faststats.ErrorTracker;
+import dev.faststats.Metrics;
 import dev.faststats.bukkit.BukkitContext;
 import fr.euphyllia.skyllia.api.InterneAPI;
 import fr.euphyllia.skyllia.api.SkylliaAPI;
@@ -35,6 +36,7 @@ public class Skyllia extends JavaPlugin {
     private final Logger logger = LogManager.getLogger(this);
     private final BukkitContext context = new BukkitContext.Factory(this, "f329c2c0e1c9562dffebed9b6786d4c9")
             .errorTrackerService(ERROR_TRACKER)
+            .metrics(Metrics.Factory::create)
             .create();
     private InterneAPI interneAPI;
     private SubCommandRegistry commandRegistry;
