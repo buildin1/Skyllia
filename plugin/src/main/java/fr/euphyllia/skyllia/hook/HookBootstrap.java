@@ -82,7 +82,7 @@ public class HookBootstrap {
             }
 
             hook.register(Skyllia.getInstance());
-            log.error("Registered plugin hook: {}", hook.name());
+            log.debug("Registered plugin hook: {}", hook.name());
         }
     }
 

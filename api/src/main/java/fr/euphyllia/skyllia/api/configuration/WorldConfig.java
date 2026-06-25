@@ -30,7 +30,7 @@ public class WorldConfig {
         try {
             env = World.Environment.valueOf(environmentStr.toUpperCase());
         } catch (IllegalArgumentException e) {
-            log.error("Environment {} does not exist. Using the default NORMAL World.", environmentStr.toUpperCase(), e);
+            log.warn("Environment {} does not exist. Using the default NORMAL World.", environmentStr.toUpperCase(), e);
             env = World.Environment.NORMAL;
         }
 
