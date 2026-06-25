@@ -8,6 +8,16 @@ canvas-supported: true
 loader: fr.euphyllia.skyllia.SkylliaLoader
 authors:
   - Euphyllia
+contributors:
+  - haha252
+  - DailyXplorer
+  - Javavailable
+  - Stabrinai
+  - Xgabi86
+  - appleneko2001
+  - Lorn87
+  - addpromax
+website: "https://github.com/Euphillya/Skyllia"
 
 dependencies:
   server:
