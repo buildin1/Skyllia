@@ -59,7 +59,9 @@ public class VisitedHandler implements PlaceholderHandler {
         Location loc = player.getLocation();
         if (loc.getWorld() == null) return null;
         if (!SkylliaAPI.isWorldSkyblock(loc.getWorld())) return null;
-        return SkylliaAPI.getIslandByChunk(loc.getChunk());
+        int chunkX = loc.getBlockX() >> 4;
+        int chunkZ = loc.getBlockZ() >> 4;
+        return SkylliaAPI.getIslandByChunk(chunkX, chunkZ);
     }
 
     /**

@@ -48,7 +48,10 @@ public class QuickShopListener implements Listener {
         final Location shopLoc = event.location();
         if (!SkylliaAPI.isWorldSkyblock(shopLoc.getWorld())) return;
 
-        final Island island = SkylliaAPI.getIslandByChunk(shopLoc.getChunk());
+        int chunkX = shopLoc.getBlockX() >> 4;
+        int chunkZ = shopLoc.getBlockZ() >> 4;
+
+        final Island island = SkylliaAPI.getIslandByChunk(chunkX, chunkZ);
         if (island == null) {
             event.setCancelled(true, "You cannot create a shop outside of an island.");
             return;
@@ -76,7 +79,10 @@ public class QuickShopListener implements Listener {
         final Location shopLoc = event.getShop().getLocation();
         if (!SkylliaAPI.isWorldSkyblock(shopLoc.getWorld())) return;
 
-        final Island island = SkylliaAPI.getIslandByChunk(shopLoc.getChunk());
+        int chunkX = shopLoc.getBlockX() >> 4;
+        int chunkZ = shopLoc.getBlockZ() >> 4;
+
+        final Island island = SkylliaAPI.getIslandByChunk(chunkX, chunkZ);
         if (island == null) return;
 
         if (island.isDisable()) {
@@ -120,13 +126,15 @@ public class QuickShopListener implements Listener {
             for (final Shop shop : shops) {
                 final Location loc = shop.getLocation();
                 if (loc == null) continue;
+                int chunkX = loc.getBlockX() >> 4;
+                int chunkZ = loc.getBlockZ() >> 4;
 
-                final Island shopIsland = SkylliaAPI.getIslandByChunk(loc.getBlockX() >> 4, loc.getBlockZ() >> 4);
+                final Island shopIsland = SkylliaAPI.getIslandByChunk(chunkX, chunkZ);
                 if (shopIsland == null || !shopIsland.getId().equals(island.getId())) continue;
 
                 if (ownerFilter != null && !Objects.equals(shop.getOwner().getUniqueId(), ownerFilter)) continue;
 
-                Bukkit.getRegionScheduler().execute(SkylliaAPI.getPlugin(), loc, () -> {
+                Bukkit.getRegionScheduler().execute(SkylliaAPI.getPlugin(), world, chunkX, chunkZ, () -> {
                     try {
                         api.getShopManager().deleteShop(shop);
                     } catch (Exception e) {
