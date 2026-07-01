@@ -59,10 +59,10 @@ public final class SkylliaAPI {
     }
 
     /**
-     * Retrieves the island associated with a player's UUID.
+     * Retrieves the island the given player belongs to (as owner or member).
      *
      * @param playerUniqueId The UUID of the player.
-     * @return A CompletableFuture that will contain the island associated with the player's UUID.
+     * @return The island the player belongs to, or {@code null} if none is found.
      */
     public static @Nullable Island getIslandByPlayerId(UUID playerUniqueId) {
         return implementation.getIslandByPlayerId(playerUniqueId);
@@ -72,7 +72,7 @@ public final class SkylliaAPI {
      * Retrieves the island associated with an island ID.
      *
      * @param islandId The UUID of the island.
-     * @return A CompletableFuture that will contain the island associated with the island ID.
+     * @return The island with this ID, or {@code null} if none is found.
      */
     public static @Nullable Island getIslandByIslandId(UUID islandId) {
         return implementation.getIslandByIslandId(islandId);
@@ -231,7 +231,7 @@ public final class SkylliaAPI {
     /**
      * Retrieves all valid (non-disabled) Skyllia islands from the database.
      *
-     * @return A CompletableFuture containing a thread-safe list of active islands.
+     * @return A thread-safe list of active islands.
      */
     public static List<Island> getAllIslandsValid() {
         return implementation.getAllIslandsValid();
