@@ -51,6 +51,19 @@ teleport-when-accepting = true
 # Allows players with the permission "skyllia.island.bypass.queue" to bypass the island creation queue.
 # If set to false, everyone must wait in the queue regardless of permissions.
 allow-bypass = true
+# Maximum number of islands the server will create concurrently (players beyond
+# this limit wait in the queue, same as before).
+# -1 = auto: derived from available CPU cores, capped at 4 so the default SQLite
+#      backend (max 4 pooled connections, see database.toml) is never asked for
+#      more concurrent writes than it can serve. 1 = strictly sequential, the
+#      previous behavior.
+# Only the schematic paste, teleport and world-border steps actually run in
+# parallel: the single database write that claims a region for a new island is
+# always serialized internally, so raising this value cannot cause two islands
+# to be assigned overlapping regions. If you run MariaDB/PostgreSQL with a
+# larger connection pool and want more throughput during creation spikes
+# (season launch, server opening), raise this explicitly past 4.
+max-concurrent = -1
 
 [settings.spawn]
 # Enables the global spawn point (access via /spawn).

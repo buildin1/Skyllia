@@ -12,12 +12,26 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * Server-wide queue for island creation requests.
+ * <p>
+ * Up to {@code settings.island.queue.max-concurrent} (see config.toml)
+ * creations are allowed to run in parallel rather than strictly one at a
+ * time. The slow steps of a creation (schematic paste, teleport, world
+ * border...) genuinely run concurrently; only the single database write that
+ * claims a region for the new island is serialized — via a lock in
+ * {@link fr.euphyllia.skyllia.managers.skyblock.SkyblockManager#createIsland} —
+ * so two concurrent creations can never be assigned the same region, even on
+ * database engines whose schema does not enforce that uniqueness itself.
+ * <p>
+ */
 public class IslandCreationQueue {
 
     private static final Queue<IslandCreationRequest> creationQueue = new ConcurrentLinkedQueue<>();
     private static final Logger logger = LogManager.getLogger(IslandCreationQueue.class);
-    private static boolean isProcessing = false;
+    private static final AtomicInteger activeCreations = new AtomicInteger(0);
 
     public static synchronized void queuePlayer(Player player, String[] args) {
         UUID uuid = player.getUniqueId();
@@ -35,44 +49,50 @@ public class IslandCreationQueue {
         creationQueue.add(new IslandCreationRequest(uuid, args));
         ConfigLoader.language.sendMessage(player, "island.create.queued", Map.of("%position%", String.valueOf(creationQueue.size())));
 
-        processNext();
+        pumpQueue();
     }
 
-    private static synchronized void processNext() {
-        if (isProcessing || creationQueue.isEmpty()) return;
-
+    /**
+     * Starts as many queued creations as the configured concurrency limit
+     * still allows, then returns — it never blocks waiting for a creation to
+     * finish. Safe to call redundantly (e.g. once per queued player and once
+     * per finished creation): each call only starts what capacity permits,
+     * and does nothing if the queue is empty or already at capacity.
+     */
+    private static synchronized void pumpQueue() {
         removeOfflinePlayers();
 
         if (creationQueue.isEmpty()) return;
 
-        isProcessing = true;
-        IslandCreationRequest request = creationQueue.poll();
-        if (request == null) {
-            isProcessing = false;
-            return;
+        final int max = ConfigLoader.general.getIslandSettings().resolvedMaxConcurrentCreations();
+        boolean startedAny = false;
+
+        while (activeCreations.get() < max) {
+            IslandCreationRequest request = creationQueue.poll();
+            if (request == null) break;
+
+            Player player = Bukkit.getPlayer(request.uuid());
+            if (player == null || !player.isOnline()) continue;
+
+            activeCreations.incrementAndGet();
+            startedAny = true;
+            startCreation(request, player);
         }
 
-        Player player = Bukkit.getPlayer(request.uuid());
-        broadcastPositions();
-
-        if (player == null || !player.isOnline()) {
-            isProcessing = false;
-            processNext();
-            return;
+        if (startedAny) {
+            broadcastPositions();
         }
+    }
 
+    private static void startCreation(IslandCreationRequest request, Player player) {
         new CreateSubCommand().runCreateIsland(Skyllia.getInstance(), player, request.args())
                 .whenComplete((result, throwable) -> {
                     if (throwable != null) {
                         logger.error("Island creation failed for {}", request.uuid(), throwable);
                     }
-                    IslandCreationQueue.resetAndProcessNext();
+                    activeCreations.decrementAndGet();
+                    pumpQueue();
                 });
-    }
-
-    private static synchronized void resetAndProcessNext() {
-        isProcessing = false;
-        processNext();
     }
 
     public static synchronized boolean isQueued(UUID uuid) {

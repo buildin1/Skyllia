@@ -48,6 +48,28 @@ public class SkyblockManager {
 
     private final ConcurrentHashMap<UUID, Set<Long>> regionsByIsland = new ConcurrentHashMap<>();
 
+    /**
+     * Guards the single database write that claims the next free region for a
+     * new island ({@code insertIslands}, an {@code INSERT ... SELECT ...
+     * ORDER BY ... LIMIT 1} against the spiral table).
+     * <p>
+     * That statement is not protected by a uniqueness constraint on
+     * (region_x, region_z) on every supported database engine — SQLite and
+     * MariaDB rely only on the primary key {@code (island_id, region_x,
+     * region_z)}, which does not prevent two different islands from claiming
+     * the same coordinates (only PostgreSQL has an explicit partial unique
+     * index for this). Concurrent, unsynchronized calls to
+     * {@link #createIsland} could therefore race and silently assign the
+     * same region to two islands on those engines.
+     * <p>
+     * Serializing this one short, fast write at the JVM level closes that
+     * race regardless of the configured database engine or its isolation
+     * level, while still allowing the slow parts of island creation
+     * (schematic paste, teleport, world border) to run fully in parallel —
+     * see {@code IslandCreationQueue} .
+     */
+    private static final Object REGION_ALLOCATION_LOCK = new Object();
+
     public SkyblockManager(Skyllia plugin, SkyblockCache cache) {
         this.plugin = plugin;
         this.cache = cache;
@@ -127,6 +149,12 @@ public class SkyblockManager {
 
     /**
      * Creates a new island with the specified {@link IslandSettings}.
+     * <p>
+     * Concurrency: safe to call concurrently from multiple threads (e.g. from
+     * {@code IslandCreationQueue} running several creations in parallel). The
+     * step that claims a region for the island is internally serialized via
+     * {@link #REGION_ALLOCATION_LOCK}, so two concurrent calls can never be
+     * assigned the same region.
      *
      * @param islandId   The UUID of the new island.
      * @param islandType The settings to apply to the new island.
@@ -162,10 +190,13 @@ public class SkyblockManager {
                     null
             );
 
-            boolean success = plugin.getInterneAPI()
-                    .getIslandQuery()
-                    .getIslandDataQuery()
-                    .insertIslands(futureIsland);
+            boolean success;
+            synchronized (REGION_ALLOCATION_LOCK) {
+                success = plugin.getInterneAPI()
+                        .getIslandQuery()
+                        .getIslandDataQuery()
+                        .insertIslands(futureIsland);
+            }
 
             if (success) {
                 var permQuery = plugin.getInterneAPI()
