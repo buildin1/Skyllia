@@ -27,7 +27,6 @@ import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class VisitSubCommand implements SubCommandInterface {
 
@@ -79,7 +78,7 @@ public class VisitSubCommand implements SubCommandInterface {
                 return;
             }
 
-            boolean bypass = player.hasPermission("skyllia.island.command.visit.bypass")
+            boolean bypass = PlayerUtils.hasPermission(player, "skyllia.island.command.visit.bypass")
                     || SkylliaAPI.getPermissionsManager().hasPermission(player, island, ISLAND_VISIT_BYPASS_PERMISSION, null, ConfigLoader.general.getDebugSettings().permission());
 
             if (!bypass) {
@@ -94,26 +93,25 @@ public class VisitSubCommand implements SubCommandInterface {
                 }
             }
 
-            WarpIsland warpIsland = Optional.ofNullable(island.getWarpByName("visit"))
-                    .orElse(island.getWarpByName("home"));
+            WarpIsland warpIsland = island.getVisit();
 
             player.getScheduler().execute(plugin, () -> {
                 Location loc;
-                if (warpIsland == null) {
-                    loc = RegionHelper.getCenterRegion(Bukkit.getWorld(WorldUtils.getWorldConfigs().getFirst().getWorldName()), island.getPosition().x(), island.getPosition().z());
+                if (warpIsland == null || warpIsland.location() == null || warpIsland.location().getWorld() == null) {
+                    loc = RegionHelper.getCenterRegion(Bukkit.getWorld(WorldUtils.getWorldConfigs().getFirst().getWorldName()), island.getRegionCoordinate().x(), island.getRegionCoordinate().z());
                 } else {
-                    loc = warpIsland.location();
+                    loc = warpIsland.location().clone();
                 }
-                loc.setY(loc.getY() + 0.5);
+                loc.add(0, 0.5, 0);
                 player.teleportAsync(loc, PlayerTeleportEvent.TeleportCause.PLUGIN).thenRun(() -> {
-                    if (player.hasPermission("skyllia.island.worldborder.bypass")) {
+                    if (PlayerUtils.hasPermission(player, "skyllia.island.worldborder.bypass")) {
                         return;
                     }
 
                     ConfigLoader.language.sendMessage(player, "island.visit.success", Map.of(
                             "%player%", visitPlayer));
 
-                    Location center = RegionHelper.getCenterRegion(loc.getWorld(), island.getPosition().x(), island.getPosition().z());
+                    Location center = RegionHelper.getCenterRegion(loc.getWorld(), island.getRegionCoordinate().x(), island.getRegionCoordinate().z());
 
                     WorldBorder border = player.getWorldBorder();
                     if (border == null) {
@@ -136,11 +134,14 @@ public class VisitSubCommand implements SubCommandInterface {
         if (args.length == 1) {
             String partial = args[0].trim().toLowerCase();
             var onlinePlayers = Bukkit.getOnlinePlayers();
-            return onlinePlayers.stream()
-                    .map(CommandSender::getName)
-                    .filter(name -> name.toLowerCase().startsWith(partial))
-                    .sorted()
-                    .collect(Collectors.toList());
+            List<String> list = new ArrayList<>();
+            for (Player onlinePlayer : onlinePlayers) {
+                String name = onlinePlayer.getName();
+                if (name.toLowerCase().startsWith(partial)) {
+                    list.add(name);
+                }
+            }
+            return list;
         }
         return Collections.emptyList();
     }

@@ -73,11 +73,12 @@ failed = "<red>Database update failed.</red>"
 
 [island.flag]
 usage = """<gray>Usage:</gray> <light_purple>/is flag list [filter]</light_purple>
-<gray> - </gray><light_purple>/is flag <namespace:key> [true|false]</light_purple>
-<gray> - </gray><light_purple>/is flag toggle <namespace:key></light_purple>
-<gray> - </gray><light_purple>/is flag set <namespace:key> <true|false></light_purple>"""
+<gray> - </gray><light_purple>/is flag <namespace:key> [true|false] [world]</light_purple>
+<gray> - </gray><light_purple>/is flag toggle <namespace:key> [world]</light_purple>
+<gray> - </gray><light_purple>/is flag set <namespace:key> <true|false> [world]</light_purple>"""
 value = "<white>%flag%</white> <gray>=</gray> <aqua>%value%</aqua>"
 permission-denied = "<red>You do not have permission to modify this flag.</red>"
+no-world = "<red>No skyblock world is configured.</red>"
 
 [island.flag.flag]
 invalid-format = "<red>Invalid flag format:</red> <white>%flag%</white> <gray>(expected namespace:key)</gray>"
@@ -197,6 +198,9 @@ banned = "You are banned from the island."
 success = "You have been teleported to the island of %player%."
 no-island-location = "No island was found at this location."
 
+[island.visit.set]
+success = "The visit point of your island has been set to your current position."
+
 [island.generic]
 unexpected-error = "An error occurred. Please contact an administrator."
 location-unsafe = "The location is not safe! Teleportation impossible."
@@ -206,6 +210,8 @@ command-in-progress = "The command is already being executed, please wait a mome
 create-success = "Your warp %s has been created."
 args-missing = "You must specify the name of the warp to register: /skyllia <set/del>warp <warp_name>"
 delete-home-forbidden = "You cannot delete the home warp."
+reserved-name = "This warp name is reserved and cannot be used."
+delete-spawn-forbidden = "You cannot delete the spawn warp. Use /skyllia setspawn to move it."
 delete-success = "The warp has been deleted."
 warp-not-exist = "The requested warp does not exist."
 teleport-success = "You have been teleported to the requested warp."
@@ -329,14 +335,14 @@ player-not-island = "<red>The player has no island."
 invalid-amount = "<red>Invalid amount."
 invalid-amount-positive = "<red>Invalid amount. Must be positive."
 invalid-amount-negative = "<red>Amount cannot be negative."
-island-balance = "<green>{player_name}'s Island Balance: <yellow>%amount%."
-island-error-balance = "<red>Unable to recover {player_name}'s Island balance."
-deposit-success = "<green>Deposited %amount% into {player_name}'s island bank."
-deposit-error = "<red>An error occurred while depositing to {player_name}'s island bank."
-success-withdraw = "<green>Withdrawn %amount% from {player_name}'s island bank."
-error-withdraw = "<red>An error occurred while withdrawing from {player_name}'s island bank."
-set-balance-success = "<green>Set {player_name}'s island bank balance to %amount%."
-set-balance-error = "<red>An error occurred while setting {player_name}'s island balance."
+island-balance = "<green>%player_name%'s Island Balance: <yellow>%amount%."
+island-error-balance = "<red>Unable to recover %player_name%'s Island balance."
+deposit-success = "<green>Deposited %amount% into %player_name%'s island bank."
+deposit-error = "<red>An error occurred while depositing to %player_name%'s island bank."
+success-withdraw = "<green>Withdrawn %amount% from %player_name%'s island bank."
+error-withdraw = "<red>An error occurred while withdrawing from %player_name%'s island bank."
+set-balance-success = "<green>Set %player_name%'s island bank balance to %amount%."
+set-balance-error = "<red>An error occurred while setting %player_name%'s island balance."
 
 [addons.ore.display]
 title = "<gold>=== Island Ore ===</gold>"
@@ -387,6 +393,10 @@ display = "<!italic><gray>- Break %amount% of %material%.</gray>"
 [addons.challenge.requirement.nearby_entity]
 display = "<!italic><gray>- Have %amount% %entity_type% nearby (%radius% m).</gray>"
 
+[addons.challenge.requirement.entity]
+display = "<!italic><gray>- Have %amount% %entity_type% on your island.</gray>"
+display_radius = "<!italic><gray>- Have %amount% %entity_type% within %radius% m.</gray>"
+
 [addons.challenge.requirement.item]
 display = "<!italic><gray>- Have %amount% of %item_name%.</gray>"
 
@@ -398,6 +408,18 @@ display = "<!italic><gray>- Have %amount% in your island account.</gray>"
 
 [addons.challenge.requirement.craft]
 display = "<!italic><gray>- Craft %amount% of %item_name%.</gray>"
+
+[addons.challenge.level]
+complete = "<green>You have completed the challenge level: %level_name%!</green>"
+notify-complete = "<green>Congratulations! %player_name%'s island has completed the challenge level: %level_name%!</green>"
+
+[addons.challenge.level.display]
+title = "<gold>=== Challenge Levels ===</gold>"
+progression = "<gray>Challenges: <white>%done%/%required%</white> (total %total%)"
+max-skip = "<!italic><gray>You may skip up to %max_skip% challenge(s).</gray>"
+completed = "<green>✔ Completed</green>"
+unlocked = "<yellow>Unlocked — in progress</yellow>"
+locked = "<red>🔒 Locked</red>"
 
 [addons.challenge.reward.bank]
 success = "<green>You have received %amount% in your island account as a reward for completing the %challenge_name% challenge.</green>"
@@ -496,6 +518,10 @@ description = "Allows modifying the island or chunk biome."
 [island.permission.set_home]
 name = "Set Home"
 description = "Allows moving the island's main spawn point."
+
+[island.permission.command.set_visit]
+name = "Set Visit Point"
+description = "Allows setting the arrival point for visitors of the island."
 
 [island.permission.set_warp]
 name = "Create a Warp"
@@ -1000,3 +1026,88 @@ description = "Controls Illusioner spawning."
 [debug]
 permission-has = "%player% HAVE %permission% permission"
 permission-missing = "%player% DOESN'T HAVE %permission% permission"
+
+[addons.backup.player]
+player-only = "<red>This command can only be used by a player."
+disabled = "<red>Player backups are disabled on this server."
+cooldown = "<red>Please wait <yellow>%minutes%m %seconds%s</yellow> before requesting another backup."
+started = "<green>Starting backup of your island, please wait..."
+success = "<green>Backup created: <white>%file%"
+uploading = "<gray>Uploading backup to remote server..."
+failed = "<red>Backup failed. Please contact an administrator."
+no-permission = "<red>You do not have permission to backup your island."
+
+[addons.backup.admin]
+usage = "<yellow>Usage: /isadmin backup <player|all>"
+started = "<green>Starting backup for <white>%player%</white>'s island..."
+success = "<green>Backup created for <white>%player%</white>: <white>%file%"
+failed = "<red>Backup failed for <white>%player%</white>'s island."
+all-started = "<green>Starting backup of ALL islands, this may take a while..."
+all-done = "<green>Done: <white>%count%</white> islands backed up."
+
+[addons.skylliaextra.player.setdescription]
+player-only = "<red>This command can only be executed by a player."
+no-island = "<red>You don't have an island!"
+no-permission = "<red>You do not have permission to use this command."
+permission-denied = "<red>Your island role does not allow you to change the description."
+usage = "<yellow>Usage: <white>/is setdescription <description> <yellow>| Use <white>reset <yellow>to clear."
+reset = "<green>Island description has been reset."
+success = "<green>Island description set to: <white>%description%"
+failed = "<red>Failed to save the island description. Please try again."
+
+[addons.skylliaextra.player.setname]
+player-only = "<red>This command can only be executed by a player."
+no-island = "<red>You don't have an island!"
+no-permission = "<red>You do not have permission to use this command."
+permission-denied = "<red>Your island role does not allow you to change the name."
+usage = "<yellow>Usage: <white>/is setname <name> <yellow>| Use <white>reset <yellow>to clear."
+reset = "<green>Island name has been reset."
+success = "<green>Island name set to: <white>%name%"
+failed = "<red>Failed to save the island name. Please try again."
+
+[addons.skylliaextra.admin.setname]
+no-permission = "<red>You do not have permission to use this command."
+usage = "<yellow>Usage: <white>/isadmin setname <player> <name> <yellow>| Use <white>reset <yellow>to clear."
+player-not-found = "<red>Player <white>%player%</white> not found."
+no-island = "<red>This player does not have an island."
+reset = "<green>Island name for <white>%player%</white> has been reset."
+success = "<green>Island name for <white>%player%</white> set to: <white>%name%"
+failed = "<red>Failed to save the island name."
+
+[addons.skylliaextra.admin.setdescription]
+no-permission = "<red>You do not have permission to use this command."
+usage = "<yellow>Usage: <white>/isadmin setdescription <player> <description> <yellow>| Use <white>reset <yellow>to clear."
+player-not-found = "<red>Player <white>%player%</white> not found."
+no-island = "<red>This player does not have an island."
+reset = "<green>Island description for <white>%player%</white> has been reset."
+success = "<green>Island description for <white>%player%</white> set to: <white>%description%"
+failed = "<red>Failed to save the island description."
+
+[addons.skylliaextra.display]
+title = "<gray>--- Island Extra Info ---</gray>"
+name = "<aqua>Name:</aqua> <white>%name%</white>"
+description = "<aqua>Description:</aqua> <white>%description%</white>"
+
+[update-checker]
+update-available-one = "<gold>Skyllia is <red>1 version behind</red>! Latest: <green>%version%</green>. Download it here: <aqua><click:open_url:'%url%'>%url%</click></aqua>"
+update-available-many = "<gold>Skyllia is <red>%behind% versions behind</red>! Latest: <green>%version%</green>. Download it here: <aqua><click:open_url:'%url%'>%url%</click></aqua>"
+
+[hook.quickshop.create]
+owner-only = "<red>Only the island owner can create a shop here."
+permission-denied = "<red>Your island role does not allow you to create a shop here."
+
+[hook.quickshop.purchase]
+island-disabled = "<red>This island is currently disabled."
+
+[island.permission.quickshop.shop.create]
+name = "Create a QuickShop"
+description = "Allows creating a QuickShop on the island."
+[island.spawn]
+block-protected = "You cannot break the island spawn block."
+
+[island.spawn.set]
+success = "Your island spawn point has been set."
+
+[island.permission.command.set_spawn]
+name = "Set Spawn"
+description = "Allows moving the island spawn point."

@@ -2,16 +2,17 @@
 
 # <img src="https://cdn.modrinth.com/data/fGbtispn/d3a18500b1a981a2207407035798e918437d0f94_96.webp" height="25"> Skyllia
 
-### The first Skyblock plugin fully compatible with Folia
+### The first Skyblock plugin built for Folia
 
-[![Folia](https://img.shields.io/badge/Folia-Compatible-green.svg)](https://papermc.io/software/folia)
-[![Paper](https://img.shields.io/badge/Paper-1.20.1+-blue.svg)](https://papermc.io/)
+[![Folia](https://img.shields.io/badge/Built%20for-Folia-brightgreen.svg)](https://papermc.io/software/folia)
+[![Paper](https://img.shields.io/badge/Paper-1.20.6+-blue.svg)](https://papermc.io/)
 [![Java](https://img.shields.io/badge/Java-21+-orange.svg)](https://www.oracle.com/java/)
-[![License](https://img.shields.io/badge/license-MIT-blue)](https://github.com/Euphillya/Skyllia)
+[![License](https://img.shields.io/badge/license-MIT-blue)](https://github.com/Euphillya/Skyllia/blob/ver/3.x/LICENSE)
+[![Servers](https://img.shields.io/endpoint?url=https%3A%2F%2Ffaststats.dev%2Fapi%2Fshields%2Fskyllia%3Fmetric%3Dservers&style=flat)](https://faststats.dev/project/skyllia)
+[![Total downloads](https://img.shields.io/endpoint?url=https%3A%2F%2Ffaststats.dev%2Fapi%2Fshields%2Fskyllia%3Fmetric%3Ddownloads&style=flat)](https://faststats.dev/project/skyllia)
 
 [Documentation](https://skyllia.euphyllia.moe) • [GitHub](https://github.com/Euphillya/Skyllia) • [Modrinth](https://modrinth.com/plugin/skyllia) • [Discord](https://discord.gg/uUJQEB7XNN)
 
-[![](https://bstats.org/signatures/bukkit/Skyllia.svg)](https://bstats.org/plugin/bukkit/Skyllia/20874)
 [![Servers & Players](https://faststats.dev/embed/default:6978bcc2-1574-41ea-b5ae-242398b401c7:servers-and-players?w=800&h=300)](https://faststats.dev/project/skyllia/skyllia-plugin)
 </div>
 
@@ -49,7 +50,7 @@ delivers exceptional performance even with hundreds of simultaneous players.
 - **6 predefined roles** — Owner, Co-Owner, Moderator, Member, Visitor, Ban
 - **50+ granular permissions** — Full control per role
 - **Temporary trust** — Configurable guest access
-- **Modular system** — Create your own roles
+- **Modular system** — Create your own permission
 
 ### 🎯 Advanced Features
 
@@ -64,35 +65,38 @@ delivers exceptional performance even with hundreds of simultaneous players.
 - **PlaceholderAPI** — Variables for scoreboard, tab, etc.
 - **Vault** — Economy support (via SkylliaBank)
 - **WorldEdit/FAWE** — High-performance schematics
-- **Insights** — Block limits (via InsightsSkyllia)
+- **Insights** — Block limits (via SkylliaInsights)
 
 ## 🎮 Official Addons
 
 Extend Skyllia with 7 free official addons:
 
-| Addon                | Description                                        |
-|----------------------|----------------------------------------------------|
-| **SkylliaBank**      | Shared island bank system with transaction history |
-| **SkylliaOre**       | Configurable automatic ore generator               |
-| **SkylliaChallenge** | Daily/weekly challenges with rewards               |
-| **SkylliaChat**      | Per-island chat with multiple channels             |
-| **InsightsSkyllia**  | Block and entity limits per island                 |
-| **SkylliaChest**     | Share a chest across your entire island (beta)     |
-| **SkylliaAcidRain**  | The water is becoming acidic!                      |
+| Addon                  | Description                                                       |
+|------------------------|-------------------------------------------------------------------|
+| **SkylliaBank**        | Shared island bank system with transaction history                |
+| **SkylliaOre**         | Configurable automatic ore generator                              |
+| **SkylliaChallenge**   | Daily/weekly challenges with rewards                              |
+| **SkylliaChat**        | Per-island chat with multiple channels                            |
+| **SkylliaInsights**    | Block and entity limits per island                                |
+| **SkylliaChest**       | Share a chest across your entire island (beta)                    |
+| **SkylliaAcidRain**    | The water is becoming acidic!                                     |
+| **SkylliaIslandValue** | Island value depends on the number of blocks placed on the island |
 
 ## 📋 Requirements
 
 - **Server**: Folia 1.20.6+ or Paper 1.20.6+
-- **Java**: 25 or higher (since 3.0-42)
+- **Java**: 21
 - **RAM**: 4GB minimum, 8GB+ recommended
 - **Database** (optional): MariaDB 10.5+ or PostgreSQL 12+ (prefer PostgreSQL for large servers)
 
 ### Compatible plugins (optional)
 
-- WorldEdit or FastAsyncWorldEdit (recommended)
-- Vault (for SkylliaBank)
-- PlaceholderAPI (for placeholders)
-- LuckPerms (for server permissions)
+- [WorldEdit](https://modrinth.com/plugin/worldedit) (recommended)
+  or [FastAsyncWorldEdit](https://modrinth.com/plugin/fastasyncworldedit)
+- [Vault](https://www.spigotmc.org/resources/vault.34315/) (for SkylliaBank)
+- [PlaceholderAPI](https://modrinth.com/plugin/placeholderapi) (for placeholders)
+- [LuckPerms](https://modrinth.com/plugin/luckperms) (for server permissions)
+- [QuickShop-Hikari](https://modrinth.com/plugin/quickshop-hikari) (for shop island)
 
 ## 🚀 Quick Installation
 
@@ -149,17 +153,18 @@ import fr.euphyllia.skyllia.api.island.Island;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.Listener;
 
-public class MyPlugin {
+public class MyPlugin implements Listener {
 
-   @EventHandler
-   public void onPlayerJoin(PlayerJoinEvent event) {
-      Player player = event.getPlayer();
-      Island island = SkylliaAPI.getIslandByPlayerId(player.getUniqueId());
-      if (island != null) {
-         player.sendMessage("Your island: " + island.getId());
-      }
-   }
+    @EventHandler
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        Player player = event.getPlayer();
+        Island island = SkylliaAPI.getIslandByPlayerId(player.getUniqueId());
+        if (island != null) {
+            player.sendMessage("Your island: " + island.getId());
+        }
+    }
 }
 ```
 
@@ -186,8 +191,6 @@ See the [API documentation](#) for more information.
 /isadmin teleport <player>   - TP to a player's island
 ```
 
-Full list: [Player commands](#) • [Admin commands](#)
-
 ## 🤝 Contributing
 
 Skyllia is open source, you can contribute via:
@@ -204,4 +207,5 @@ Skyllia is open source, you can contribute via:
 
 ## 📜 License
 
-Skyllia is licensed under the MIT License. For more details, see the [LICENSE](LICENSE) file in the GitHub repository.
+Skyllia is licensed under the MIT License. For more details, see
+the [LICENSE](https://github.com/Euphillya/Skyllia/blob/ver/3.x/LICENSE) file in the GitHub repository.

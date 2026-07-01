@@ -3,6 +3,7 @@ package fr.euphyllia.skyllia.commands.common.subcommands;
 import fr.euphyllia.skyllia.Skyllia;
 import fr.euphyllia.skyllia.api.SkylliaAPI;
 import fr.euphyllia.skyllia.api.commands.SubCommandInterface;
+import fr.euphyllia.skyllia.api.configuration.WorldConfig;
 import fr.euphyllia.skyllia.api.database.IslandPermissionQuery;
 import fr.euphyllia.skyllia.api.permissions.*;
 import fr.euphyllia.skyllia.api.skyblock.Island;
@@ -17,7 +18,6 @@ import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class FlagSubCommand implements SubCommandInterface {
 
@@ -149,12 +149,39 @@ public class FlagSubCommand implements SubCommandInterface {
             return;
         }
 
+        String worldName = null;
+        if (args.length - offset >= 3) {
+            String candidate = args[offset + 2];
+            if (SkylliaAPI.isWorldSkyblock(candidate)) {
+                worldName = candidate;
+            } else {
+                ConfigLoader.language.sendMessage(player, "island.flag.world.invalid", Map.of(
+                        "%world%", candidate
+                ));
+                return;
+            }
+        }
+
+        if (worldName == null) {
+            String playerWorld = player.getWorld().getName();
+            if (SkylliaAPI.isWorldSkyblock(playerWorld)) {
+                worldName = playerWorld;
+            } else {
+                List<WorldConfig> worlds = SkylliaAPI.getRegisteredWorlds();
+                if (worlds.isEmpty()) {
+                    ConfigLoader.language.sendMessage(player, "island.flag.no-world"); // Todo : add message
+                    return;
+                }
+                worldName = worlds.getFirst().getWorldName();
+            }
+        }
+
         boolean isReadOnly = action.equals("get")
                 || (action.equals("auto") && (args.length - offset < 2 || parseBool(args[offset + 1]) == null));
 
         Boolean explicitBool = (args.length - offset >= 2) ? parseBool(args[offset + 1]) : null;
 
-        boolean current = island.getIslandFlags().has(registry, fid);
+        boolean current = island.getIslandFlags(worldName).has(registry, fid);
 
         if (action.equals("get") || (action.equals("auto") && explicitBool == null)) {
             ConfigLoader.language.sendMessage(player, "island.flag.value", Map.of(
@@ -177,13 +204,13 @@ public class FlagSubCommand implements SubCommandInterface {
             next = explicitBool;
         }
 
-        boolean updated = setDbAndRuntime(island, fid, next);
+        boolean updated = setDbAndRuntime(island, fid, next, worldName);
         if (!updated) {
             ConfigLoader.language.sendMessage(player, "island.flag.update.failed");
             return;
         }
 
-        boolean finalValue = island.getIslandFlags().has(registry, fid);
+        boolean finalValue = island.getIslandFlags(worldName).has(registry, fid);
         ConfigLoader.language.sendMessage(player, "island.flag.update.success", Map.of(
                 "%flag%", toKeyString(key),
                 "%old%", String.valueOf(current),
@@ -192,7 +219,7 @@ public class FlagSubCommand implements SubCommandInterface {
     }
 
 
-    private boolean setDbAndRuntime(Island island, FlagId fid, boolean value) {
+    private boolean setDbAndRuntime(Island island, FlagId fid, boolean value, String worldName) {
         IslandPermissionQuery query = Skyllia.getInstance()
                 .getInterneAPI()
                 .getIslandQuery()
@@ -221,7 +248,7 @@ public class FlagSubCommand implements SubCommandInterface {
         }
 
         // Load flags from DB, apply all changes at once, save once
-        IslandFlags dbFlags = query.loadIslandFlags(island.getId(), registry);
+        IslandFlags dbFlags = query.loadIslandFlags(island.getId(), registry, worldName);
         if (dbFlags == null) dbFlags = new IslandFlags(registry);
 
         dbFlags.set(registry, fid, value);
@@ -230,11 +257,11 @@ public class FlagSubCommand implements SubCommandInterface {
         }
 
         byte[] blob = PermissionSetCodec.encodeLongs(dbFlags.snapshotWords());
-        boolean success = query.saveIslandFlags(island.getId(), blob);
+        boolean success = query.saveIslandFlags(island.getId(), blob, worldName);
         if (!success) return false;
 
         // Update runtime cache
-        IslandFlags flags = island.getIslandFlags();
+        IslandFlags flags = island.getIslandFlags(worldName);
         flags.ensureUpToDate(registry);
         flags.set(registry, fid, value);
         for (FlagId child : childFlags) {
@@ -257,9 +284,13 @@ public class FlagSubCommand implements SubCommandInterface {
 
         if (args.length == 1) {
             String partial = args[0].trim().toLowerCase(Locale.ROOT);
-            return ACTIONS.stream()
-                    .filter(a -> a.startsWith(partial))
-                    .collect(Collectors.toList());
+            List<String> list = new ArrayList<>();
+            for (String a : ACTIONS) {
+                if (a.startsWith(partial)) {
+                    list.add(a);
+                }
+            }
+            return list;
         }
 
         int offset = isAction(args[0]) ? 1 : 0;
@@ -288,12 +319,38 @@ public class FlagSubCommand implements SubCommandInterface {
 
         if (args.length == offset + 2 && !action.equals("get") && !action.equals("list") && !action.equals("toggle")) {
             String partial = args[offset + 1].trim().toLowerCase(Locale.ROOT);
-            return BOOLS.stream().filter(b -> b.startsWith(partial)).toList();
+            List<String> list = new ArrayList<>();
+            for (String b : BOOLS) {
+                if (b.startsWith(partial)) {
+                    list.add(b);
+                }
+            }
+            return list;
         }
 
         if (action.equals("auto") && args.length == 2) {
             String partial = args[1].trim().toLowerCase(Locale.ROOT);
-            return BOOLS.stream().filter(b -> b.startsWith(partial)).toList();
+            List<String> list = new ArrayList<>();
+            for (String b : BOOLS) {
+                if (b.startsWith(partial)) {
+                    list.add(b);
+                }
+            }
+            return list;
+        }
+
+
+        if (args.length == offset + 3 && !action.equals("list")) {
+            String partial = args[offset + 2].trim().toLowerCase(Locale.ROOT);
+            List<String> list = new ArrayList<>();
+            for (WorldConfig worldConfig : SkylliaAPI.getRegisteredWorlds()) {
+                String w = worldConfig.getWorldName();
+                if (w.toLowerCase(Locale.ROOT).startsWith(partial)) {
+                    list.add(w);
+                }
+            }
+            list.sort(null);
+            return list;
         }
 
         return Collections.emptyList();

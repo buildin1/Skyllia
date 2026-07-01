@@ -1,10 +1,11 @@
 name: SkylliaOre
 version: ${version}
 main: fr.euphyllia.skylliaore.SkylliaOre
-api-version: 1.20.1
-authors: [ Euphyllia ]
+api-version: 1.20.6
 folia-supported: true
 loader: fr.euphyllia.skylliaore.OreLoader
+authors:
+  - Euphyllia
 
 dependencies:
   server:
@@ -17,6 +18,10 @@ dependencies:
       required: false
       join-classpath: true
     Nexo:
+      load: BEFORE
+      required: false
+      join-classpath: true
+    CraftEngine:
       load: BEFORE
       required: false
       join-classpath: true

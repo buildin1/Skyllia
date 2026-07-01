@@ -6,6 +6,10 @@ import fr.euphyllia.skyllia.api.SkylliaAPI;
 import fr.euphyllia.skyllia.listeners.bukkitevents.blocks.GrowEvent;
 import fr.euphyllia.skyllia.listeners.bukkitevents.blocks.ObsidianFormHologramListener;
 import fr.euphyllia.skyllia.listeners.bukkitevents.blocks.PistonEvent;
+import fr.euphyllia.skyllia.listeners.bukkitevents.paper.PortalAlternativePaperEvent;
+import fr.euphyllia.skyllia.listeners.bukkitevents.player.*;
+import fr.euphyllia.skyllia.listeners.bukkitevents.world.ChunkEvent;
+import fr.euphyllia.skyllia.listeners.extra.IslandInfoExtraListener;
 import fr.euphyllia.skyllia.listeners.bukkitevents.entity.LightningVillagerTransformListener;
 import fr.euphyllia.skyllia.listeners.bukkitevents.player.JoinEvent;
 import fr.euphyllia.skyllia.listeners.bukkitevents.player.MoveEvent;
@@ -34,6 +38,7 @@ import fr.euphyllia.skyllia.listeners.permissions.player.ConvertObsidianToLavaPe
 import fr.euphyllia.skyllia.listeners.permissions.player.ItemDropPermissions;
 import fr.euphyllia.skyllia.listeners.permissions.player.ItemPickupPermissions;
 import fr.euphyllia.skyllia.listeners.permissions.player.TeleportPermissions;
+import fr.euphyllia.skyllia.listeners.skyblockevents.PortalTeleportListener;
 import fr.euphyllia.skyllia.listeners.skyblockevents.SkyblockEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -72,6 +77,12 @@ public class ListenersRegistrar {
         registerEvent(pluginManager, new PistonEvent(interneAPI));
         registerEvent(pluginManager, new GrowEvent(interneAPI));
         registerEvent(pluginManager, new MoveEvent());
+        registerEvent(pluginManager, new QuitEvent());
+        registerEvent(pluginManager, new RespawnEvent(interneAPI));
+        registerEvent(pluginManager, new ChunkEvent());
+
+
+        // Folia/Paper specifics
         PortalOverrideListener portalListener = new PortalOverrideListener();
         registerEvent(pluginManager, portalListener);
         registerEvent(pluginManager, new ObsidianFormHologramListener(plugin));
@@ -80,6 +91,8 @@ public class ListenersRegistrar {
 
         // Skyblock Events
         registerEvent(pluginManager, new SkyblockEvent(interneAPI));
+        registerEvent(pluginManager, new PortalTeleportListener());
+        registerEvent(pluginManager, new IslandInfoExtraListener());
 
         // Permissions Listeners
         var moduleManager = SkylliaAPI.getPermissionModuleManager();

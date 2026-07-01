@@ -61,6 +61,11 @@ public class DelWarpSubCommand implements SubCommandInterface {
                 return;
             }
 
+            if (warpName.equalsIgnoreCase("spawn")) {
+                ConfigLoader.language.sendMessage(player, "island.warp.delete-spawn-forbidden");
+                return;
+            }
+
             boolean allowed = SkylliaAPI.getPermissionsManager().hasPermission(player, island, ISLAND_DELWARP_PERMISSION, null, ConfigLoader.general.getDebugSettings().permission());
             if (!allowed) {
                 ConfigLoader.language.sendMessage(player, "island.player.permission-denied");
@@ -81,7 +86,7 @@ public class DelWarpSubCommand implements SubCommandInterface {
 
     @Override
     public @NotNull List<String> onTabComplete(@NotNull Plugin plugin, @NotNull CommandSender sender, @NotNull String[] args) {
-        if (sender.hasPermission("skyllia.island.command.delwarp") && sender instanceof Player player) {
+        if (sender instanceof Player player && PlayerUtils.hasPermission(player, "skyllia.island.command.delwarp")) {
             if (args.length == 1) {
                 String partial = args[0].trim().toLowerCase();
                 List<String> warpList = CacheCommands.getWarps(player.getUniqueId());

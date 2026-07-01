@@ -1,9 +1,9 @@
 package fr.euphyllia.skyllia.database.mariadb;
 
 import fr.euphyllia.skyllia.api.SkylliaAPI;
+import fr.euphyllia.skyllia.api.coordinate.RegionCoordinate;
 import fr.euphyllia.skyllia.api.database.DatabaseInitializeQuery;
 import fr.euphyllia.skyllia.api.skyblock.IslandData;
-import fr.euphyllia.skyllia.api.skyblock.model.Position;
 import fr.euphyllia.skyllia.api.utils.RegionUtils;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
 import fr.euphyllia.skyllia.sgbd.utils.model.DatabaseLoader;
@@ -94,9 +94,11 @@ public class MariaDBDatabaseInitialize extends DatabaseInitializeQuery {
 
     private static final String CREATE_ISLANDS_FLAGS_TABLE = """
             CREATE TABLE IF NOT EXISTS islands_flags (
-                island_id CHAR(36) NOT NULL,
-                words LONGBLOB NOT NULL,
-                PRIMARY KEY (`island_id`)
+                island_id  CHAR(36)     NOT NULL,
+                world_name VARCHAR(255) NOT NULL,
+                words      LONGBLOB     NOT NULL,
+                PRIMARY KEY (island_id, world_name),
+                CONSTRAINT islands_flags_FK FOREIGN KEY (island_id) REFERENCES islands (island_id) ON DELETE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
             """;
 
@@ -115,6 +117,52 @@ public class MariaDBDatabaseInitialize extends DatabaseInitializeQuery {
     private static final String CREATE_ISLANDS_INDEX = """
             CREATE INDEX IF NOT EXISTS region_xz_disabled
             ON islands (region_x, region_z, disable);
+            """;
+
+    /**
+     * Guarantees, at the database level, that at most one active
+     * (non-disabled) island may ever hold a given region.
+     * <p>
+     * Unlike PostgreSQL (see {@code PostgreSQLDatabaseInitialize}, which uses
+     * a native partial unique index), MariaDB/MySQL has no {@code WHERE}
+     * clause on {@code CREATE INDEX}. This emulates the same semantics with
+     * the standard workaround: two virtual generated columns that evaluate
+     * to NULL for disabled islands and to the real coordinates for active
+     * ones, with a unique index over that pair. SQL treats every NULL as
+     * distinct for uniqueness purposes, so any number of disabled islands
+     * can keep sharing old coordinates — island deletion is a soft-delete
+     * (see {@code updateDisable}), and a former region is legitimately
+     * reassigned to a later island — while at most one active island may
+     * ever hold a given region.
+     * <p>
+     * This closes, at the schema level and regardless of any
+     * application-level locking, a gap that nothing else in MariaDB's schema
+     * covered: without it, two different island_id rows could share the same
+     * active (region_x, region_z).
+     */
+    private static final String ADD_REGION_X_ACTIVE_COLUMN = """
+            ALTER TABLE islands
+                ADD COLUMN IF NOT EXISTS region_x_active INT
+                GENERATED ALWAYS AS (CASE WHEN disable = 0 THEN region_x END) VIRTUAL;
+            """;
+
+    private static final String ADD_REGION_Z_ACTIVE_COLUMN = """
+            ALTER TABLE islands
+                ADD COLUMN IF NOT EXISTS region_z_active INT
+                GENERATED ALWAYS AS (CASE WHEN disable = 0 THEN region_z END) VIRTUAL;
+            """;
+
+    private static final String CREATE_ISLANDS_REGION_UNIQUE = """
+            CREATE UNIQUE INDEX IF NOT EXISTS islands_region_unique_active
+            ON islands (region_x_active, region_z_active);
+            """;
+
+    private static final String FIND_DUPLICATE_ACTIVE_REGIONS = """
+            SELECT region_x, region_z, GROUP_CONCAT(island_id) AS island_ids, COUNT(*) AS cnt
+            FROM islands
+            WHERE disable = 0
+            GROUP BY region_x, region_z
+            HAVING COUNT(*) > 1;
             """;
 
     private static final String CREATE_SPIRAL_INDEX = """
@@ -223,6 +271,53 @@ public class MariaDBDatabaseInitialize extends DatabaseInitializeQuery {
                 DROP PRIMARY KEY,
                 ADD PRIMARY KEY (uuid_player, cause);
                 """);
+
+        if (configVersion < 5) {
+            migrateV4ToV5();
+        }
+
+        ensureRegionUniqueConstraint();
+    }
+
+    /**
+     * Creates the generated-column based unique index described at
+     * {@link #ADD_REGION_X_ACTIVE_COLUMN}, unless pre-existing data already
+     * violates it — which could happen on a server that previously allowed
+     * island creations to run concurrently (including via the queue-bypass
+     * permission, which has always skipped the creation queue entirely). In
+     * that case the migration is skipped and the conflicting islands are
+     * logged explicitly, rather than letting it fail with a generic,
+     * hard-to-act-on SQL error.
+     */
+    private void ensureRegionUniqueConstraint() {
+        List<String> duplicates = SQLExecute.queryMap(databaseLoader, FIND_DUPLICATE_ACTIVE_REGIONS, null, rs -> {
+            List<String> found = new ArrayList<>();
+            try {
+                while (rs.next()) {
+                    found.add("(%d,%d) -> islands [%s]".formatted(
+                            rs.getInt("region_x"), rs.getInt("region_z"), rs.getString("island_ids")));
+                }
+            } catch (Exception e) {
+                logger.log(Level.ERROR, "Failed to scan for duplicate active regions", e);
+            }
+            return found;
+        });
+
+        if (duplicates != null && !duplicates.isEmpty()) {
+            logger.log(Level.ERROR, "══════════════════════════════════════════════════════");
+            logger.log(Level.ERROR, "  Found {} active island(s) sharing a region with another active island:", duplicates.size());
+            for (String d : duplicates) {
+                logger.log(Level.ERROR, "    {}", d);
+            }
+            logger.log(Level.ERROR, "  The unique-region safety index was NOT created. Disable (or move) all");
+            logger.log(Level.ERROR, "  but one island per listed region, then restart the server to apply it.");
+            logger.log(Level.ERROR, "══════════════════════════════════════════════════════");
+            return;
+        }
+
+        exec(ADD_REGION_X_ACTIVE_COLUMN);
+        exec(ADD_REGION_Z_ACTIVE_COLUMN);
+        exec(CREATE_ISLANDS_REGION_UNIQUE);
     }
 
     private void initializeSpiralTable() {
@@ -234,7 +329,7 @@ public class MariaDBDatabaseInitialize extends DatabaseInitializeQuery {
         Runnable spiralTask = () -> {
             List<IslandData> islandDataList = new ArrayList<>();
             for (int i = 1; i < maxIslands; i++) {
-                Position pos = RegionUtils.computeNewIslandRegionPosition(i);
+                RegionCoordinate pos = RegionUtils.computeNewIslandRegionPosition(i);
                 islandDataList.add(new IslandData(
                         i,
                         pos.x() * regionDistance,
@@ -252,5 +347,37 @@ public class MariaDBDatabaseInitialize extends DatabaseInitializeQuery {
 
     private void exec(String sql) {
         SQLExecute.update(databaseLoader, sql, null);
+    }
+
+    private void migrateV4ToV5() {
+        exec("""
+                ALTER TABLE islands_flags
+                DROP PRIMARY KEY;
+                """);
+
+        exec("""
+                ALTER TABLE islands_flags
+                ADD COLUMN IF NOT EXISTS world_name VARCHAR(255) NOT NULL DEFAULT '';
+                """);
+
+        String firstWorld = SkylliaAPI.getRegisteredWorlds().isEmpty()
+                ? ""
+                : SkylliaAPI.getRegisteredWorlds().getFirst().getWorldName();
+
+        SQLExecute.update(databaseLoader,
+                "UPDATE islands_flags SET world_name = ? WHERE world_name = '';",
+                List.of(firstWorld));
+
+        exec("""
+                ALTER TABLE islands_flags
+                ALTER COLUMN world_name DROP DEFAULT;
+                """);
+
+        exec("""
+                ALTER TABLE islands_flags
+                ADD PRIMARY KEY (island_id, world_name);
+                """);
+
+        logger.info("Migration V4 -> V5 applied: islands_flags now has per-world support.");
     }
 }

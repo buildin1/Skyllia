@@ -25,6 +25,24 @@ STONE = 3
 type = "BOSS_BAR"
 boss-bar-color = "YELLOW"
 
+# How many chunks to process between each progress notification update.
+# Higher = less frequent updates, lower CPU overhead from translations.
+# Min: 1 (update after every chunk). Recommended: 5–10.
+update-every-chunks = 5
+
 [scan-processing]
-threads = -1
+# Number of threads used to schedule chunk load requests.
+# -1 = auto (max(4, availableProcessors / 8))
+# Increase if many islands are scanned simultaneously.
+scheduler-threads = -1
+
+# Number of threads used to compute block scores after a chunk is loaded.
+# -1 = auto (max(4, availableProcessors / 8))
+# Increase if scoring is the bottleneck (CPU-bound step).
+# Keep lower than scheduler-threads if your server is CPU-constrained.
+scorer-threads = -1
+
+# Delay in milliseconds between each chunk load request within a single island scan.
+# Higher values reduce CPU/IO bursts but make scans slower.
+# Recommended: 20–100 ms. Set to 0 to disable throttling (not recommended).
 delay-ms = 50

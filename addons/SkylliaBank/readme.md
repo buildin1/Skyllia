@@ -42,7 +42,7 @@ auction houses, etc.) reads and writes the island bank directly, without needing
 
 | Dependency                                                                | Required | Role                                          |
 |---------------------------------------------------------------------------|----------|-----------------------------------------------|
-| Paper / Folia 1.20.5+                                                     | ✅        | Server software                               |
+| Paper / Folia 1.20.6+                                                     | ✅        | Server software                               |
 | [Skyllia](https://modrinth.com/plugin/skyllia)                            | ✅        | Skyblock platform                             |
 | [Vault](https://www.spigotmc.org/resources/vault.34315/)                  | ✅        | Economy abstraction                           |
 | An economy plugin (e.g. EssentialsX)                                      | ✅        | Actual money provider                         |

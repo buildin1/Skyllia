@@ -31,6 +31,9 @@ dependencies {
     implementation(project(":hook:canvas"))
     implementation(project(":hook:luminol"))
     implementation(project(":hook:essentialsx"))
+    implementation(project(":hook:luckperms"))
+    implementation(project(":hook:quickshop"))
+    implementation(project(":hook:cmi"))
 
     // NMS Version
     implementation(project(":nms:v1_20_R4"))
@@ -42,6 +45,7 @@ dependencies {
     implementation(project(":nms:v1_21_R6"))
     implementation(project(":nms:v1_21_R7"))
     implementation(project(":nms:v26_1"))
+    implementation(project(":nms:v26_2"))
 }
 
 allprojects {
@@ -65,18 +69,18 @@ allprojects {
         maven(sonatypeRepo)
         maven(engineHubRepo)
         maven(mojang)
-        maven(jitpack)
+        //maven(jitpack)
         maven(extendedclip)
         maven(theNextLvl)
         maven(euphyRepo)
     }
 
     dependencies {
-        compileOnly("org.apache.maven.resolver:maven-resolver-api:2.0.16")
-        compileOnly("org.apache.logging.log4j:log4j-api:2.25.3")
-        compileOnly("org.apache.logging.log4j:log4j-core:2.25.3")
-        compileOnly("org.mariadb.jdbc:mariadb-java-client:3.5.7")
-        compileOnly("com.zaxxer:HikariCP:7.0.2")
+        compileOnly("org.apache.maven.resolver:maven-resolver-api:2.0.18")
+        compileOnly("org.apache.logging.log4j:log4j-api:2.26.0")
+        compileOnly("org.apache.logging.log4j:log4j-core:2.26.0")
+        compileOnly("org.mariadb.jdbc:mariadb-java-client:3.5.9")
+        compileOnly("com.zaxxer:HikariCP:7.1.0")
         compileOnly("org.xerial:sqlite-jdbc:3.51.2.0")
         compileOnly("org.jetbrains:annotations:26.1.0")
         compileOnly("com.electronwill.night-config:toml:3.8.3")
@@ -155,6 +159,8 @@ modrinth {
             project(":addons:SkylliaChest").tasks.named<Jar>("shadowJar"),
             project(":addons:SkylliaAcidRain").tasks.named<Jar>("shadowJar"),
             project(":addons:SkylliaIslandValue").tasks.named<Jar>("shadowJar"),
+            project(":addons:SkylliaBackup").tasks.named<Jar>("shadowJar"),
+//            project(":addons:SkylliaExtra").tasks.named<Jar>("shadowJar"),
         )
     )
 
@@ -174,7 +180,8 @@ modrinth {
         "1.21.11",
         "26.1",
         "26.1.1",
-        "26.1.2"
+        "26.1.2",
+        "26.2"
     )
 
     loaders.addAll("folia", "paper", "purpur")
@@ -200,6 +207,8 @@ tasks.modrinth {
         ":addons:SkylliaChallenge:shadowJar",
         ":addons:SkylliaChest:shadowJar",
         ":addons:SkylliaAcidRain:shadowJar",
-        ":addons:SkylliaIslandValue:shadowJar"
+        ":addons:SkylliaIslandValue:shadowJar",
+        ":addons:SkylliaBackup:shadowJar",
+//        ":addons:SkylliaExtra:shadowJar"
     )
 }

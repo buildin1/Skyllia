@@ -8,8 +8,10 @@ import fr.euphyllia.skyllia.api.permissions.modules.PermissionModule;
 import fr.euphyllia.skyllia.api.skyblock.Island;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
 import fr.euphyllia.skyllia.listeners.ListenersUtils;
-import org.bukkit.Location;
+import fr.euphyllia.skyllia.utils.PlayerUtils;
 import org.bukkit.NamespacedKey;
+import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.block.BlockPlaceEvent;
@@ -23,29 +25,31 @@ public class BlockPlacePermissions implements PermissionModule {
 
     @EventHandler(ignoreCancelled = true)
     public void onPlace(final BlockPlaceEvent event) {
-        final Player player = event.getPlayer();
-        final Location location = event.getBlockPlaced().getLocation();
+        final Block placed = event.getBlockPlaced();
+        final World world = placed.getWorld();
 
+        final int bx = placed.getX();
+        final int by = placed.getY();
+        final int bz = placed.getZ();
         if (!SkylliaAPI.isWorldSkyblock(location.getWorld()) || player.isOp()) return;
 
-        final int chunkX = location.getBlockX() >> 4;
-        final int chunkZ = location.getBlockZ() >> 4;
-        final Island island = SkylliaAPI.getIslandByChunk(chunkX, chunkZ);
+        final Island island = ListenersUtils.islandAtBlock(world, bx, bz);
         if (island == null) {
             //log.warn("玩家{}在{}位置岛屿无效，无法进行{}", player.getName(), player.getLocation(), event.getEventName());
             event.setCancelled(true);
             return;
         }
 
-        final boolean hasBypass = player.hasPermission("skyllia.player.place.bypass");
-        final boolean hasPermission = hasBypass || SkylliaAPI.getPermissionsManager().hasPermission(player, island, BLOCK_PLACE, null, ConfigLoader.general.getDebugSettings().permission());
+        final Player player = event.getPlayer();
+        final boolean hasBypass = PlayerUtils.hasPermission(player, "skyllia.player.place.bypass");
+        final boolean hasPermission = hasBypass || SkylliaAPI.getPermissionsManager()
+                .hasPermission(player, island, BLOCK_PLACE, null, ConfigLoader.general.getDebugSettings().permission());
         if (!hasPermission) {
-            //log.warn("玩家{}在{}岛上没有BLOCK_PLACE权限，无法进行{}", player.getName(), island.getOwner().getLastKnowName(), event.getEventName());
             event.setCancelled(true);
             return;
         }
-        if (!hasBypass && ListenersUtils.isBlockOutsideIsland(island, location, event)) {
-            return;
+        if (!hasBypass) {
+            ListenersUtils.isBlockOutsideIsland(island, world, bx, by, bz, event);
         }
     }
 

@@ -43,18 +43,29 @@ jobs:
           name: Skyllia-Build
           path: release/*.jar
 
-      #      - name: Publish all modules to Nexus
-      #        run: ./gradlew publish
+      - name: Publish all modules to Nexus
+        run: ./gradlew publish
+
+      - name: Build commit list for release notes
+        env:
+          COMMITS_JSON: ${{ toJSON(github.event.commits.*.message) }}
+        run: |
+          delimiter="COMMITS_EOF_$(date +%s%N)"
+          {
+            echo "commit_msg<<$delimiter"
+            echo "$COMMITS_JSON" | jq -r 'reverse | .[] | "- " + .'
+            echo "$delimiter"
+          } >> "$GITHUB_ENV"
 
       - name: Create Release
-        if: github.event_name != 'pull_request' || (github.event.pull_request.number == 94 && github.event.pull_request.head.repo.full_name == github.repository)
+        if: github.event_name != 'pull_request'
         uses: ncipollo/release-action@v1
         with:
           tag: ${{ env.tag }}
           name: ${{ env.project_id_b }} - ${{ github.run_number }}
           body: |
             This release is automatically compiled by GitHub Actions
-            ### Commit Message
+            ### Commits
             ${{ env.commit_msg }}
           artifacts: release/*.jar
           generateReleaseNotes: true
@@ -64,14 +75,13 @@ jobs:
           replacesArtifacts: false
 
       - name: Publish to Modrinth (Gradle Minotaur)
-        if: github.event_name != 'pull_request' || (github.event.pull_request.number == 94 && github.event.pull_request.head.repo.full_name == github.repository)
+        if: github.event_name != 'pull_request'
         run: ./gradlew modrinth
 
 env:
   tag: build-ver3.x-${{ github.run_number }}
   project_id_b: Skyllia
   commit_id: ${{ github.sha }}
-  commit_msg: ${{ github.event.head_commit.message }}
   MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
   pre: false
   make_latest: true

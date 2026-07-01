@@ -1,9 +1,9 @@
 package fr.euphyllia.skyllia.database.postgresql;
 
 import fr.euphyllia.skyllia.api.SkylliaAPI;
+import fr.euphyllia.skyllia.api.coordinate.RegionCoordinate;
 import fr.euphyllia.skyllia.api.database.DatabaseInitializeQuery;
 import fr.euphyllia.skyllia.api.skyblock.IslandData;
-import fr.euphyllia.skyllia.api.skyblock.model.Position;
 import fr.euphyllia.skyllia.api.utils.RegionUtils;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
 import fr.euphyllia.skyllia.sgbd.utils.model.DatabaseLoader;
@@ -35,10 +35,30 @@ public class PostgreSQLDatabaseInitialize extends DatabaseInitializeQuery {
             );
             """;
 
+    /**
+     * Guarantees, at the database level, that at most one active
+     * (non-disabled) island may ever hold a given region — a partial unique
+     * index, deliberately scoped to {@code disable = FALSE}.
+     * <p>
+     * Island deletion is a soft-delete (see {@code updateDisable}): the row
+     * stays forever with {@code disable = TRUE}, and its former region is
+     * legitimately reassigned to a later island. A plain, non-partial unique
+     * index on (region_x, region_z) would incorrectly reject that reuse the
+     * moment a region is claimed a second time, so the WHERE clause is not
+     * optional here.
+     */
     private static final String CREATE_ISLANDS_REGION_UNIQUE = """
             CREATE UNIQUE INDEX IF NOT EXISTS islands_region_unique
             ON %s.islands (region_x, region_z)
             WHERE disable = FALSE;
+            """;
+
+    private static final String FIND_DUPLICATE_ACTIVE_REGIONS = """
+            SELECT region_x, region_z, STRING_AGG(island_id::text, ',') AS island_ids, COUNT(*) AS cnt
+            FROM %s.islands
+            WHERE disable = FALSE
+            GROUP BY region_x, region_z
+            HAVING COUNT(*) > 1;
             """;
 
     private static final String CREATE_ISLANDS_GAMERULE_TABLE = """
@@ -93,9 +113,10 @@ public class PostgreSQLDatabaseInitialize extends DatabaseInitializeQuery {
 
     private static final String CREATE_ISLANDS_FLAGS_TABLE = """
             CREATE TABLE IF NOT EXISTS %s.islands_flags (
-                island_id UUID NOT NULL REFERENCES %s.islands(island_id) ON DELETE CASCADE,
-                words BYTEA NOT NULL,
-                PRIMARY KEY (island_id)
+                island_id  UUID         NOT NULL REFERENCES %s.islands(island_id) ON DELETE CASCADE,
+                world_name VARCHAR(255) NOT NULL,
+                words      BYTEA        NOT NULL,
+                PRIMARY KEY (island_id, world_name)
             );
             """;
 
@@ -213,7 +234,7 @@ public class PostgreSQLDatabaseInitialize extends DatabaseInitializeQuery {
         final String s = sanitizeIdent(schema);
 
         exec(CREATE_ISLANDS_TABLE.formatted(s));
-        exec(CREATE_ISLANDS_REGION_UNIQUE.formatted(s));
+        ensureRegionUniqueConstraint(s);
 
         exec(CREATE_ISLANDS_MEMBERS_TABLE.formatted(s, s));
         exec(CREATE_ISLANDS_WARP_TABLE.formatted(s, s));
@@ -235,6 +256,48 @@ public class PostgreSQLDatabaseInitialize extends DatabaseInitializeQuery {
     }
 
     private void applyMigrations() {
+        final String s = sanitizeIdent(schema);
+        if (configVersion < 5) {
+            migrateV4ToV5(s);
+        }
+    }
+
+    /**
+     * Creates {@link #CREATE_ISLANDS_REGION_UNIQUE}, unless pre-existing data
+     * already violates it — which could happen on a server that previously
+     * allowed island creations to run concurrently (including via the
+     * queue-bypass permission, which has always skipped the creation queue
+     * entirely). In that case the index creation is skipped and the
+     * conflicting islands are logged explicitly, rather than letting it fail
+     * with a generic, hard-to-act-on SQL error.
+     */
+    private void ensureRegionUniqueConstraint(String s) {
+        List<String> duplicates = SQLExecute.queryMap(databaseLoader, FIND_DUPLICATE_ACTIVE_REGIONS.formatted(s), null, rs -> {
+            List<String> found = new ArrayList<>();
+            try {
+                while (rs.next()) {
+                    found.add("(%d,%d) -> islands [%s]".formatted(
+                            rs.getInt("region_x"), rs.getInt("region_z"), rs.getString("island_ids")));
+                }
+            } catch (Exception e) {
+                logger.log(Level.ERROR, "Failed to scan for duplicate active regions", e);
+            }
+            return found;
+        });
+
+        if (duplicates != null && !duplicates.isEmpty()) {
+            logger.log(Level.ERROR, "══════════════════════════════════════════════════════");
+            logger.log(Level.ERROR, "  Found {} active island(s) sharing a region with another active island:", duplicates.size());
+            for (String d : duplicates) {
+                logger.log(Level.ERROR, "    {}", d);
+            }
+            logger.log(Level.ERROR, "  The unique-region safety index was NOT created. Disable (or move) all");
+            logger.log(Level.ERROR, "  but one island per listed region, then restart the server to apply it.");
+            logger.log(Level.ERROR, "══════════════════════════════════════════════════════");
+            return;
+        }
+
+        exec(CREATE_ISLANDS_REGION_UNIQUE.formatted(s));
     }
 
     private void initializeSpiralTable() {
@@ -249,7 +312,7 @@ public class PostgreSQLDatabaseInitialize extends DatabaseInitializeQuery {
         Runnable spiralTask = () -> {
             List<IslandData> islandDataList = new ArrayList<>();
             for (int i = 1; i < maxIslands; i++) {
-                Position position = RegionUtils.computeNewIslandRegionPosition(i);
+                RegionCoordinate position = RegionUtils.computeNewIslandRegionPosition(i);
                 islandDataList.add(new IslandData(
                         i,
                         position.x() * distancePerIsland,
@@ -271,5 +334,37 @@ public class PostgreSQLDatabaseInitialize extends DatabaseInitializeQuery {
 
     private void exec(String sql) {
         SQLExecute.update(databaseLoader, sql, null);
+    }
+
+    private void migrateV4ToV5(String s) {
+        exec("""
+                ALTER TABLE %s.islands_flags
+                DROP CONSTRAINT IF EXISTS islands_flags_pkey;
+                """.formatted(s));
+
+        exec("""
+                ALTER TABLE %s.islands_flags
+                ADD COLUMN IF NOT EXISTS world_name VARCHAR(255) NOT NULL DEFAULT '';
+                """.formatted(s));
+
+        String firstWorld = SkylliaAPI.getRegisteredWorlds().isEmpty()
+                ? ""
+                : SkylliaAPI.getRegisteredWorlds().getFirst().getWorldName();
+
+        SQLExecute.update(databaseLoader,
+                "UPDATE " + s + ".islands_flags SET world_name = ? WHERE world_name = '';",
+                List.of(firstWorld));
+
+        exec("""
+                ALTER TABLE %s.islands_flags
+                ALTER COLUMN world_name DROP DEFAULT;
+                """.formatted(s));
+
+        exec("""
+                ALTER TABLE %s.islands_flags
+                ADD CONSTRAINT islands_flags_pkey PRIMARY KEY (island_id, world_name);
+                """.formatted(s));
+
+        logger.info("Migration V4 -> V5 applied: islands_flags now has per-world support.");
     }
 }

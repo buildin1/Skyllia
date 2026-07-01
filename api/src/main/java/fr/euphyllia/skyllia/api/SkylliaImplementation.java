@@ -2,7 +2,10 @@ package fr.euphyllia.skyllia.api;
 
 import fr.euphyllia.skyllia.api.commands.SubCommandInterface;
 import fr.euphyllia.skyllia.api.configuration.IConfigRegistry;
+import fr.euphyllia.skyllia.api.configuration.WorldConfig;
+import fr.euphyllia.skyllia.api.coordinate.RegionCoordinate;
 import fr.euphyllia.skyllia.api.database.IslandCustomDataQuery;
+import fr.euphyllia.skyllia.api.language.LanguageProvider;
 import fr.euphyllia.skyllia.api.permissions.IslandFlagRegistry;
 import fr.euphyllia.skyllia.api.permissions.PermissionRegistry;
 import fr.euphyllia.skyllia.api.permissions.PermissionsManagers;
@@ -34,10 +37,10 @@ import java.util.UUID;
 public interface SkylliaImplementation {
 
     /**
-     * Retrieves the island associated with a player's UUID.
+     * Retrieves the island the given player belongs to (as owner or member).
      *
      * @param playerUniqueId The UUID of the player.
-     * @return A CompletableFuture that will contain the island associated with the player's UUID.
+     * @return The island the player belongs to, or {@code null} if none is found.
      */
     @Nullable Island getIslandByPlayerId(UUID playerUniqueId);
 
@@ -45,25 +48,39 @@ public interface SkylliaImplementation {
      * Retrieves the island associated with an island ID.
      *
      * @param islandId The UUID of the island.
-     * @return A CompletableFuture that will contain the island associated with the island ID.
+     * @return The island with this ID, or {@code null} if none is found.
      */
     @Nullable Island getIslandByIslandId(UUID islandId);
 
     /**
-     * Retrieves the island owned by a specific owner.
+     * Retrieves the island owned by a specific player.
      *
-     * @param ownerId The UUID of the island owner.
-     * @return The island owned by the specified owner, or null if none is found.
+     * @param playerUniqueId The UUID of the island owner.
+     * @return The island owned by the specified player, or {@code null} if none is found.
      */
-    @Nullable Island getIslandByOwner(UUID ownerId);
+    @Nullable Island getIslandByOwner(UUID playerUniqueId);
+
+    /**
+     * Retrieves the island at a specific region coordinate.
+     *
+     * @param region The region coordinate to check.
+     * @return The island at the specified region coordinate, or null if none is found.
+     */
+    @Nullable Island getIslandByRegion(RegionCoordinate region);
 
     /**
      * Retrieves the island at a specific position.
      *
      * @param position The position to check.
      * @return The island at the specified position, or null if none is found.
+     * @deprecated Use {@link #getIslandByRegion(RegionCoordinate)} instead.
      */
-    @Nullable Island getIslandByPosition(Position position);
+    @Deprecated(forRemoval = true, since = "3.x")
+    @ApiStatus.ScheduledForRemoval(inVersion = "4.x")
+    default @Nullable Island getIslandByRegion(Position position) {
+        if (position == null) return null;
+        return getIslandByRegion(new RegionCoordinate(position.x(), position.z()));
+    }
 
     /**
      * Retrieves the island associated with a specific chunk.
@@ -85,7 +102,7 @@ public interface SkylliaImplementation {
     /**
      * Retrieves all valid (non-disabled) Skyllia islands from the database.
      *
-     * @return A CompletableFuture containing a thread-safe list of active islands.
+     * @return A thread-safe list of active islands.
      */
     List<Island> getAllIslandsValid();
 
@@ -104,6 +121,22 @@ public interface SkylliaImplementation {
      * @return True if the world is a Skyblock world, false otherwise.
      */
     @NotNull Boolean isWorldSkyblock(World world);
+
+
+    /**
+     * Retrieves the list of all Skyblock world configurations registered in Skyllia.
+     * <p>
+     * A world is considered registered if it has been declared in Skyllia's
+     * configuration. This does not guarantee that the world is currently
+     * loaded or available in the server.
+     * <p>
+     * To check whether a specific world is a registered Skyblock world,
+     * use {@link #isWorldSkyblock(String)} or {@link #isWorldSkyblock(World)}.
+     *
+     * @return An immutable list of {@link WorldConfig} representing all registered
+     * Skyblock worlds. Returns an empty list if no worlds are configured.
+     */
+    List<WorldConfig> getRegisteredWorlds();
 
     /**
      * Gets the current location TPS.
@@ -248,4 +281,15 @@ public interface SkylliaImplementation {
      * @return The {@link TrustService} instance.
      */
     TrustService getTrustService();
+
+    /**
+     * Retrieves the language provider.
+     * <p>
+     * The language provider handles translation lookups, placeholder replacement,
+     * and message dispatching. Hooks and addons should use this instead of
+     * accessing the internal {@code ConfigLoader} directly.
+     *
+     * @return the {@link LanguageProvider} instance
+     */
+    LanguageProvider getLanguageProvider();
 }

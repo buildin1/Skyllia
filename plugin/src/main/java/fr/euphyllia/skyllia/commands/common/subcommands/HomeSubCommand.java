@@ -13,6 +13,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.WorldBorder;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -44,17 +45,15 @@ public class HomeSubCommand implements SubCommandInterface {
 
             WarpIsland warpIsland = island.getWarpByName("home");
             double rayon = island.getSize();
-            Location center = RegionHelper.getCenterRegion(
-                    Bukkit.getWorld(WorldUtils.getWorldConfigs().getFirst().getWorldName()),
-                    island.getPosition().x(),
-                    island.getPosition().z()
-            );
+            World islandWorld = WorldUtils.getWorldConfigs().getFirst().getWorld();
 
             Location loc;
-            if (warpIsland == null || warpIsland.location() == null) {
-                loc = center.clone();
-            } else {
+            if (island.hasCustomSpawn()) {
+                loc = island.getSpawnLocation(islandWorld);
+            } else if (warpIsland != null && warpIsland.location() != null) {
                 loc = warpIsland.location().clone();
+            } else {
+                loc = island.getSpawnLocation(islandWorld);
             }
             loc.add(0.5, 0.1, 0.5);
 
@@ -64,9 +63,15 @@ public class HomeSubCommand implements SubCommandInterface {
 
                 ConfigLoader.language.sendMessage(player, "island.home.success");
 
-                if (player.hasPermission("skyllia.island.worldborder.bypass")) {
+                if (PlayerUtils.hasPermission(player, "skyllia.island.worldborder.bypass")) {
                     return;
                 }
+
+                Location center = RegionHelper.getCenterRegion(
+                        islandWorld,
+                        island.getRegionCoordinate().x(),
+                        island.getRegionCoordinate().z()
+                );
 
                 WorldBorder border = player.getWorldBorder();
                 if (border == null) {

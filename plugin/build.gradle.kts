@@ -10,7 +10,7 @@ dependencies {
     compileOnly("net.kyori:adventure-text-minimessage:4.26.1")
     compileOnly("net.kyori:adventure-text-serializer-legacy:4.26.1")
     compileOnly("me.clip:placeholderapi:2.11.6")
-    compileOnly("dev.faststats.metrics:bukkit:0.18.1")
+    compileOnly("dev.faststats.metrics:bukkit:0.27.0")
     compileOnly(project(":api"))
     compileOnly(project(":database"))
     compileOnly(project(":hook:worldedit"))
@@ -19,6 +19,9 @@ dependencies {
     compileOnly(project(":hook:canvas"))
     compileOnly(project(":hook:luminol"))
     compileOnly(project(":hook:essentialsx"))
+    compileOnly(project(":hook:luckperms"))
+    compileOnly(project(":hook:quickshop"))
+    compileOnly(project(":hook:cmi"))
 
     // NMS Version
     compileOnly(project(":nms:v1_20_R4"))
@@ -30,6 +33,7 @@ dependencies {
     compileOnly(project(":nms:v1_21_R6"))
     compileOnly(project(":nms:v1_21_R7"))
     compileOnly(project(":nms:v26_1"))
+    compileOnly(project(":nms:v26_2"))
 }
 java.disableAutoTargetJvm()
 

@@ -1,6 +1,7 @@
 package fr.euphyllia.skyllia.papi.handlers;
 
 import fr.euphyllia.skyllia.api.SkylliaAPI;
+import fr.euphyllia.skyllia.api.configuration.WorldConfig;
 import fr.euphyllia.skyllia.api.permissions.FlagId;
 import fr.euphyllia.skyllia.api.permissions.FlagNode;
 import fr.euphyllia.skyllia.api.permissions.IslandFlagRegistry;
@@ -14,6 +15,7 @@ import org.bukkit.OfflinePlayer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -84,13 +86,25 @@ public class FlagsHandler implements PlaceholderHandler {
             return resolveNodeMeta(registry, key.substring("desc_".length()), MetaType.DESCRIPTION, locale);
         }
 
-        NamespacedKey namespacedKey = SkylliaPAPIUtils.parseKeyLenient(key);
+        String flagPart = key;
+        String worldName = resolveWorld(player);
+
+        int lastUnderscore = key.lastIndexOf('_');
+        if (lastUnderscore > 0) {
+            String possibleWorld = key.substring(lastUnderscore + 1);
+            if (SkylliaAPI.isWorldSkyblock(possibleWorld)) {
+                flagPart = key.substring(0, lastUnderscore);
+                worldName = possibleWorld;
+            }
+        }
+
+        NamespacedKey namespacedKey = SkylliaPAPIUtils.parseKeyLenient(flagPart);
         if (namespacedKey == null) return null;
 
         FlagId fid = registry.getIfPresent(namespacedKey);
         if (fid == null) return null;
 
-        return String.valueOf(island.getIslandFlags().has(registry, fid));
+        return String.valueOf(island.getIslandFlags(worldName).has(registry, fid));
     }
 
     /**
@@ -123,6 +137,15 @@ public class FlagsHandler implements PlaceholderHandler {
             return LegacyComponentSerializer.legacySection()
                     .serialize(ConfigLoader.language.translate(locale, langKey, Map.of(), false));
         }
+    }
+
+    private @NotNull String resolveWorld(@NotNull OfflinePlayer player) {
+        if (player.isOnline() && player.getPlayer() != null) {
+            String w = player.getPlayer().getWorld().getName();
+            if (SkylliaAPI.isWorldSkyblock(w)) return w;
+        }
+        List<WorldConfig> worlds = SkylliaAPI.getRegisteredWorlds();
+        return worlds.isEmpty() ? "" : worlds.getFirst().getWorldName();
     }
 
     private enum MetaType {NAME, DESCRIPTION}

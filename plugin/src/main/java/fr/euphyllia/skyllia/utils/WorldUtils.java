@@ -12,7 +12,9 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Ce code provient d'ici : <a href="https://github.com/Folia-Inquisitors/MoreFoWorld/blob/master/src/Skyllia/java/me/hsgamer/morefoworld/WorldUtil.java">MoreFoWorld</a> et CraftBukkit
@@ -30,11 +32,12 @@ public final class WorldUtils {
     }
 
     public static Boolean isWorldSkyblock(String name) {
-        return ConfigLoader.worldManager.getWorldConfigs().keySet().stream().anyMatch(worldName -> worldName.equalsIgnoreCase(name));
+        Map<String, WorldConfig> configs = ConfigLoader.worldManager.getWorldConfigs();
+        return configs.containsKey(name);
     }
 
     public static List<WorldConfig> getWorldConfigs() {
-        return ConfigLoader.worldManager.getWorldConfigs().values().stream().toList();
+        return new ArrayList<>(ConfigLoader.worldManager.getWorldConfigs().values());
     }
 
     public static @Nullable WorldConfig getWorldConfig(String worldName) {
@@ -50,14 +53,13 @@ public final class WorldUtils {
     public static boolean isSafeLocation(Location location) {
         Block feet = location.getBlock();
         Block head = feet.getRelative(BlockFace.UP);
-        Block aboveHead = head.getRelative(BlockFace.UP);
         Block ground = feet.getRelative(BlockFace.DOWN);
 
         if (!feet.isPassable() || !head.isPassable()) {
             return false;
         }
 
-        if (!aboveHead.isPassable()) {
+        if (isDangerous(feet) || isDangerous(head)) {
             return false;
         }
 
@@ -65,6 +67,20 @@ public final class WorldUtils {
             return false;
         }
 
+        if (isDangerous(ground)) {
+            return false;
+        }
+
         return true;
+    }
+
+    private static boolean isDangerous(Block block) {
+        return switch (block.getType()) {
+            case LAVA, FIRE, SOUL_FIRE, MAGMA_BLOCK,
+                 SWEET_BERRY_BUSH, WITHER_ROSE,
+                 CACTUS, POWDER_SNOW,
+                 NETHER_PORTAL, END_PORTAL, END_GATEWAY -> true;
+            default -> false;
+        };
     }
 }

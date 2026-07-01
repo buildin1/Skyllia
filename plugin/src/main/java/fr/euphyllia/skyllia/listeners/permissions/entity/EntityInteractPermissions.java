@@ -8,8 +8,10 @@ import fr.euphyllia.skyllia.api.permissions.modules.PermissionModule;
 import fr.euphyllia.skyllia.api.skyblock.Island;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
 import fr.euphyllia.skyllia.listeners.ListenersUtils;
+import fr.euphyllia.skyllia.utils.PlayerUtils;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
+import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -26,24 +28,25 @@ public class EntityInteractPermissions implements PermissionModule {
     public void onInteractEntity(final PlayerInteractEntityEvent event) {
         final Player player = event.getPlayer();
         final Entity target = event.getRightClicked();
-        final Location location = target.getLocation();
+        final World world = target.getWorld();
 
+        final int bx = Location.locToBlock(target.getX());
+        final int by = Location.locToBlock(target.getY());
+        final int bz = Location.locToBlock(target.getZ());
         if (!SkylliaAPI.isWorldSkyblock(location.getWorld()) || player.isOp()) return;
 
-        final int chunkX = location.getBlockX() >> 4;
-        final int chunkZ = location.getBlockZ() >> 4;
-        final Island island = SkylliaAPI.getIslandByChunk(chunkX, chunkZ);
+        final Island island = ListenersUtils.islandAtBlock(world, bx, bz);
         if (island == null) return;
 
-        final boolean hasBypass = player.hasPermission("skyllia.player.entity.interact.bypass");
-        final boolean hasPermission = hasBypass || SkylliaAPI.getPermissionsManager().hasPermission(player, island, ENTITY_INTERACT, null, ConfigLoader.general.getDebugSettings().permission());
+        final boolean hasBypass = PlayerUtils.hasPermission(player, "skyllia.player.entity.interact.bypass");
+        final boolean hasPermission = hasBypass || SkylliaAPI.getPermissionsManager()
+                .hasPermission(player, island, ENTITY_INTERACT, null, ConfigLoader.general.getDebugSettings().permission());
         if (!hasPermission) {
-            //log.warn("玩家{}在{}岛上没有ENTITY_INTERACT权限，无法进行{}", player.getName(), island.getOwner().getLastKnowName(), event.getEventName());
             event.setCancelled(true);
             return;
         }
-        if (!hasBypass && ListenersUtils.isBlockOutsideIsland(island, location, event)) {
-            return;
+        if (!hasBypass) {
+            ListenersUtils.isBlockOutsideIsland(island, world, bx, by, bz, event);
         }
     }
 

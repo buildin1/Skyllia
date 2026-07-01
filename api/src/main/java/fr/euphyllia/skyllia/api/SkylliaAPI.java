@@ -2,7 +2,10 @@ package fr.euphyllia.skyllia.api;
 
 import fr.euphyllia.skyllia.api.commands.SubCommandInterface;
 import fr.euphyllia.skyllia.api.configuration.IConfigRegistry;
+import fr.euphyllia.skyllia.api.configuration.WorldConfig;
+import fr.euphyllia.skyllia.api.coordinate.RegionCoordinate;
 import fr.euphyllia.skyllia.api.database.IslandCustomDataQuery;
+import fr.euphyllia.skyllia.api.language.LanguageProvider;
 import fr.euphyllia.skyllia.api.permissions.IslandFlagRegistry;
 import fr.euphyllia.skyllia.api.permissions.PermissionRegistry;
 import fr.euphyllia.skyllia.api.permissions.PermissionsManagers;
@@ -56,10 +59,10 @@ public final class SkylliaAPI {
     }
 
     /**
-     * Retrieves the island associated with a player's UUID.
+     * Retrieves the island the given player belongs to (as owner or member).
      *
      * @param playerUniqueId The UUID of the player.
-     * @return A CompletableFuture that will contain the island associated with the player's UUID.
+     * @return The island the player belongs to, or {@code null} if none is found.
      */
     public static @Nullable Island getIslandByPlayerId(UUID playerUniqueId) {
         return implementation.getIslandByPlayerId(playerUniqueId);
@@ -69,7 +72,7 @@ public final class SkylliaAPI {
      * Retrieves the island associated with an island ID.
      *
      * @param islandId The UUID of the island.
-     * @return A CompletableFuture that will contain the island associated with the island ID.
+     * @return The island with this ID, or {@code null} if none is found.
      */
     public static @Nullable Island getIslandByIslandId(UUID islandId) {
         return implementation.getIslandByIslandId(islandId);
@@ -86,13 +89,26 @@ public final class SkylliaAPI {
     }
 
     /**
+     * Retrieves the island at a specific region coordinate.
+     *
+     * @param region The region coordinate to check.
+     * @return The island at the specified region coordinate, or null if none is found.
+     */
+    public static @Nullable Island getIslandByRegion(RegionCoordinate region) {
+        return implementation.getIslandByRegion(region);
+    }
+
+    /**
      * Retrieves the island at a specific position.
      *
      * @param position The position to check.
      * @return The island at the specified position, or null if none is found.
+     * @deprecated Use {@link #getIslandByRegion(RegionCoordinate)} instead.
      */
-    public static @Nullable Island getIslandByPosition(Position position) {
-        return implementation.getIslandByPosition(position);
+    @Deprecated(forRemoval = true, since = "3.x")
+    @ApiStatus.ScheduledForRemoval(inVersion = "4.x")
+    public static @Nullable Island getIslandByRegion(Position position) {
+        return implementation.getIslandByRegion(new RegionCoordinate(position.x(), position.z()));
     }
 
     /**
@@ -143,6 +159,23 @@ public final class SkylliaAPI {
      */
     public static @NotNull Boolean isWorldSkyblock(World world) {
         return implementation.isWorldSkyblock(world);
+    }
+
+    /**
+     * Retrieves the list of all Skyblock world configurations registered in Skyllia.
+     * <p>
+     * A world is considered registered if it has been declared in Skyllia's
+     * configuration. This does not guarantee that the world is currently
+     * loaded or available in the server.
+     * <p>
+     * To check whether a specific world is a registered Skyblock world,
+     * use {@link #isWorldSkyblock(String)} or {@link #isWorldSkyblock(World)}.
+     *
+     * @return An immutable list of {@link WorldConfig} representing all registered
+     * Skyblock worlds. Returns an empty list if no worlds are configured.
+     */
+    public static List<WorldConfig> getRegisteredWorlds() {
+        return implementation.getRegisteredWorlds();
     }
 
     /**
@@ -198,7 +231,7 @@ public final class SkylliaAPI {
     /**
      * Retrieves all valid (non-disabled) Skyllia islands from the database.
      *
-     * @return A CompletableFuture containing a thread-safe list of active islands.
+     * @return A thread-safe list of active islands.
      */
     public static List<Island> getAllIslandsValid() {
         return implementation.getAllIslandsValid();
@@ -342,5 +375,18 @@ public final class SkylliaAPI {
      */
     public static TrustService getTrustService() {
         return implementation.getTrustService();
+    }
+
+    /**
+     * Retrieves the language provider.
+     * <p>
+     * The language provider handles translation lookups, placeholder replacement,
+     * and message dispatching. Hooks and addons should use this instead of
+     * accessing the internal {@code ConfigLoader} directly.
+     *
+     * @return the {@link LanguageProvider} instance
+     */
+    public static LanguageProvider getLanguageProvider() {
+        return implementation.getLanguageProvider();
     }
 }

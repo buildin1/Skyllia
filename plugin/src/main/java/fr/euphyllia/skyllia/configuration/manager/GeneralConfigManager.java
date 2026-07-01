@@ -23,6 +23,8 @@ public class GeneralConfigManager implements IConfigurationProvider {
     private CacheTtlSettings cacheTtlSettings;
     private PermissionsSettings permissionsSettings;
 
+    private UpdateCheckerSettings updateCheckerSettings;
+
     public GeneralConfigManager(CommentedFileConfig config) {
         this.config = config;
         loadConfig();
@@ -47,6 +49,7 @@ public class GeneralConfigManager implements IConfigurationProvider {
                 getOrSetDefault("settings.island.delete.chunk-perimeter-island", false, Boolean.class),
                 getOrSetDefault("settings.island.invitation.teleport-when-accepting", true, Boolean.class),
                 getOrSetDefault("settings.island.queue.allow-bypass", true, Boolean.class),
+                getOrSetDefault("settings.island.queue.max-concurrent", -1, Integer.class),
                 new ChunkProcessingSettings(
                         getOrSetDefault("settings.island.chunk-processing.delete.threads", -1, Integer.class),
                         getOrSetDefault("settings.island.chunk-processing.delete.delay-ms", 50, Integer.class),
@@ -76,12 +79,19 @@ public class GeneralConfigManager implements IConfigurationProvider {
                 getOrSetDefault("settings.cache.ttl.island", -1L, Long.class),
                 getOrSetDefault("settings.cache.ttl.player-link", -1L, Long.class),
                 getOrSetDefault("settings.cache.ttl.members", -1L, Long.class),
-                getOrSetDefault("settings.cache.ttl.state", -1L, Long.class)
+                getOrSetDefault("settings.cache.ttl.state", -1L, Long.class),
+                getOrSetDefault("settings.cache.ttl.island-name", -1L, Long.class),
+                getOrSetDefault("settings.cache.ttl.island-description", -1L, Long.class)
         );
 
         this.permissionsSettings = new PermissionsSettings(
                 getOrSetDefault("permissions.check-owner", false, Boolean.class),
                 getOrSetDefault("permissions.check-ban", false, Boolean.class)
+        );
+
+        this.updateCheckerSettings = new UpdateCheckerSettings(
+                getOrSetDefault("settings.update-checker.enabled", true, Boolean.class),
+                getOrSetDefault("settings.update-checker.interval-minutes", 60L, Long.class)
         );
 
         if (changed) {
@@ -151,6 +161,10 @@ public class GeneralConfigManager implements IConfigurationProvider {
         return permissionsSettings;
     }
 
+    public UpdateCheckerSettings getUpdateCheckerSettings() {
+        return updateCheckerSettings;
+    }
+
     public Location getSpawnLocation() {
         if (!spawnSettings.enabled()) return null;
         var world = Bukkit.getWorld(spawnSettings.worldName());
@@ -172,9 +186,36 @@ public class GeneralConfigManager implements IConfigurationProvider {
             boolean deleteChunkPerimeterIsland,
             boolean teleportWhenAcceptingInvitation,
             boolean allowBypassQueue,
+            int maxConcurrentCreations,
             ChunkProcessingSettings chunkProcessing
     ) {
+        /**
+     * Resolves the configured maximum number of islands that may be
+     * created concurrently across the whole server.
+     * <p>
+     * -1 means "auto": derived from the number of available CPU cores,
+     * capped at 4 so that servers running the default SQLite backend —
+     * whose HikariCP pool is itself capped at 4 connections, see
+     * database.toml — never end up with more concurrent creations than
+     * the connection pool can actually serve. Raise {@code
+     * settings.island.queue.max-concurrent} explicitly past 4 if you run
+     * MariaDB/PostgreSQL with a larger pool and want more parallelism.
+     *
+     * @return the resolved concurrency limit, always &gt;= 1
+     */
+    public int resolvedMaxConcurrentCreations() {
+        if (maxConcurrentCreations == -1) {
+            return Math.max(1, Math.min(4, Runtime.getRuntime().availableProcessors() / 4));
+        }
+        if (maxConcurrentCreations > 0) {
+            return maxConcurrentCreations;
+        }
+        log.warn("Invalid settings.island.queue.max-concurrent value ({}), falling back to 1.", maxConcurrentCreations);
+        return 1;
     }
+    }
+
+
 
     public record ChunkProcessingSettings(
             int deleteThreads,
@@ -214,9 +255,13 @@ public class GeneralConfigManager implements IConfigurationProvider {
     }
 
     public record CacheTtlSettings(long warps, long nameRole, long role, long island, long playerLink, long members,
-                                   long state) {
+                                   long state, long islandName, long islandDescription) {
     }
 
     public record PermissionsSettings(boolean checkOwner, boolean checkBan) {
+    }
+
+    public record UpdateCheckerSettings(boolean enabled, long intervalMinutes) {
+
     }
 }

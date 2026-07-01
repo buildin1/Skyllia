@@ -56,8 +56,10 @@ public class IslandLevelConfigManager implements IConfigurationProvider {
         scanNotification = new ScanNotificationConfig(type, notifColor);
 
         processingSettings = new ChunkProcessingSettings(
-                getOrSetDefault("scan-processing.threads", -1, Integer.class),
-                getOrSetDefault("scan-processing.delay-ms", 50, Integer.class)
+                getOrSetDefault("scan-processing.scheduler-threads", -1, Integer.class),
+                getOrSetDefault("scan-processing.scorer-threads", -1, Integer.class),
+                getOrSetDefault("scan-processing.delay-ms", 50, Integer.class),
+                getOrSetDefault("scan-processing.notification-update-every", 5, Integer.class)
         );
 
         if (changed) {
@@ -146,7 +148,9 @@ public class IslandLevelConfigManager implements IConfigurationProvider {
         return processingSettings;
     }
 
-    public record ChunkProcessingSettings(int scanThread, int scanDelayMs) {
+    public record ChunkProcessingSettings(int scanThread, int scoreThread, int scanDelayMs,
+                                          int notificationUpdateEvery) {
+
         private static int resolveThreads(int configured, String context) {
             if (configured == -1) {
                 return Math.max(4, Runtime.getRuntime().availableProcessors() / 8);
@@ -155,13 +159,21 @@ public class IslandLevelConfigManager implements IConfigurationProvider {
             if (configured > 0) {
                 return configured;
             }
-
-            log.warn("Invalid chunk-processing.{}.threads value ({}), falling back to 1.", context, configured);
+            log.warn("Invalid scan-processing.{}.threads value ({}), falling back to 1.", context, configured);
             return 1;
         }
 
         public int resolvedScanThreads() {
-            return resolveThreads(scanThread, "island_scan");
+            return resolveThreads(scanThread, "scheduler");
         }
+
+        public int resolvedScoreThreads() {
+            return resolveThreads(scoreThread, "scorer");
+        }
+
+        public int resolvedNotificationUpdateEvery() {
+            return Math.max(1, notificationUpdateEvery);
+        }
+
     }
 }

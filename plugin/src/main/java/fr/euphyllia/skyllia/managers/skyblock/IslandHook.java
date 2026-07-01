@@ -2,6 +2,7 @@ package fr.euphyllia.skyllia.managers.skyblock;
 
 import fr.euphyllia.skyllia.Skyllia;
 import fr.euphyllia.skyllia.api.SkylliaAPI;
+import fr.euphyllia.skyllia.api.coordinate.RegionCoordinate;
 import fr.euphyllia.skyllia.api.event.SkyblockChangeSizeEvent;
 import fr.euphyllia.skyllia.api.event.SkyblockCreateWarpEvent;
 import fr.euphyllia.skyllia.api.event.SkyblockDeleteEvent;
@@ -11,13 +12,16 @@ import fr.euphyllia.skyllia.api.permissions.IslandFlags;
 import fr.euphyllia.skyllia.api.permissions.PermissionRegistry;
 import fr.euphyllia.skyllia.api.skyblock.Island;
 import fr.euphyllia.skyllia.api.skyblock.Players;
+import fr.euphyllia.skyllia.api.skyblock.enums.RemovalCause;
 import fr.euphyllia.skyllia.api.skyblock.model.HeightType;
-import fr.euphyllia.skyllia.api.skyblock.model.Position;
 import fr.euphyllia.skyllia.api.skyblock.model.WarpIsland;
+import fr.euphyllia.skyllia.api.utils.Keys;
 import fr.euphyllia.skyllia.api.utils.helper.RegionHelper;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.persistence.PersistentDataType;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.Timestamp;
@@ -41,14 +45,15 @@ public class IslandHook extends Island {
     private final Skyllia plugin;
     private final UUID islandId;
     private final Timestamp createDate;
-    private final Position position;
+    private final RegionCoordinate position;
     private final int maxMemberInIsland;
     private final Map<World, Location> islandCenterLocations;
     private final ConcurrentHashMap<String, Integer> buildMinHeightCache = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Integer> buildMaxHeightCache = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, IslandFlags> islandFlagsCache = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Bounds> boundsCache = new ConcurrentHashMap<>();
     private double islandSize;
     private transient volatile CompiledPermissions compiledPermissions;
-    private transient volatile IslandFlags islandFlags;
 
     /**
      * Constructs a new {@code IslandHook} instance.
@@ -61,7 +66,7 @@ public class IslandHook extends Island {
      */
     public IslandHook(UUID islandId,
                       int maxMembers,
-                      Position position,
+                      RegionCoordinate position,
                       double size,
                       Timestamp date) {
         this.plugin = Skyllia.getInstance();
@@ -71,6 +76,26 @@ public class IslandHook extends Island {
         this.maxMemberInIsland = maxMembers;
         this.islandSize = size;
         this.islandCenterLocations = new ConcurrentHashMap<>();
+    }
+
+    @Override
+    public @Nullable String getName() {
+        return this.plugin.getInterneAPI().getSkyblockManager().getIslandName(this);
+    }
+
+    @Override
+    public boolean setName(@Nullable String name) {
+        return this.plugin.getInterneAPI().getSkyblockManager().updateIslandName(this, name);
+    }
+
+    @Override
+    public @Nullable String getDescription() {
+        return this.plugin.getInterneAPI().getSkyblockManager().getIslandDescription(this);
+    }
+
+    @Override
+    public boolean setDescription(@Nullable String description) {
+        return this.plugin.getInterneAPI().getSkyblockManager().updateIslandDescription(this, description);
     }
 
     /**
@@ -117,6 +142,7 @@ public class IslandHook extends Island {
                 .setSizeIsland(this, newSize);
 
         if (isUpdated) {
+            boundsCache.clear();
             Bukkit.getPluginManager().callEvent(new SkyblockChangeSizeEvent(this, oldSize, newSize));
             return true;
         }
@@ -239,8 +265,8 @@ public class IslandHook extends Island {
      * {@inheritDoc}
      */
     @Override
-    public boolean removeMember(Players oldMember) {
-        return this.plugin.getInterneAPI().getSkyblockManager().deleteMember(this, oldMember);
+    public boolean removeMember(Players oldMember, RemovalCause cause) {
+        return this.plugin.getInterneAPI().getSkyblockManager().deleteMember(this, oldMember, cause);
     }
 
     /**
@@ -255,7 +281,7 @@ public class IslandHook extends Island {
      * {@inheritDoc}
      */
     @Override
-    public Position getPosition() {
+    public RegionCoordinate getRegionCoordinate() {
         return this.position;
     }
 
@@ -309,12 +335,12 @@ public class IslandHook extends Island {
     }
 
     @Override
-    public final IslandFlags getIslandFlags() {
-        IslandFlags local = this.islandFlags;
+    public IslandFlags getIslandFlags(String worldName) {
+        IslandFlags local = islandFlagsCache.get(worldName);
         if (local != null) return local;
 
         synchronized (this) {
-            local = this.islandFlags;
+            local = islandFlagsCache.get(worldName);
             if (local != null) return local;
 
             var flagRegistry = SkylliaAPI.getFlagRegistry();
@@ -326,18 +352,18 @@ public class IslandHook extends Island {
 
             IslandFlags loaded = null;
             if (query != null) {
-                loaded = query.loadIslandFlags(getId(), flagRegistry);
+                loaded = query.loadIslandFlags(getId(), flagRegistry, worldName);
             }
 
             local = (loaded != null) ? loaded : new IslandFlags(flagRegistry);
-            this.islandFlags = local;
+            islandFlagsCache.put(worldName, local);
             return local;
         }
     }
 
     @Override
-    public final void invalidateIslandFlags() {
-        this.islandFlags = null;
+    public void invalidateIslandFlags(String worldName) {
+        islandFlagsCache.remove(worldName);
     }
 
     @Override
@@ -364,6 +390,7 @@ public class IslandHook extends Island {
     @Override
     public void setCenterLocation(Location location) {
         this.islandCenterLocations.put(location.getWorld(), location);
+        boundsCache.remove(location.getWorld().getName());
         this.plugin.getInterneAPI().getSkyblockManager().updateCenterLocation(this, location);
     }
 
@@ -412,5 +439,93 @@ public class IslandHook extends Island {
             if (ok) buildMaxHeightCache.put(worldName, value);
         }
         return ok;
+    }
+
+    @Override
+    public Location getMinimumPoint(World world) {
+        Location center = getCenterLocation(world);
+
+        int minY = getBuildMinHeight(world.getName()) != null
+                ? getBuildMinHeight(world.getName())
+                : world.getMinHeight();
+
+        double halfSize = (getSize() - 1D) / 2D;
+
+        return new Location(
+                world,
+                center.getBlockX() - halfSize,
+                minY,
+                center.getBlockZ() - halfSize
+        );
+    }
+
+    @Override
+    public Location getMaximumPoint(World world) {
+        Location center = getCenterLocation(world);
+
+        int maxY = getBuildMaxHeight(world.getName()) != null
+                ? getBuildMaxHeight(world.getName())
+                : world.getMaxHeight() - 1;
+
+        double halfSize = (getSize() - 1D) / 2D;
+
+        return new Location(
+                world,
+                center.getBlockX() + halfSize,
+                maxY,
+                center.getBlockZ() + halfSize
+        );
+
+    }
+
+    @Override
+    public boolean isInside(Location location) {
+        World world = location.getWorld();
+        if (world == null) {
+            return false;
+        }
+        return isInside(world, location.getBlockX(), location.getBlockY(), location.getBlockZ());
+    }
+
+    @Override
+    public boolean isInside(@NotNull World world, int blockX, int blockY, int blockZ) {
+        String worldName = world.getName();
+        Bounds b = boundsCache.get(worldName);
+        if (b == null) {
+            b = computeBounds(world);
+            boundsCache.put(worldName, b);
+        }
+        return b.contains(blockX, blockY, blockZ);
+    }
+
+    private Bounds computeBounds(World world) {
+        Location center = getCenterLocation(world);
+        String worldName = world.getName();
+        double halfSize = (getSize() - 1D) / 2D;
+
+        int cx = center.getBlockX();
+        int cz = center.getBlockZ();
+
+        Integer customMin = getBuildMinHeight(worldName);
+        int minY = (customMin != null) ? customMin : world.getMinHeight();
+
+        Integer customMax = getBuildMaxHeight(worldName);
+        int maxY = (customMax != null) ? customMax : world.getMaxHeight() - 1;
+
+        return new Bounds(
+                (int) Math.floor(cx - halfSize),
+                (int) Math.floor(cx + halfSize),
+                (int) Math.floor(cz - halfSize),
+                (int) Math.floor(cz + halfSize),
+                minY, maxY
+        );
+    }
+
+    private record Bounds(int minX, int maxX, int minZ, int maxZ, int minY, int maxY) {
+        boolean contains(int x, int y, int z) {
+            return x >= minX && x <= maxX
+                    && z >= minZ && z <= maxZ
+                    && y >= minY && y <= maxY;
+        }
     }
 }

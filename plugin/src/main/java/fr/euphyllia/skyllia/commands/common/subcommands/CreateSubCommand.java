@@ -35,71 +35,107 @@ public class CreateSubCommand implements SubCommandInterface {
     private final Logger logger = LogManager.getLogger(CreateSubCommand.class);
 
     public CompletableFuture<Void> runCreateIsland(Skyllia plugin, Player player, String[] args) {
-        return CompletableFuture.runAsync(() -> {
+        final UUID playerId = player.getUniqueId();
+        final AtomicBoolean acquired = new AtomicBoolean(false);
 
-            final UUID playerId = player.getUniqueId();
-
-            if (CommandCacheExecution.isAlreadyExecute(playerId, "create")) {
+        return CompletableFuture.supplyAsync(() -> {
+            if (!CommandCacheExecution.tryAcquire(playerId, "create")) {
                 ConfigLoader.language.sendMessage(player, "island.generic.command-in-progress");
-                return;
+                return null;
             }
-            CommandCacheExecution.addCommandExecute(playerId, "create");
-            try {
+            acquired.set(true);
 
-                Island existingIsland = SkylliaAPI.getIslandByPlayerId(playerId);
-                if (existingIsland != null) {
-                    new HomeSubCommand().onExecute(plugin, player, args);
-                    return;
-                }
+            if (!PlayerUtils.hasPermission(player, "skyllia.island.command.create")) {
+                ConfigLoader.language.sendMessage(player, "island.player.permission-denied");
+                return null;
+            }
 
-                List<String> schematicsKeys = ConfigLoader.schematicManager.getIslandTypes();
-                if (schematicsKeys.isEmpty()) {
-                    ConfigLoader.language.sendMessage(player, "island.schematic-not-exist");
-                    return;
-                }
+            Island existingIsland = SkylliaAPI.getIslandByPlayerId(playerId);
+            if (existingIsland != null) {
+                new HomeSubCommand().onExecute(plugin, player, args);
+                return null;
+            }
 
-                String schemKey = (args.length > 0 && schematicsKeys.contains(args[0])) ? args[0] : schematicsKeys.getFirst();
-                Map<String, SchematicSetting> schematicSettingMap = IslandUtils.getSchematic(schemKey);
-                if (schematicSettingMap == null || schematicSettingMap.isEmpty()) {
-                    ConfigLoader.language.sendMessage(player, "island.schematic-not-exist");
-                    return;
-                }
+            List<String> schematicsKeys = ConfigLoader.schematicManager.getIslandTypes();
+            if (schematicsKeys.isEmpty()) {
+                ConfigLoader.language.sendMessage(player, "island.schematic-not-exist");
+                return null;
+            }
 
-                IslandSettings islandSettings = IslandUtils.getIslandSettings(schemKey);
-                if (islandSettings == null) {
-                    ConfigLoader.language.sendMessage(player, "island.type-not-exist");
-                    return;
-                }
+            String schemKey = resolveSchematicKey(args.length > 0 ? args[0] : null, schematicsKeys);
+            Map<String, SchematicSetting> schematicSettingMap = IslandUtils.getSchematic(schemKey);
+            if (schematicSettingMap == null || schematicSettingMap.isEmpty()) {
+                ConfigLoader.language.sendMessage(player, "island.schematic-not-exist");
+                return null;
+            }
 
-                ConfigLoader.language.sendMessage(player, "island.create-in-progress");
-                UUID idIsland = UUID.randomUUID();
+            IslandSettings islandSettings = IslandUtils.getIslandSettings(schemKey);
+            if (islandSettings == null) {
+                ConfigLoader.language.sendMessage(player, "island.type-not-exist");
+                return null;
+            }
 
-                Players owners = new Players(player.getUniqueId(), player.getName(), null, RoleType.OWNER);
-                boolean isCreate = SkylliaAPI.createIsland(idIsland, islandSettings, owners);
-                if (!isCreate) {
-                    ConfigLoader.language.sendMessage(player, "island.generic-error");
-                    return;
-                }
+            if (!PlayerUtils.hasPermission(player, "skyllia.island.command.create.%s".formatted(schemKey))) {
+                ConfigLoader.language.sendMessage(player, "island.player.permission-denied");
+                return null;
+            }
 
-                Island island = SkylliaAPI.getIslandByIslandId(idIsland);
-                if (island == null) {
-                    ConfigLoader.language.sendMessage(player, "island.generic-error");
-                    return;
-                }
+            ConfigLoader.language.sendMessage(player, "island.create-in-progress");
+            UUID idIsland = UUID.randomUUID();
+
+            Players owners = new Players(player.getUniqueId(), player.getName(), null, RoleType.OWNER);
+            boolean isCreate = SkylliaAPI.createIsland(idIsland, islandSettings, owners);
+            if (!isCreate) {
+                ConfigLoader.language.sendMessage(player, "island.generic-error");
+                return null;
+            }
+
+            Island island = SkylliaAPI.getIslandByIslandId(idIsland);
+            if (island == null) {
+                ConfigLoader.language.sendMessage(player, "island.generic-error");
+                return null;
+            }
 
                 new SkyblockCreateEvent(island, playerId).callEvent();
 
-                pasteAllSchematics(plugin, player, island, schematicSettingMap)
-                        .thenRun(() -> ConfigLoader.language.sendMessage(player, "island.create-finish"))
-                        .exceptionally(e -> {
-                            logger.error("Island creation failed for {}: {}", island.getId(), e.getMessage());
+            return new IslandCreationContext(island, schematicSettingMap);
+        }).thenCompose(context -> {
+            if (context == null) {
+                return CompletableFuture.completedFuture(null);
+            }
+
+            return pasteAllSchematics(plugin, player, context.island(), context.schematicSettingMap())
+                    .handle((result, throwable) -> {
+                        if (throwable != null) {
+                            logger.error("Island creation failed for {}: {}", context.island().getId(), throwable.getMessage(), throwable);
                             ConfigLoader.language.sendMessage(player, "island.generic-error");
-                            return null;
-                        });
-            } finally {
+                        } else {
+                            ConfigLoader.language.sendMessage(player, "island.create-finish");
+                        }
+                        return (Void) null;
+                    });
+        }).exceptionally(throwable -> {
+            logger.error("Island creation failed for {}: {}", playerId, throwable.getMessage(), throwable);
+            ConfigLoader.language.sendMessage(player, "island.generic-error");
+            return null;
+        }).whenComplete((result, throwable) -> {
+            if (acquired.get()) {
                 CommandCacheExecution.removeCommandExec(playerId, "create");
             }
         });
+    }
+
+    private String resolveSchematicKey(String requestedKey, List<String> schematicsKeys) {
+        if (requestedKey != null && schematicsKeys.contains(requestedKey)) {
+            return requestedKey;
+        }
+
+        String defaultSchemKey = ConfigLoader.islandManager.getDefaultIslandKey();
+        if (defaultSchemKey != null && schematicsKeys.contains(defaultSchemKey)) {
+            return defaultSchemKey;
+        }
+
+        return schematicsKeys.getFirst();
     }
 
     private CompletableFuture<Void> pasteAllSchematics(Skyllia plugin, Player player, Island island,
@@ -114,8 +150,8 @@ public class CreateSubCommand implements SubCommandInterface {
             chain = chain.thenCompose(ignored -> {
                 Location center = RegionHelper.getCenterRegion(
                         Bukkit.getWorld(worldName),
-                        island.getPosition().x(),
-                        island.getPosition().z()
+                        island.getRegionCoordinate().x(),
+                        island.getRegionCoordinate().z()
                 );
                 center.setY(setting.height());
                 island.setCenterLocation(center);
@@ -123,10 +159,10 @@ public class CreateSubCommand implements SubCommandInterface {
                 return Skyllia.getInstance().getInterneAPI()
                         .getSchematicHook(SchematicPlugin.fromString(setting.plugin()))
                         .paste(center, setting)
-                        .thenAcceptAsync(success -> {
+                        .thenComposeAsync(success -> {
                             if (!success) {
                                 island.setDisable(true);
-                                throw new RuntimeException("Schematic paste failed for world " + worldName);
+                                return CompletableFuture.failedFuture(new RuntimeException("Schematic paste failed for world " + worldName));
                             }
                             if (setting.minBuildHeight() != null) {
                                 island.setBuildHeight(worldName, HeightType.MIN, setting.minBuildHeight());
@@ -136,33 +172,41 @@ public class CreateSubCommand implements SubCommandInterface {
                             }
                             if (first) {
                                 island.addWarps("home", center, true);
+                                island.setSpawnLocation(center);
 
                                 Skyllia.getInstance().getInterneAPI()
                                         .getSkyblockManager()
                                         .cacheIslandAndIndex(island);
 
                                 new SkyblockLoadEvent(island).callEvent();
-                                Location spawnLoc = center.clone().add(0.5, 0.1, 0.5);
-                                player.teleportAsync(spawnLoc, PlayerTeleportEvent.TeleportCause.PLUGIN)
-                                        .thenRun(() -> {
-                                            player.setVelocity(new Vector(0, 0, 0));
-                                            player.setFallDistance(0);
-                                            if (player.hasPermission("skyllia.island.worldborder.bypass")) {
-                                                return;
-                                            }
-                                            WorldBorder border = player.getWorldBorder();
-                                            if (border == null) border = Bukkit.createWorldBorder();
-                                            border.setCenter(center);
-                                            border.setSize(island.getSize());
-                                            //player.setWorldBorder(border);
-                                        });
+                                return teleportAndApplyBorder(player, island, center);
                             }
+                            return CompletableFuture.completedFuture(null);
                         });
             });
         }
         return chain;
     }
 
+    private CompletableFuture<Void> teleportAndApplyBorder(Player player, Island island, Location center) {
+        Location spawnLoc = center.clone().add(0, 0.5, 0);
+        return player.teleportAsync(spawnLoc, PlayerTeleportEvent.TeleportCause.PLUGIN)
+                .thenAccept(successTeleport -> {
+                    if (!successTeleport) {
+                        return;
+                    }
+                    player.setVelocity(new Vector(0, 0, 0));
+                    player.setFallDistance(0);
+                    if (PlayerUtils.hasPermission(player, "skyllia.island.worldborder.bypass")) {
+                        return;
+                    }
+                    WorldBorder border = player.getWorldBorder();
+                    if (border == null) border = Bukkit.createWorldBorder();
+                    border.setCenter(center);
+                    border.setSize(island.getSize());
+                    player.setWorldBorder(border);
+                });
+    }
 
     @Override
     public void onExecute(@NotNull Plugin plugin, @NotNull CommandSender sender, @NotNull String[] args) {
@@ -185,7 +229,6 @@ public class CreateSubCommand implements SubCommandInterface {
         }
     }
 
-
     @Override
     public @NotNull List<String> onTabComplete(@NotNull Plugin plugin, @NotNull CommandSender sender, @NotNull String[] args) {
         if (args.length == 1) {
@@ -197,7 +240,7 @@ public class CreateSubCommand implements SubCommandInterface {
 
             List<String> list = new ArrayList<>();
             for (String schem : nameSchem) {
-                if (sender.hasPermission("skyllia.island.command.create.%s".formatted(schem))) {
+                if (PlayerUtils.hasPermission(sender, "skyllia.island.command.create.%s".formatted(schem))) {
                     if (schem.toLowerCase().startsWith(partial)) {
                         list.add(schem);
                     }
@@ -207,5 +250,8 @@ public class CreateSubCommand implements SubCommandInterface {
         }
 
         return Collections.emptyList();
+    }
+
+    private record IslandCreationContext(Island island, Map<String, SchematicSetting> schematicSettingMap) {
     }
 }

@@ -1,8 +1,10 @@
 package fr.euphyllia.skyllia.managers.world;
 
 import fr.euphyllia.skyllia.api.SkylliaAPI;
+import fr.euphyllia.skyllia.api.configuration.WorldConfig;
+import fr.euphyllia.skyllia.api.coordinate.ChunkCoordinate;
+import fr.euphyllia.skyllia.api.coordinate.RegionCoordinate;
 import fr.euphyllia.skyllia.api.skyblock.Island;
-import fr.euphyllia.skyllia.api.skyblock.model.Position;
 import fr.euphyllia.skyllia.api.utils.RegionUtils;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
 import fr.euphyllia.skyllia.configuration.manager.GeneralConfigManager;
@@ -68,8 +70,9 @@ public class WorldModifier {
     }
 
     public void deleteIsland(@NotNull Island island, @NotNull World world, int regionDistance, Consumer<Boolean> onFinish) {
-        Position position = island.getPosition();
-        List<Position> chunks = RegionUtils.computeChunksToDelete(position, regionDistance, island.getSize());
+        RegionCoordinate position = island.getRegionCoordinate();
+        Biome defaultBiome = resolveDefaultBiome(world);
+        List<ChunkCoordinate> chunks = RegionUtils.computeChunksToDelete(position, regionDistance, island.getSize());
         if (chunks.isEmpty()) {
             if (onFinish != null) onFinish.accept(true);
             return;
@@ -77,12 +80,15 @@ public class WorldModifier {
         AtomicInteger toDelete = new AtomicInteger(chunks.size());
         AtomicBoolean failed = new AtomicBoolean(false);
         for (int i = 0; i < chunks.size(); i++) {
-            final Position chunkPos = chunks.get(i);
+            final ChunkCoordinate chunkPos = chunks.get(i);
             final long delay = (long) i * ConfigLoader.general.getIslandSettings().chunkProcessing().deleteDelayMs();
             deleteScheduler.schedule(() -> {
                 world.getChunkAtAsync(chunkPos.x(), chunkPos.z()).thenAccept(ignored -> {
                     try {
                         SkylliaAPI.getWorldNMS().resetChunk(world, chunkPos);
+                        if (!SkylliaAPI.getBiomesImpl().setBiome(world, chunkPos.x(), chunkPos.z(), defaultBiome)) {
+                            failed.set(true);
+                        }
                     } catch (Exception e) {
                         failed.set(true);
                     }
@@ -92,6 +98,22 @@ public class WorldModifier {
                 });
             }, delay, TimeUnit.MILLISECONDS);
         }
+    }
+
+    private Biome resolveDefaultBiome(@NotNull World world) {
+        WorldConfig worldConfig = ConfigLoader.worldManager.getWorldConfig(world.getName());
+        Biome fallback = switch (world.getEnvironment()) {
+            case NETHER -> Biome.NETHER_WASTES;
+            case THE_END -> Biome.THE_END;
+            default -> Biome.PLAINS;
+        };
+
+        if (worldConfig == null || worldConfig.getBiomeId() == null || worldConfig.getBiomeId().isBlank()) {
+            return fallback;
+        }
+
+        Biome configuredBiome = SkylliaAPI.getBiomesImpl().getBiome(worldConfig.getBiomeId());
+        return configuredBiome != null ? configuredBiome : fallback;
     }
 
     public CompletableFuture<Boolean> changeBiomeChunk(@NotNull World world, int chunkX, int chunkZ, @NotNull Biome biome) {
@@ -111,8 +133,8 @@ public class WorldModifier {
     public CompletableFuture<Boolean> changeBiomeIsland(@NotNull World world, @NotNull Biome biome,
                                                         @NotNull Island island, int regionDistance) {
         CompletableFuture<Boolean> future = new CompletableFuture<>();
-        Position islandPos = island.getPosition();
-        List<Position> chunks = new ArrayList<>();
+        RegionCoordinate islandPos = island.getRegionCoordinate();
+        List<ChunkCoordinate> chunks = new ArrayList<>();
         RegionUtils.spiralStartCenter(islandPos, regionDistance, island.getSize(), chunks::add);
         if (chunks.isEmpty()) {
             future.complete(true);
@@ -121,7 +143,7 @@ public class WorldModifier {
         AtomicInteger remaining = new AtomicInteger(chunks.size());
         AtomicBoolean failed = new AtomicBoolean(false);
         for (int i = 0; i < chunks.size(); i++) {
-            Position chunk = chunks.get(i);
+            ChunkCoordinate chunk = chunks.get(i);
             final int cX = chunk.x();
             final int cZ = chunk.z();
             final long delay = (long) i * ConfigLoader.general.getIslandSettings().chunkProcessing().biomeDelayMs();

@@ -9,6 +9,7 @@ import fr.euphyllia.skyllia.api.permissions.modules.PermissionModule;
 import fr.euphyllia.skyllia.api.skyblock.Island;
 import fr.euphyllia.skyllia.api.utils.helper.RegionHelper;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
+import fr.euphyllia.skyllia.utils.PlayerUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
@@ -80,7 +81,7 @@ public class TeleportPermissions implements PermissionModule {
     public void onAddWorldBorder(final PlayerTeleportIslandEvent event) {
         final Player player = event.getPlayer();
 
-        if (player.hasPermission("skyllia.island.worldborder.bypass")) {
+        if (PlayerUtils.hasPermission(player, "skyllia.island.worldborder.bypass")) {
             return;
         }
 
@@ -89,7 +90,7 @@ public class TeleportPermissions implements PermissionModule {
 
         if (island == null) return;
 
-        Location centerIsland = RegionHelper.getCenterRegion(to.getWorld(), island.getPosition().x(), island.getPosition().z());
+        Location centerIsland = RegionHelper.getCenterRegion(to.getWorld(), island.getRegionCoordinate().x(), island.getRegionCoordinate().z());
 
         WorldBorder border = player.getWorldBorder();
         if (border == null) {

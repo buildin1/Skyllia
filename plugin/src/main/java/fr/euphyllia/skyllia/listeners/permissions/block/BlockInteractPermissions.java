@@ -8,9 +8,11 @@ import fr.euphyllia.skyllia.api.permissions.modules.PermissionModule;
 import fr.euphyllia.skyllia.api.skyblock.Island;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
 import fr.euphyllia.skyllia.listeners.ListenersUtils;
-import org.bukkit.Location;
+import fr.euphyllia.skyllia.utils.PlayerUtils;
 import org.bukkit.NamespacedKey;
+import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.block.Container;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.block.Action;
@@ -30,30 +32,33 @@ public class BlockInteractPermissions implements PermissionModule {
         final Block clicked = event.getClickedBlock();
         if (clicked == null) return;
 
+        if (clicked.getState(false) instanceof Container)
+            return; // If the block has an inventory, we let InventoryOpenPermissions handle the interaction
+
+        final World world = clicked.getWorld();
+
         final Player player = event.getPlayer();
-        final Location location = clicked.getLocation();
+        final int bx = clicked.getX();
+        final int by = clicked.getY();
+        final int bz = clicked.getZ();
 
-        if (!SkylliaAPI.isWorldSkyblock(location.getWorld()) || player.isOp()) return;
-
-        final int chunkX = location.getBlockX() >> 4;
-        final int chunkZ = location.getBlockZ() >> 4;
-        final Island island = SkylliaAPI.getIslandByChunk(chunkX, chunkZ);
+        final Island island = ListenersUtils.islandAtBlock(world, bx, bz);
+        if (!SkylliaAPI.isWorldSkyblock(world) || player.isOp()) return;
         if (island == null) {
             //log.warn("玩家{}在{}位置岛屿无效，无法进行{}", player.getName(), player.getLocation(), event.getEventName());
             event.setCancelled(true);
             return;
         }
 
-        final boolean hasBypass = player.hasPermission("skyllia.player.interact.bypass");
-        final boolean hasPermission = hasBypass || SkylliaAPI.getPermissionsManager().hasPermission(player, island, BLOCK_INTERACT, null, ConfigLoader.general.getDebugSettings().permission());
+        final boolean hasBypass = PlayerUtils.hasPermission(player, "skyllia.player.interact.bypass");
+        final boolean hasPermission = hasBypass || SkylliaAPI.getPermissionsManager()
+                .hasPermission(player, island, BLOCK_INTERACT, null, ConfigLoader.general.getDebugSettings().permission());
         if (!hasPermission) {
-            //log.warn("Player= {}, Pos= {}, Chunk= {} {}, Region= {} {}, Returned island owner= {} Pos= {} Permission= BLOCK_INTERACT",
-            //        player.getName(), location, chunkX,chunkZ, chunkX>>5, chunkZ>>5 , island.getOwner().getLastKnowName(), island.getPosition());
             event.setCancelled(true);
             return;
         }
-        if (!hasBypass && ListenersUtils.isBlockOutsideIsland(island, location, event)) {
-            return;
+        if (!hasBypass) {
+            ListenersUtils.isBlockOutsideIsland(island, world, bx, by, bz, event);
         }
     }
 

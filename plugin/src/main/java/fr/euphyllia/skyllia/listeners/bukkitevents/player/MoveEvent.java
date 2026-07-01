@@ -1,12 +1,13 @@
 package fr.euphyllia.skyllia.listeners.bukkitevents.player;
 
 import fr.euphyllia.skyllia.api.SkylliaAPI;
+import fr.euphyllia.skyllia.api.coordinate.RegionCoordinate;
 import fr.euphyllia.skyllia.api.skyblock.Island;
-import fr.euphyllia.skyllia.api.skyblock.model.Position;
 import fr.euphyllia.skyllia.api.skyblock.model.WarpIsland;
 import fr.euphyllia.skyllia.api.utils.helper.RegionHelper;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
 import fr.euphyllia.skyllia.listeners.ListenersUtils;
+import fr.euphyllia.skyllia.utils.PlayerUtils;
 import fr.euphyllia.skyllia.utils.WorldUtils;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
@@ -32,7 +33,7 @@ public class MoveEvent implements Listener {
         if (!ConfigLoader.general.getIslandSettings().teleportOutsideIsland()) return;
 
         final Player player = event.getPlayer();
-        if (player.hasPermission("skyllia.island.outside.bypass")) return;
+        if (PlayerUtils.hasPermission(player, "skyllia.island.outside.bypass")) return;
 
         Location location = player.getLocation();
         World world = location.getWorld();
@@ -46,9 +47,9 @@ public class MoveEvent implements Listener {
         int chunkX = location.getBlockX() >> 4;
         int chunkZ = location.getBlockZ() >> 4;
 
-        Position position = RegionHelper.getRegionFromChunk(chunkX, chunkZ);
+        RegionCoordinate position = RegionHelper.getRegionCoordinateFromChunk(chunkX, chunkZ);
 
-        Island island = SkylliaAPI.getIslandByPosition(position);
+        Island island = SkylliaAPI.getIslandByRegion(position);
         if (island == null) return;
 
         WarpIsland homeWarp = island.getWarpByName("home");
@@ -75,7 +76,7 @@ public class MoveEvent implements Listener {
         if (!ConfigLoader.general.getIslandSettings().restrictPlayerMovement()) return;
 
         final Player player = event.getPlayer();
-        if (player.hasPermission("skyllia.island.border.bypass")) return;
+        if (PlayerUtils.hasPermission(player, "skyllia.island.border.bypass")) return;
 
         final Location to = event.getTo();
         if (to == null || to.getWorld() == null) return;
@@ -88,10 +89,10 @@ public class MoveEvent implements Listener {
         int chunkX = to.getBlockX() >> 4;
         int chunkZ = to.getBlockZ() >> 4;
 
-        Island island = ListenersUtils.checkChunkIsIsland(chunkX, chunkZ, from.getWorld(), event);
+        Island island = ListenersUtils.checkChunkIsIsland(chunkX, chunkZ, event);
         if (island == null) return;
 
-        Location center = RegionHelper.getCenterRegion(to.getWorld(), island.getPosition().x(), island.getPosition().z());
+        Location center = RegionHelper.getCenterRegion(to.getWorld(), island.getRegionCoordinate().x(), island.getRegionCoordinate().z());
         if (!RegionHelper.isBlockWithinSquare(center, to.getBlockX(), to.getBlockZ(), island.getSize())) {
             player.teleportAsync(from, PlayerTeleportEvent.TeleportCause.PLUGIN).thenRun(() -> {
                 Component component = ConfigLoader.language.translate(player, "island.player.outside-island", Map.of());

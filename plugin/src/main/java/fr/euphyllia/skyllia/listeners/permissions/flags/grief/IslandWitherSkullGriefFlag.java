@@ -9,6 +9,7 @@ import fr.euphyllia.skyllia.api.skyblock.Island;
 import fr.euphyllia.skyllia.listeners.ListenersUtils;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
+import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.WitherSkull;
 import org.bukkit.event.EventHandler;
@@ -40,24 +41,25 @@ public class IslandWitherSkullGriefFlag implements FlagModule {
         if (!(entity instanceof WitherSkull)) return;
 
         final Location location = event.getLocation();
-        if (location.getWorld() == null) return;
-        if (!SkylliaAPI.isWorldSkyblock(location.getWorld())) return;
+        final World world = location.getWorld();
+        if (world == null) return;
 
-        final int chunkX = location.getBlockX() >> 4;
-        final int chunkZ = location.getBlockZ() >> 4;
-        final Island island = SkylliaAPI.getIslandByChunk(chunkX, chunkZ);
+        final int bx = location.getBlockX();
+        final int by = location.getBlockY();
+        final int bz = location.getBlockZ();
+
+        final Island island = ListenersUtils.islandAtBlock(world, bx, bz);
         if (island == null) {
             event.setCancelled(true);
             return;
         }
 
-        if (!SkylliaAPI.getPermissionsManager().hasFlag(island, ALLOW_WITHER_SKULL_GRIEF, ALLOW_MOB_GRIEF)) {
+        final String worldName = world.getName();
+        if (!SkylliaAPI.getPermissionsManager().hasFlag(island, ALLOW_WITHER_SKULL_GRIEF, ALLOW_MOB_GRIEF, worldName)) {
             event.setCancelled(true);
             return;
         }
 
-        if (ListenersUtils.isBlockOutsideIsland(island, location, event)) {
-            return;
-        }
+        ListenersUtils.isBlockOutsideIsland(island, world, bx, by, bz, event);
     }
 }

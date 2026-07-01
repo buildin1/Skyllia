@@ -15,14 +15,13 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
-
 public class IslandFlagsConfigManager implements IConfigurationProvider {
 
     private static final Logger log = LoggerFactory.getLogger(IslandFlagsConfigManager.class);
 
     private final CommentedFileConfig config;
 
-    private final Map<String, Map<FlagId, Boolean>> compiledDefaults = new HashMap<>();
+    private final Map<String, Map<String, Map<FlagId, Boolean>>> compiledDefaults = new HashMap<>();
 
     private boolean changed = false;
     private int configVersion;
@@ -74,7 +73,7 @@ public class IslandFlagsConfigManager implements IConfigurationProvider {
     @Override
     public void loadConfig() {
         changed = false;
-        this.configVersion = getOrSetDefault("config-version", 1, Integer.class);
+        this.configVersion = getOrSetDefault("config-version", 2, Integer.class);
         this.verbose = getOrSetDefault("verbose", false, Boolean.class);
 
         IslandFlagRegistry registry = SkylliaAPI.getFlagRegistry();
@@ -82,16 +81,32 @@ public class IslandFlagsConfigManager implements IConfigurationProvider {
         ensureAllDefaultsExist(registry);
 
         compiledDefaults.clear();
-        readDefaultsFlat(registry, null, config.get("defaults"));
+        readDefaultsFlat(registry, null, null, config.get("defaults"));
+
+        Object worldsObj = config.get("worlds");
+        if (worldsObj instanceof CommentedConfig worldsRoot) {
+            for (String worldName : new TreeSet<>(worldsRoot.valueMap().keySet())) {
+                Object worldNodeObj = worldsRoot.get(worldName);
+                if (!(worldNodeObj instanceof CommentedConfig worldNode)) continue;
+                readDefaultsFlat(registry, null, worldName, worldNode.get("defaults"));
+            }
+        }
 
         Object islandObj = config.get("island");
         if (islandObj instanceof CommentedConfig islandRoot) {
-            List<String> islandTypes = new ArrayList<>(islandRoot.valueMap().keySet());
-            islandTypes.sort(String::compareTo);
-            for (String islandType : islandTypes) {
+            for (String islandType : new TreeSet<>(islandRoot.valueMap().keySet())) {
                 Object islandNodeObj = islandRoot.get(islandType);
                 if (!(islandNodeObj instanceof CommentedConfig islandNode)) continue;
-                readDefaultsFlat(registry, islandType, islandNode.get("defaults"));
+                readDefaultsFlat(registry, islandType, null, islandNode.get("defaults"));
+
+                Object islandWorldsObj = islandNode.get("worlds");
+                if (islandWorldsObj instanceof CommentedConfig islandWorldsRoot) {
+                    for (String worldName : new TreeSet<>(islandWorldsRoot.valueMap().keySet())) {
+                        Object worldNodeObj = islandWorldsRoot.get(worldName);
+                        if (!(worldNodeObj instanceof CommentedConfig worldNode)) continue;
+                        readDefaultsFlat(registry, islandType, worldName, worldNode.get("defaults"));
+                    }
+                }
             }
         }
 
@@ -129,14 +144,17 @@ public class IslandFlagsConfigManager implements IConfigurationProvider {
     }
 
 
-    public byte[] buildDefaultFlagBlob(@Nullable String islandType) {
+    public byte[] buildDefaultFlagBlob(@Nullable String islandType, String worldName) {
         IslandFlagRegistry registry = SkylliaAPI.getFlagRegistry();
         IslandFlags flags = new IslandFlags(registry);
 
-        applyInto(flags, registry, compiledDefaults.get(null));
-        if (islandType != null) {
-            applyInto(flags, registry, compiledDefaults.get(islandType));
-        }
+        applyInto(flags, registry, getMap(null, null));
+
+        applyInto(flags, registry, getMap(null, worldName));
+
+        if (islandType != null) applyInto(flags, registry, getMap(islandType, null));
+
+        if (islandType != null) applyInto(flags, registry, getMap(islandType, worldName));
 
         flags.ensureUpToDate(registry);
         return PermissionSetCodec.encodeLongs(flags.snapshotWords());
@@ -185,22 +203,21 @@ public class IslandFlagsConfigManager implements IConfigurationProvider {
 
     private void readDefaultsFlat(IslandFlagRegistry registry,
                                   @Nullable String islandType,
+                                  @Nullable String worldName,
                                   @Nullable Object defaultsObj) {
         if (!(defaultsObj instanceof CommentedConfig defaultsBlock)) return;
 
         Map<FlagId, Boolean> flagMap = compiledDefaults
-                .computeIfAbsent(islandType, k -> new HashMap<>());
+                .computeIfAbsent(islandType, k -> new HashMap<>())
+                .computeIfAbsent(worldName, k -> new HashMap<>());
 
         List<Map.Entry<String, Object>> entries = new ArrayList<>(defaultsBlock.valueMap().entrySet());
         entries.sort(Map.Entry.comparingByKey());
 
         for (Map.Entry<String, Object> entry : entries) {
             String permString = entry.getKey();
-            Object valueObj = entry.getValue();
+            Boolean value = coerceBoolean(entry.getValue());
 
-            if (valueObj instanceof CommentedConfig) continue; // nested — skip
-
-            Boolean value = coerceBoolean(valueObj);
             if (value == null) continue;
 
             NamespacedKey key = parseNamespacedKey(permString);
@@ -208,9 +225,7 @@ public class IslandFlagsConfigManager implements IConfigurationProvider {
 
             FlagId id = registry.getIfPresent(key);
             if (id == null) {
-                if (verbose) {
-                    log.info("Unknown flag '{}' in flags.toml (islandType='{}')", key, islandType);
-                }
+                if (verbose) log.info("Unknown flag '{}' (islandType='{}', world='{}')", key, islandType, worldName);
                 continue;
             }
             flagMap.put(id, value);
@@ -228,5 +243,11 @@ public class IslandFlagsConfigManager implements IConfigurationProvider {
 
     private void setLiteral(CommentedConfig cfg, String literalKey, Object value) {
         cfg.set(literalPath(literalKey), value);
+    }
+
+    private @Nullable Map<FlagId, Boolean> getMap(@Nullable String islandType, @Nullable String worldName) {
+        Map<String, Map<FlagId, Boolean>> byWorld = compiledDefaults.get(islandType);
+        if (byWorld == null) return null;
+        return byWorld.get(worldName);
     }
 }

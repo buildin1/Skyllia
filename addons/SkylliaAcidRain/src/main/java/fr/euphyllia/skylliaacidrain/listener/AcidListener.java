@@ -7,7 +7,6 @@ import fr.euphyllia.skyllia.api.addons.skylliaacidrain.event.EntityDamageAcidEve
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
 import fr.euphyllia.skylliaacidrain.SkylliaAcidRain;
 import fr.euphyllia.skylliaacidrain.configuration.AcidConfigLoader;
-import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import net.kyori.adventure.text.Component;
 import org.bukkit.*;
@@ -177,7 +176,7 @@ public class AcidListener implements Listener {
                 Sound sound;
 
                 if (key != null) {
-                    sound = Bukkit.getUnsafe().get(RegistryKey.SOUND_EVENT, key);
+                    sound = Registry.SOUNDS.get(key);
                     if (sound != null) {
                         entity.getWorld().playSound(entity.getLocation(), sound, SoundCategory.HOSTILE, 0.6f, 0.8f);
                     }

@@ -2,6 +2,7 @@ package fr.euphyllia.skyllia.hook.internal;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import fr.euphyllia.skyllia.api.SkylliaAPI;
 import fr.euphyllia.skyllia.api.hooks.SchematicHook;
 import fr.euphyllia.skyllia.api.skyblock.model.SchematicSetting;
 import fr.euphyllia.skyllia.api.utils.schematics.SchematicDTO;
@@ -9,6 +10,7 @@ import org.bukkit.*;
 import org.bukkit.block.*;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.EntityType;
+import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
@@ -21,16 +23,18 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class InternalSchematicHook implements SchematicHook {
 
     private static final Gson GSON = new GsonBuilder().disableHtmlEscaping().create();
     private static final Logger log = LoggerFactory.getLogger(InternalSchematicHook.class);
-
+    private static final Map<File, SchematicDTO> cache = new ConcurrentHashMap<>();
     private final Plugin plugin;
+    private InternalListener internalListener;
 
-    public InternalSchematicHook(Plugin plugin) {
-        this.plugin = plugin;
+    public InternalSchematicHook() {
+        this.plugin = SkylliaAPI.getPlugin();
     }
 
     private static boolean isAir(BlockData bd) {
@@ -67,6 +71,10 @@ public class InternalSchematicHook implements SchematicHook {
         }
     }
 
+    public static void clearCache() {
+        cache.clear();
+    }
+
     @Override
     public String name() {
         return "Internal";
@@ -89,12 +97,16 @@ public class InternalSchematicHook implements SchematicHook {
         }
 
         File file = new File(plugin.getDataFolder() + File.separator + settings.schematicFile());
-        SchematicDTO schematicDTO;
-        try (var in = Files.newInputStream(file.toPath());
-             var r = new InputStreamReader(in, StandardCharsets.UTF_8)) {
-            schematicDTO = GSON.fromJson(r, SchematicDTO.class);
-        } catch (Exception e) {
-            log.error("Failed to read schematic file: {}", file.getAbsolutePath(), e);
+        SchematicDTO schematicDTO = cache.computeIfAbsent(file, f -> {
+            try (var in = Files.newInputStream(f.toPath());
+                 var r = new InputStreamReader(in, StandardCharsets.UTF_8)) {
+                return GSON.fromJson(r, SchematicDTO.class);
+            } catch (Exception e) {
+                log.error("Failed to read schematic file: {}", f.getAbsolutePath(), e);
+                return null;
+            }
+        });
+        if (schematicDTO == null) {
             future.complete(false);
             return future;
         }
@@ -128,95 +140,118 @@ public class InternalSchematicHook implements SchematicHook {
             }
         }
 
-        Bukkit.getRegionScheduler().execute(plugin, loc, () -> {
-            try {
-                List<BlockData> palette = new ArrayList<>(schematicDTO.palette.size());
-                for (String state : schematicDTO.palette) palette.add(Bukkit.createBlockData(state));
-
-                int dx = schematicDTO.size.dx(), dy = schematicDTO.size.dy(), dz = schematicDTO.size.dz();
-                int ox = loc.getBlockX() - schematicDTO.origin.x();
-                int oy = loc.getBlockY() - schematicDTO.origin.y();
-                int oz = loc.getBlockZ() - schematicDTO.origin.z();
-
-                final Map<Long, List<Voxel>> blocksByChunk = new HashMap<>();
-                int y = 0, z = 0, x = 0, r = 0, runRemaining = 0, idx = 0;
-                while (y < dy) {
-                    if (runRemaining == 0) {
-                        int[] entry = schematicDTO.blocks.get(r++);
-                        idx = entry[0];
-                        runRemaining = entry[1];
-                    }
-                    runRemaining--;
-                    int wx = ox + x, wy = oy + y, wz = oz + z;
-                    BlockData bd = palette.get(idx);
-                    if (!(settings.ignoreAirBlocks() && isAir(bd))) {
-                        int cx = wx >> 4, cz = wz >> 4;
-                        long key = (((long) cx) << 32) ^ (cz & 0xffffffffL);
-                        blocksByChunk.computeIfAbsent(key, k -> new ArrayList<>()).add(new Voxel(wx, wy, wz, bd));
-                    }
-                    if (++x >= dx) {
-                        x = 0;
-                        if (++z >= dz) {
-                            z = 0;
-                            ++y;
-                        }
-                    }
-                }
-
-                for (var e : blocksByChunk.entrySet()) {
-                    final int cx = (int) (e.getKey() >> 32);
-                    final int cz = (int) (e.getKey().longValue());
-                    final List<Voxel> voxels = e.getValue();
-                    final List<BlockEntityPlace> bes = besByChunk.getOrDefault(e.getKey(), List.of());
+        int chunkX = loc.getBlockX() >> 4;
+        int chunkZ = loc.getBlockZ() >> 4;
+        loc.getWorld().getChunkAtAsync(chunkX, chunkZ, true, true)
+                .thenAccept(chunk -> {
                     try {
-                        for (Voxel v : voxels) world.getBlockAt(v.x, v.y, v.z).setBlockData(v.bd, false);
-                        for (BlockEntityPlace be : bes) {
-                            BlockState bs = world.getBlockAt(be.x, be.y, be.z).getState(true);
-                            if (!(bs instanceof TileState ts)) continue;
-                            if (ts instanceof Container c) applyContainer(c, be.data.get("inv"));
-                            if (ts instanceof Sign sign) {
-                                if (be.data.get("lines") instanceof List<?> lines)
-                                    for (int i = 0; i < Math.min(4, lines.size()); i++)
-                                        sign.setLine(i, String.valueOf(lines.get(i)));
-                                if (be.data.get("color") instanceof String col)
-                                    try {
-                                        sign.setColor(DyeColor.valueOf(col));
-                                    } catch (Exception ignored) {
-                                    }
-                                if (be.data.get("glow") instanceof Boolean g) sign.setGlowingText(g);
+                        List<BlockData> palette = new ArrayList<>(schematicDTO.palette.size());
+                        for (String state : schematicDTO.palette) palette.add(Bukkit.createBlockData(state));
+
+                        int dx = schematicDTO.size.dx(), dy = schematicDTO.size.dy(), dz = schematicDTO.size.dz();
+                        int ox = loc.getBlockX() - schematicDTO.origin.x();
+                        int oy = loc.getBlockY() - schematicDTO.origin.y();
+                        int oz = loc.getBlockZ() - schematicDTO.origin.z();
+
+                        final Map<Long, List<Voxel>> blocksByChunk = new HashMap<>();
+                        int y = 0, z = 0, x = 0, r = 0, runRemaining = 0, idx = 0;
+                        while (y < dy) {
+                            if (runRemaining == 0) {
+                                int[] entry = schematicDTO.blocks.get(r++);
+                                idx = entry[0];
+                                runRemaining = entry[1];
                             }
-                            if (ts instanceof CreatureSpawner sp) {
-                                if (be.data.get("type") instanceof String name)
-                                    try {
-                                        sp.setSpawnedType(EntityType.valueOf(name));
-                                    } catch (Exception ignored) {
-                                    }
-                                setInt(sp::setDelay, be.data.get("delay"));
-                                setInt(sp::setMinSpawnDelay, be.data.get("minDelay"));
-                                setInt(sp::setMaxSpawnDelay, be.data.get("maxDelay"));
-                                setInt(sp::setMaxNearbyEntities, be.data.get("maxNearbyEntities"));
-                                setInt(sp::setSpawnCount, be.data.get("spawnCount"));
-                                setInt(sp::setSpawnRange, be.data.get("spawnRange"));
-                                setInt(sp::setRequiredPlayerRange, be.data.get("requiredPlayerRange"));
+                            runRemaining--;
+                            int wx = ox + x, wy = oy + y, wz = oz + z;
+                            BlockData bd = palette.get(idx);
+                            if (!(settings.ignoreAirBlocks() && isAir(bd))) {
+                                int cx = wx >> 4, cz = wz >> 4;
+                                long key = (((long) cx) << 32) ^ (cz & 0xffffffffL);
+                                blocksByChunk.computeIfAbsent(key, k -> new ArrayList<>()).add(new Voxel(wx, wy, wz, bd));
                             }
-                            ts.update(true, false);
+                            if (++x >= dx) {
+                                x = 0;
+                                if (++z >= dz) {
+                                    z = 0;
+                                    ++y;
+                                }
+                            }
                         }
-                    } catch (Exception ex) {
-                        log.error("Failed to paste chunk {}/{}", cx, cz, ex);
+
+                        for (var e : blocksByChunk.entrySet()) {
+                            final int cx = (int) (e.getKey() >> 32);
+                            final int cz = (int) (e.getKey().longValue());
+                            final List<Voxel> voxels = e.getValue();
+                            final List<BlockEntityPlace> bes = besByChunk.getOrDefault(e.getKey(), List.of());
+                            try {
+                                for (Voxel v : voxels) world.getBlockAt(v.x, v.y, v.z).setBlockData(v.bd, false);
+                                for (BlockEntityPlace be : bes) {
+                                    BlockState bs = world.getBlockAt(be.x, be.y, be.z).getState(true);
+                                    if (!(bs instanceof TileState ts)) continue;
+                                    if (ts instanceof Container c) applyContainer(c, be.data.get("inv"));
+                                    if (ts instanceof Sign sign) {
+                                        if (be.data.get("lines") instanceof List<?> lines)
+                                            for (int i = 0; i < Math.min(4, lines.size()); i++)
+                                                sign.setLine(i, String.valueOf(lines.get(i)));
+                                        if (be.data.get("color") instanceof String col)
+                                            try {
+                                                sign.setColor(DyeColor.valueOf(col));
+                                            } catch (Exception ignored) {
+                                            }
+                                        if (be.data.get("glow") instanceof Boolean g) sign.setGlowingText(g);
+                                    }
+                                    if (ts instanceof CreatureSpawner sp) {
+                                        if (be.data.get("type") instanceof String name)
+                                            try {
+                                                sp.setSpawnedType(EntityType.valueOf(name));
+                                            } catch (Exception ignored) {
+                                            }
+                                        setInt(sp::setDelay, be.data.get("delay"));
+                                        setInt(sp::setMinSpawnDelay, be.data.get("minDelay"));
+                                        setInt(sp::setMaxSpawnDelay, be.data.get("maxDelay"));
+                                        setInt(sp::setMaxNearbyEntities, be.data.get("maxNearbyEntities"));
+                                        setInt(sp::setSpawnCount, be.data.get("spawnCount"));
+                                        setInt(sp::setSpawnRange, be.data.get("spawnRange"));
+                                        setInt(sp::setRequiredPlayerRange, be.data.get("requiredPlayerRange"));
+                                    }
+                                    ts.update(true, false);
+                                }
+                            } catch (Exception ex) {
+                                log.error("Failed to paste chunk {}/{}", cx, cz, ex);
+                            }
+                        }
+
+                        for (List<EntityPlace> b : entsByChunk.values())
+                            for (EntityPlace ep : b) spawnEntity(world, ep);
+
+                        future.complete(true);
+                    } catch (Exception e) {
+                        log.error("Failed to paste schematic at {}: {}", loc, e.getMessage(), e);
+                        future.complete(false);
+                    } catch (Throwable t) {
+                        log.error("Fatal error while pasting schematic at {}", loc, t);
+                        future.complete(false);
                     }
-                }
-
-                for (List<EntityPlace> b : entsByChunk.values())
-                    for (EntityPlace ep : b) spawnEntity(world, ep);
-
-                future.complete(true);
-            } catch (Exception e) {
-                log.error("Failed to paste schematic at {}: {}", loc, e.getMessage(), e);
-                future.complete(false);
-            }
-        });
+                })
+                .exceptionally(t -> {
+                    log.error("Failed to load chunk at {}/{}", chunkX, chunkZ, t);
+                    future.complete(false);
+                    return null;
+                });
 
         return future;
+    }
+
+    @Override
+    public void register(@NotNull Plugin plugin) {
+        internalListener = new InternalListener();
+        Bukkit.getPluginManager().registerEvents(internalListener, plugin);
+    }
+
+    @Override
+    public void unregister() {
+        clearCache();
+        if (internalListener != null) HandlerList.unregisterAll(internalListener);
     }
 
     private void spawnEntity(World world, EntityPlace ep) {

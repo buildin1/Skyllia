@@ -11,6 +11,7 @@ import fr.euphyllia.skyllia.api.skyblock.model.*;
 import fr.euphyllia.skyllia.api.utils.helper.RegionHelper;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
 import fr.euphyllia.skyllia.utils.IslandUtils;
+import fr.euphyllia.skyllia.utils.PlayerUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -35,7 +36,7 @@ public class ForceCreateSubCommands implements SubCommandInterface {
 
     @Override
     public void onExecute(@NotNull Plugin plugin, @NotNull CommandSender sender, @NotNull String[] args) {
-        if (!sender.hasPermission("skyllia.admins.commands.island.create")) {
+        if (!PlayerUtils.hasPermission(sender, "skyllia.admins.commands.island.create")) {
             ConfigLoader.language.sendMessage(sender, "island.player.permission-denied");
             return;
         }
@@ -87,9 +88,7 @@ public class ForceCreateSubCommands implements SubCommandInterface {
                 return;
             }
 
-            String schemKey = (schemArg != null && schematicsKeys.contains(schemArg))
-                    ? schemArg
-                    : schematicsKeys.getFirst();
+            String schemKey = resolveSchematicKey(schemArg, schematicsKeys);
 
             Map<String, SchematicSetting> schematicSettingMap = IslandUtils.getSchematic(schemKey);
             if (schematicSettingMap == null || schematicSettingMap.isEmpty()) {
@@ -141,6 +140,19 @@ public class ForceCreateSubCommands implements SubCommandInterface {
         }
     }
 
+    private String resolveSchematicKey(String requestedKey, List<String> schematicsKeys) {
+        if (requestedKey != null && schematicsKeys.contains(requestedKey)) {
+            return requestedKey;
+        }
+
+        String defaultSchemKey = ConfigLoader.islandManager.getDefaultIslandKey();
+        if (defaultSchemKey != null && schematicsKeys.contains(defaultSchemKey)) {
+            return defaultSchemKey;
+        }
+
+        return schematicsKeys.getFirst();
+    }
+
     private CompletableFuture<Void> pasteAllSchematics(Island island,
                                                        Map<String, SchematicSetting> schematicMap,
                                                        UUID ownerId) {
@@ -155,8 +167,8 @@ public class ForceCreateSubCommands implements SubCommandInterface {
             chain = chain.thenCompose(ignored -> {
                 Location center = RegionHelper.getCenterRegion(
                         Bukkit.getWorld(worldName),
-                        island.getPosition().x(),
-                        island.getPosition().z()
+                        island.getRegionCoordinate().x(),
+                        island.getRegionCoordinate().z()
                 );
                 center.setY(setting.height());
                 island.setCenterLocation(center);
@@ -177,6 +189,7 @@ public class ForceCreateSubCommands implements SubCommandInterface {
                             }
                             if (first) {
                                 island.addWarps("home", center, true);
+                                island.setSpawnLocation(center);
 
                                 Skyllia.getInstance().getInterneAPI()
                                         .getSkyblockManager()
@@ -200,7 +213,7 @@ public class ForceCreateSubCommands implements SubCommandInterface {
 
     @Override
     public @NotNull List<String> onTabComplete(@NotNull Plugin plugin, @NotNull CommandSender sender, @NotNull String[] args) {
-        if (!sender.hasPermission("skyllia.admins.commands.island.create")) {
+        if (!PlayerUtils.hasPermission(sender, "skyllia.admins.commands.island.create")) {
             return Collections.emptyList();
         }
 

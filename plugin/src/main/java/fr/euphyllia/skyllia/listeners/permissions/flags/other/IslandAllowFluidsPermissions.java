@@ -7,8 +7,9 @@ import fr.euphyllia.skyllia.api.permissions.IslandFlagRegistry;
 import fr.euphyllia.skyllia.api.permissions.modules.FlagModule;
 import fr.euphyllia.skyllia.api.skyblock.Island;
 import fr.euphyllia.skyllia.listeners.ListenersUtils;
-import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
+import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.block.BlockFromToEvent;
 import org.bukkit.plugin.Plugin;
@@ -21,27 +22,28 @@ public class IslandAllowFluidsPermissions implements FlagModule {
 
     @EventHandler(ignoreCancelled = true)
     public void onFromTo(final BlockFromToEvent event) {
-        final Location to = event.getToBlock().getLocation();
-        if (!SkylliaAPI.isWorldSkyblock(to.getWorld())) return;
+        final Block to = event.getToBlock();
+        final World world = to.getWorld();
 
-        final int chunkX = to.getBlockX() >> 4;
-        final int chunkZ = to.getBlockZ() >> 4;
-        final Island island = SkylliaAPI.getIslandByChunk(chunkX, chunkZ);
+        final int bx = to.getX();
+        final int by = to.getY();
+        final int bz = to.getZ();
+
+        final Island island = ListenersUtils.islandAtBlock(world, bx, bz);
         if (island == null) {
             log.warn("液体{}在{}位置岛屿无效，无法进行{}", event.getBlock(), event.getToBlock().getLocation(), event.getEventName());
             event.setCancelled(true);
             return;
         }
 
-        if (!SkylliaAPI.getPermissionsManager().hasFlag(island, ISLAND_ALLOW_FLUIDS)) {
+        final String worldName = world.getName();
+        if (!SkylliaAPI.getPermissionsManager().hasFlag(island, ISLAND_ALLOW_FLUIDS, worldName)) {
             log.warn("液体{}在{}岛上没有启用ISLAND_ALLOW_FLUIDS，无法进行{}", event.getBlock(), island.getOwner().getLastKnowName(), event.getEventName());
             event.setCancelled(true);
             return;
         }
 
-        if (ListenersUtils.isBlockOutsideIsland(island, to, event)) {
-            return;
-        }
+        ListenersUtils.isBlockOutsideIsland(island, world, bx, by, bz, event);
     }
 
     @Override

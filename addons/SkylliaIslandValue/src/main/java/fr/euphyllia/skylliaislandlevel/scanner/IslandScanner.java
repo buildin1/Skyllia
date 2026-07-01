@@ -1,9 +1,9 @@
 package fr.euphyllia.skylliaislandlevel.scanner;
 
 import fr.euphyllia.skyllia.api.SkylliaAPI;
+import fr.euphyllia.skyllia.api.coordinate.RegionCoordinate;
 import fr.euphyllia.skyllia.api.skyblock.Island;
 import fr.euphyllia.skyllia.api.skyblock.Players;
-import fr.euphyllia.skyllia.api.skyblock.model.Position;
 import fr.euphyllia.skylliaislandlevel.SkylliaIslandLevel;
 import fr.euphyllia.skylliaislandlevel.configuration.IslandLevelConfigLoader;
 import fr.euphyllia.skylliaislandlevel.configuration.IslandLevelConfigManager;
@@ -17,25 +17,33 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.DoubleAdder;
 
 public class IslandScanner {
 
     private static final Logger log = LoggerFactory.getLogger(IslandScanner.class);
     private final SkylliaIslandLevel plugin;
     private final ScheduledExecutorService scanScheduler;
+    private final ExecutorService scoreExecutor;
 
     public IslandScanner(SkylliaIslandLevel plugin) {
         this.plugin = plugin;
         IslandLevelConfigManager.ChunkProcessingSettings cfg = IslandLevelConfigLoader.config.getProcessingSettings();
-        this.scanScheduler = Executors.newScheduledThreadPool(cfg.resolvedScanThreads(),
+        this.scanScheduler = Executors.newScheduledThreadPool(
+                cfg.resolvedScanThreads(),
                 r -> {
-                    Thread t = new Thread(r, "skylliaislandvalue-scan-processor");
+                    Thread t = new Thread(r, "skyllia-scan-scheduler");
+                    t.setDaemon(true);
+                    t.setPriority(Thread.MIN_PRIORITY);
+                    return t;
+                });
+
+        this.scoreExecutor = Executors.newFixedThreadPool(
+                Math.max(1, cfg.resolvedScoreThreads()),
+                r -> {
+                    Thread t = new Thread(r, "skyllia-scan-scorer");
                     t.setDaemon(true);
                     t.setPriority(Thread.MIN_PRIORITY);
                     return t;
@@ -50,7 +58,7 @@ public class IslandScanner {
         // DEBUG
         log.debug("[Scanner] Island {} — center chunk ({},{}) size={} → {} chunks to scan",
                 island.getId(),
-                island.getPosition().x(), island.getPosition().z(),
+                island.getRegionCoordinate().x(), island.getRegionCoordinate().z(),
                 island.getSize(),
                 chunkCoords.size());
 
@@ -71,43 +79,61 @@ public class IslandScanner {
 
         ScanProgressNotifier notifier = onlineMembers.isEmpty()
                 ? null
-                : new ScanProgressNotifier(onlineMembers, IslandLevelConfigLoader.config.getScanNotification());
+                : new ScanProgressNotifier(onlineMembers);
 
         int total = chunkCoords.size();
         AtomicInteger remaining = new AtomicInteger(total);
         AtomicInteger done = new AtomicInteger(0);
-        AtomicReference<Double> totalScore = new AtomicReference<>(0.0);
+        DoubleAdder totalScore = new DoubleAdder();
+
+        IslandLevelConfigManager.ChunkProcessingSettings cfg =
+                IslandLevelConfigLoader.config.getProcessingSettings();
+
+        int maxConcurrent = Math.max(1, cfg.resolvedScoreThreads() * 2);
+        Semaphore semaphore = new Semaphore(maxConcurrent);
 
         for (int i = 0; i < chunkCoords.size(); i++) {
             int[] coord = chunkCoords.get(i);
             int chunkX = coord[0];
             int chunkZ = coord[1];
-            final long delay = (long) IslandLevelConfigLoader.config.getProcessingSettings().scanDelayMs() * i;
+            final long delay = (long) cfg.scanDelayMs() * i;
+
             this.scanScheduler.schedule(() -> {
-                world.getChunkAtAsync(chunkX, chunkZ).thenAccept(ignored -> {
-                    double chunkScore = 0.0;
-                    try {
-                        chunkScore = scoreChunk(world, chunkX, chunkZ, blockValues);
-                    } catch (Throwable e) {
-                        log.error("Failed to scan chunk at ({}, {}) for island '{}'", chunkX, chunkZ, island.getId(), e);
-                    }
+                try {
+                    semaphore.acquire();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    if (remaining.decrementAndGet() == 0) result.complete(totalScore.sum());
+                    return;
+                }
 
-                    final double scored = chunkScore;
-                    totalScore.updateAndGet(current -> current + scored);
-
-                    int nowDone = done.incrementAndGet();
-
-                    if (notifier != null) {
-                        notifier.update(nowDone, total);
-                    }
-
-                    if (remaining.decrementAndGet() == 0) {
-                        if (notifier != null) {
-                            notifier.finish();
-                        }
-                        result.complete(totalScore.get());
-                    }
-                });
+                world.getChunkAtAsync(chunkX, chunkZ, false, false)
+                        .thenAcceptAsync(chunk -> {
+                            if (chunk == null) {
+                                semaphore.release();
+                                if (notifier != null) notifier.update(done.incrementAndGet(), total);
+                                if (remaining.decrementAndGet() == 0) {
+                                    if (notifier != null) notifier.finish();
+                                    result.complete(totalScore.sum());
+                                }
+                                return;
+                            }
+                            try {
+                                double chunkScore = scoreChunk(world, chunkX, chunkZ, blockValues);
+                                totalScore.add(chunkScore);
+                            } catch (Throwable e) {
+                                log.error("Failed to score chunk ({},{}) for island '{}'",
+                                        chunkX, chunkZ, island.getId(), e);
+                            } finally {
+                                semaphore.release();
+                                int nowDone = done.incrementAndGet();
+                                if (notifier != null) notifier.update(nowDone, total);
+                                if (remaining.decrementAndGet() == 0) {
+                                    if (notifier != null) notifier.finish();
+                                    result.complete(totalScore.sum());
+                                }
+                            }
+                        }, scoreExecutor);
             }, delay, TimeUnit.MILLISECONDS);
 
         }
@@ -143,7 +169,7 @@ public class IslandScanner {
     }
 
     private List<int[]> getIslandChunks(Island island) {
-        Position pos = island.getPosition();
+        RegionCoordinate pos = island.getRegionCoordinate();
         double size = island.getSize();
 
         int centerChunkX = (pos.x() << 5) + 16;
@@ -158,5 +184,10 @@ public class IslandScanner {
             }
         }
         return result;
+    }
+
+    public void shutdown() {
+        scanScheduler.shutdown();
+        scoreExecutor.shutdown();
     }
 }

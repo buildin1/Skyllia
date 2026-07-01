@@ -1,7 +1,8 @@
 package fr.euphyllia.skyllia;
 
-import dev.faststats.bukkit.BukkitMetrics;
-import dev.faststats.core.ErrorTracker;
+import dev.faststats.ErrorTracker;
+import dev.faststats.Metrics;
+import dev.faststats.bukkit.BukkitContext;
 import fr.euphyllia.skyllia.api.InterneAPI;
 import fr.euphyllia.skyllia.api.SkylliaAPI;
 import fr.euphyllia.skyllia.api.commands.SubCommandRegistry;
@@ -13,15 +14,19 @@ import fr.euphyllia.skyllia.hook.HookBootstrap;
 import fr.euphyllia.skyllia.listeners.ListenersRegistrar;
 import fr.euphyllia.skyllia.papi.SkylliaExpansion;
 import fr.euphyllia.skyllia.sgbd.exceptions.DatabaseException;
+import fr.euphyllia.skyllia.utils.UpdateCheckerTask;
 import net.md_5.bungee.api.ChatColor;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.bukkit.Bukkit;
+import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 @SuppressWarnings("UnstableApiUsage")
 public class Skyllia extends JavaPlugin {
@@ -29,10 +34,14 @@ public class Skyllia extends JavaPlugin {
     public static final ErrorTracker ERROR_TRACKER = ErrorTracker.contextAware();
     private static Skyllia instance;
     private final Logger logger = LogManager.getLogger(this);
+    private final BukkitContext context = new BukkitContext.Factory(this, "f329c2c0e1c9562dffebed9b6786d4c9")
+            .errorTrackerService(ERROR_TRACKER)
+            .metrics(Metrics.Factory::create)
+            .create();
     private InterneAPI interneAPI;
     private SubCommandRegistry commandRegistry;
     private SubCommandRegistry adminCommandRegistry;
-    private BukkitMetrics fastStatsMetrics;
+    private BStatsMetrics bStatsMetrics;
 
     public static Skyllia getInstance() {
         return instance;
@@ -41,6 +50,7 @@ public class Skyllia extends JavaPlugin {
     @Override
     public void onEnable() {
         instance = this;
+        context.ready();
         printStartupBanner();
         File oldConfig = new File(getDataFolder(), "config.toml");
         if (oldConfig.exists()) {
@@ -87,12 +97,9 @@ public class Skyllia extends JavaPlugin {
         // Register listeners
         new ListenersRegistrar(this, interneAPI).registerListeners();
 
-        HookBootstrap.registerAll(this);
+        HookBootstrap.registerAll();
 
-        checkDisabledConfig();
-
-        new BStatsMetrics(this, 20874);
-        initializeFastStats();
+        bStatsMetrics = new BStatsMetrics(this, 20874);
 
         ConfigLoader.permissionsV2.compileNow();
         ConfigLoader.islandFlags.compileNow();
@@ -100,19 +107,29 @@ public class Skyllia extends JavaPlugin {
         if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
             new SkylliaExpansion(this).register();
         }
+
+        if (ConfigLoader.general.getUpdateCheckerSettings().enabled()) {
+            UpdateCheckerTask.start(this);
+        }
     }
 
     @Override
     public void onDisable() {
+        context.shutdown();
+        if (bStatsMetrics != null) {
+            bStatsMetrics.shutdown();
+        }
+
         Bukkit.getAsyncScheduler().cancelTasks(this);
         Bukkit.getGlobalRegionScheduler().cancelTasks(this);
 
-        if (fastStatsMetrics != null) {
-            fastStatsMetrics.shutdown();
-        }
+        HookBootstrap.unregisterAll();
 
         if (this.interneAPI != null) {
-            this.interneAPI.getWorldModifier().shutdown();
+            var worldModifier = this.interneAPI.getWorldModifier();
+            if (worldModifier != null) {
+                worldModifier.shutdown();
+            }
             if (this.interneAPI.getDatabaseLoader() != null) {
                 this.interneAPI.getDatabaseLoader().closeDatabase();
             }
@@ -165,62 +182,34 @@ public class Skyllia extends JavaPlugin {
         }
     }
 
-    private void checkDisabledConfig() {
-        /* Since 1.20.3, there is a gamerule that allows you to increase the number of ticks between entering a portal and teleporting.
-          This makes the configuration possibly useless.
-          BUT just in case, I leave the message enabled by default.
-         */
-        if (SkylliaAPI.isFolia() && !ConfigLoader.worldManager.isSuppressWarnNetherEndWorld()) {
-            if (Bukkit.getAllowNether()) {
-                logger.log(Level.WARN, "Disable nether in server.properties to disable nether portals!");
-            }
-            if (Bukkit.getAllowEnd()) {
-                logger.log(Level.WARN, "Disable end in bukkit.yml to disable end portals!");
-            }
-        }
-    }
-
     private void printStartupBanner() {
-        String pluginName = getPluginMeta().getName();
-        String pluginVersion = getPluginMeta().getVersion();
-        String description = getPluginMeta().getDescription();
-        String serverType = Bukkit.getName();
-        String serverVersion = Bukkit.getVersion();
-        String threadModel = (SkylliaAPI.isFolia() ? "Multi" : "Single");
-        int cpuCores = Runtime.getRuntime().availableProcessors();
+        final String VIOLET = "§d";
+        final String GRAY = "§7";
+        final String WHITE = "§f";
+        final String SEP = VIOLET + "━".repeat(50);
 
-        String violet = "§d";
-        String gray = "§7";
-        String white = "§f";
-        String separator = violet + "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━";
+        String[][] info = {
+                {"Version", getPluginMeta().getVersion()},
+                {"Server", Bukkit.getName() + WHITE + " (" + VIOLET + Bukkit.getVersion() + WHITE + ")"},
+                {"Thread Model", SkylliaAPI.isFolia() ? "Multi" : "Single"},
+                {"CPU Cores", String.valueOf(Runtime.getRuntime().availableProcessors())},
+        };
 
-        Bukkit.getConsoleSender().sendMessage(separator);
-        Bukkit.getConsoleSender().sendMessage(violet + center(pluginName + " - " + description, 50));
-        Bukkit.getConsoleSender().sendMessage(separator);
-        Bukkit.getConsoleSender().sendMessage(gray + " » " + white + "Version: " + violet + pluginVersion);
-        Bukkit.getConsoleSender().sendMessage(gray + " » " + white + "Server: " + violet + serverType + white + " (" + violet + serverVersion + white + ")");
-        Bukkit.getConsoleSender().sendMessage(gray + " » " + white + "Thread Model: " + violet + threadModel);
-        Bukkit.getConsoleSender().sendMessage(gray + " » " + white + "CPU Cores: " + violet + cpuCores);
-        Bukkit.getConsoleSender().sendMessage(separator);
+        List<String> lines = new ArrayList<>();
+        lines.add(SEP);
+        lines.add(VIOLET + center(getPluginMeta().getName() + " - " + getPluginMeta().getDescription(), 50));
+        lines.add(SEP);
+        for (String[] entry : info)
+            lines.add(GRAY + " » " + WHITE + entry[0] + ": " + VIOLET + entry[1]);
+        lines.add(SEP);
+
+        ConsoleCommandSender console = Bukkit.getConsoleSender();
+        lines.forEach(console::sendMessage);
     }
 
     private String center(String text, int lineWidth) {
         int textLength = ChatColor.stripColor(text).length();
         int padding = (lineWidth - textLength) / 2;
         return " ".repeat(Math.max(0, padding)) + text;
-    }
-
-    private void initializeFastStats() {
-        try {
-            this.fastStatsMetrics = BukkitMetrics.factory()
-                    .token("f329c2c0e1c9562dffebed9b6786d4c9")
-                    .errorTracker(ERROR_TRACKER)
-                    .debug(false)
-                    .create(this);
-            this.fastStatsMetrics.ready();
-            logger.info("[FastStats] initialized");
-        } catch (Exception exception) {
-            logger.log(Level.FATAL, exception, exception);
-        }
     }
 }

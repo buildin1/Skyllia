@@ -1,48 +1,46 @@
 package fr.euphyllia.skyllia.hook.essentialsx;
 
-
-import com.earth2me.essentials.Essentials;
-import com.earth2me.essentials.spawn.EssentialsSpawn;
+import fr.euphyllia.skyllia.api.hooks.PluginHook;
 import fr.euphyllia.skyllia.api.hooks.SpawnHook;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.Nullable;
 
 public class EssentialsSpawnHook implements SpawnHook {
 
-    private static final boolean AVAILABLE =
-            SpawnHook.hasClass("com.earth2me.essentials.spawn.EssentialsSpawn")
-                    && SpawnHook.hasClass("com.earth2me.essentials.Essentials");
+    private static final boolean CLASS_AVAILABLE =
+            PluginHook.hasClass("com.earth2me.essentials.spawn.EssentialsSpawn")
+                    && PluginHook.hasClass("com.earth2me.essentials.Essentials");
 
-    private final EssentialsSpawn essentialsSpawn;
-    private final Essentials essentials;
+    private EssentialsDelegate delegate;
 
     public EssentialsSpawnHook() {
-        this.essentialsSpawn =
-                (EssentialsSpawn) Bukkit.getPluginManager().getPlugin("EssentialsSpawn");
+    }
 
-        this.essentials =
-                (Essentials) Bukkit.getPluginManager().getPlugin("Essentials");
+    @Override
+    public String name() {
+        return "Essentials";
     }
 
     @Override
     public boolean isAvailable() {
-        return AVAILABLE
-                && essentialsSpawn != null
-                && essentials != null
-                && essentialsSpawn.isEnabled()
-                && essentials.isEnabled();
+        return CLASS_AVAILABLE
+                && Bukkit.getPluginManager().getPlugin("EssentialsSpawn") != null
+                && Bukkit.getPluginManager().getPlugin("Essentials") != null;
+    }
+
+    @Override
+    public void register(Plugin skylliaPlugin) {
+        this.delegate = new EssentialsDelegate();
     }
 
     @Override
     public @Nullable Location getSpawnLocation(Player player) {
-        if (!isAvailable()) {
+        if (delegate == null || !delegate.isEnabled()) {
             return null;
         }
-
-        return essentialsSpawn.getSpawn(
-                essentials.getUser(player.getUniqueId()).getGroup()
-        );
+        return delegate.getSpawnLocation(player);
     }
 }

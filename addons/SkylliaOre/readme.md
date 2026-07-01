@@ -7,11 +7,13 @@ This plugin manages custom block generators for SkyBlock islands, with support f
 - [Skyllia](https://github.com/Euphillya/Skyllia)
 - [Oraxen](https://oraxen.com/) (optional)
 - [Nexo](https://docs.nexomc.com) (optinal)
+- [CraftEngine](https://github.com/Xiao-MoMi/craft-engine) (optinal)
 
 ## Installation
 
 1. Clone the Skyllia repository and follow the instructions to install Skyllia.
-2. (Optional) Ensure Oraxen is installed and configured on your server if you want to use custom blocks from Oraxen.
+2. (Optional) Ensure Oraxen/Nexo or CraftEngine is installed and configured on your server if you want to use custom
+   blocks.
 3. Place the `SkylliaOre.jar` file in your server's `plugins` directory.
 4. Start your server to generate the default configuration files.
 
@@ -32,10 +34,12 @@ generators:
       - sky-overworld
     block_chance:
       - block: cobblestone
-        chance: 80.0
+        chance: 70.0
       - block: oraxen:ore
         chance: 10.0
       - block: nexo:ore
+        chance: 10.0
+      - block: "craftengine:ore:bcop2"
         chance: 10.0
 ```
 
@@ -62,22 +66,26 @@ generators:
       - sky-overworld
     block_chance:
       - block: cobblestone
-        chance: 80.0
+        chance: 70.0
       - block: oraxen:ore
         chance: 10.0
       - block: nexo:ore
+        chance: 10.0
+      - block: "craftengine:ore:bcop2"
         chance: 10.0
 ```
 
 In this example, the default generator is set to "test". The generator named "test" will replace `cobblestone` and
 `stone` blocks in the `sky-overworld` world. It has an 80% chance to generate `cobblestone`, a 10% chance to generate
-`oraxen:ore` and a 10% chance to generate `nexo:ore`.
+`oraxen:ore`, a 10% chance to generate `nexo:ore` and 10% chance to generate `ore:bcop2`.
 
 ## Usage
 
 ### Commands
 
 - `/skylliaadmin generator <player> <generator>`: Change the generator for a specific player.
+- `/skylliaadmin generator reload`: Reload the `config.yml` from disk and clear the generator caches. The new generator
+  definitions take effect immediately, without restarting the server.
 
 ### Note on Generator Change
 
@@ -86,6 +94,7 @@ When changing the generator, there is a delay of approximately 30 seconds before
 ### Permissions
 
 - `skylliaore.use`: Permission to use the `/skylliaadmin generator` command.
+- `skylliaore.reload`: Permission to use the `/skylliaadmin generator reload` command.
 
 ## Support
 

@@ -9,10 +9,12 @@ import fr.euphyllia.skyllia.api.skyblock.model.RoleType;
 import fr.euphyllia.skyllia.commands.common.subcommands.DeleteSubCommand;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
 import fr.euphyllia.skyllia.managers.skyblock.SkyblockManager;
+import fr.euphyllia.skyllia.utils.PlayerUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.bukkit.Bukkit;
+import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
@@ -31,7 +33,7 @@ public class ForceDeleteSubCommands implements SubCommandInterface {
 
     @Override
     public void onExecute(@NotNull Plugin plugin, @NotNull CommandSender sender, @NotNull String[] args) {
-        if (!sender.hasPermission("skyllia.admins.commands.island.delete")) {
+        if (!PlayerUtils.hasPermission(sender, "skyllia.admins.commands.island.delete")) {
             ConfigLoader.language.sendMessage(sender, "island.player.permission-denied");
             return;
         }
@@ -88,8 +90,23 @@ public class ForceDeleteSubCommands implements SubCommandInterface {
                 } else {
                     worldsToDelete.forEach(entry -> {
                         String name = entry.getKey();
+                        World world = Bukkit.getWorld(name);
+                        if (world == null) {
+                            failed.set(true);
+                            logger.log(Level.FATAL, "Failed to delete island {} in world {}: world not loaded", island.getId(), name);
+                            if (worldsLeft.decrementAndGet() == 0) {
+                                boolean value = skyblockManager.setLockedIsland(island, true);
+                                if (value) {
+                                    ConfigLoader.language.sendMessage(sender, "island.generic.unexpected-error");
+                                } else {
+                                    logger.error("Failed to update lock state for island {} after deletion.", island.getId());
+                                }
+                            }
+                            return;
+                        }
+
                         Skyllia.getInstance().getInterneAPI().getWorldModifier()
-                                .deleteIsland(island, Bukkit.getWorld(name), ConfigLoader.general.getIslandSettings().regionDistance(), (success) -> {
+                                .deleteIsland(island, world, ConfigLoader.general.getIslandSettings().regionDistance(), (success) -> {
                                     if (!success) failed.set(true);
                                     if (worldsLeft.decrementAndGet() == 0) {
                                         boolean value = skyblockManager.setLockedIsland(island, failed.get());
@@ -115,7 +132,7 @@ public class ForceDeleteSubCommands implements SubCommandInterface {
 
     @Override
     public @NotNull List<String> onTabComplete(@NotNull Plugin plugin, @NotNull CommandSender sender, @NotNull String[] args) {
-        if (!sender.hasPermission("skyllia.admins.commands.island.delete")) {
+        if (!PlayerUtils.hasPermission(sender, "skyllia.admins.commands.island.delete")) {
             return Collections.emptyList();
         }
         if (args.length == 1) {

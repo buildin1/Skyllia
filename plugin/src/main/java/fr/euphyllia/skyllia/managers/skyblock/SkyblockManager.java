@@ -2,7 +2,11 @@ package fr.euphyllia.skyllia.managers.skyblock;
 
 import com.google.common.base.Preconditions;
 import fr.euphyllia.skyllia.Skyllia;
+import fr.euphyllia.skyllia.api.SkylliaAPI;
+import fr.euphyllia.skyllia.api.configuration.WorldConfig;
+import fr.euphyllia.skyllia.api.coordinate.RegionCoordinate;
 import fr.euphyllia.skyllia.api.event.PrepareSkyblockCreateEvent;
+import fr.euphyllia.skyllia.api.event.SkyblockRemoveMemberEvent;
 import fr.euphyllia.skyllia.api.skyblock.Island;
 import fr.euphyllia.skyllia.api.skyblock.Players;
 import fr.euphyllia.skyllia.api.skyblock.enums.RemovalCause;
@@ -10,6 +14,7 @@ import fr.euphyllia.skyllia.api.skyblock.model.IslandSettings;
 import fr.euphyllia.skyllia.api.skyblock.model.Position;
 import fr.euphyllia.skyllia.api.skyblock.model.RoleType;
 import fr.euphyllia.skyllia.api.skyblock.model.WarpIsland;
+import fr.euphyllia.skyllia.api.utils.Keys;
 import fr.euphyllia.skyllia.cache.SkyblockCache;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
 import org.apache.logging.log4j.LogManager;
@@ -17,6 +22,8 @@ import org.apache.logging.log4j.Logger;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
+import org.bukkit.persistence.PersistentDataType;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -42,6 +49,28 @@ public class SkyblockManager {
     private final ConcurrentHashMap<Long, UUID> islandByRegion = new ConcurrentHashMap<>();
 
     private final ConcurrentHashMap<UUID, Set<Long>> regionsByIsland = new ConcurrentHashMap<>();
+
+    /**
+     * Guards the single database write that claims the next free region for a
+     * new island ({@code insertIslands}, an {@code INSERT ... SELECT ...
+     * ORDER BY ... LIMIT 1} against the spiral table).
+     * <p>
+     * That statement is not protected by a uniqueness constraint on
+     * (region_x, region_z) on every supported database engine — SQLite and
+     * MariaDB rely only on the primary key {@code (island_id, region_x,
+     * region_z)}, which does not prevent two different islands from claiming
+     * the same coordinates (only PostgreSQL has an explicit partial unique
+     * index for this). Concurrent, unsynchronized calls to
+     * {@link #createIsland} could therefore race and silently assign the
+     * same region to two islands on those engines.
+     * <p>
+     * Serializing this one short, fast write at the JVM level closes that
+     * race regardless of the configured database engine or its isolation
+     * level, while still allowing the slow parts of island creation
+     * (schematic paste, teleport, world border) to run fully in parallel —
+     * see {@code IslandCreationQueue} .
+     */
+    private static final Object REGION_ALLOCATION_LOCK = new Object();
 
     public SkyblockManager(Skyllia plugin, SkyblockCache cache) {
         this.plugin = plugin;
@@ -74,7 +103,7 @@ public class SkyblockManager {
     }
 
     private void reindexIslandCoverage(Island island) {
-        Position root = island.getPosition();
+        RegionCoordinate root = island.getRegionCoordinate();
         if (root == null) return;
 
         int rootRx = root.x();
@@ -122,6 +151,12 @@ public class SkyblockManager {
 
     /**
      * Creates a new island with the specified {@link IslandSettings}.
+     * <p>
+     * Concurrency: safe to call concurrently from multiple threads (e.g. from
+     * {@code IslandCreationQueue} running several creations in parallel). The
+     * step that claims a region for the island is internally serialized via
+     * {@link #REGION_ALLOCATION_LOCK}, so two concurrent calls can never be
+     * assigned the same region.
      *
      * @param islandId   The UUID of the new island.
      * @param islandType The settings to apply to the new island.
@@ -157,10 +192,13 @@ public class SkyblockManager {
                     null
             );
 
-            boolean success = plugin.getInterneAPI()
-                    .getIslandQuery()
-                    .getIslandDataQuery()
-                    .insertIslands(futureIsland);
+            boolean success;
+            synchronized (REGION_ALLOCATION_LOCK) {
+                success = plugin.getInterneAPI()
+                        .getIslandQuery()
+                        .getIslandDataQuery()
+                        .insertIslands(futureIsland);
+            }
 
             if (success) {
                 var permQuery = plugin.getInterneAPI()
@@ -175,8 +213,10 @@ public class SkyblockManager {
                     }
 
                     if (ConfigLoader.islandFlags != null) {
-                        byte[] flagsBlob = ConfigLoader.islandFlags.buildDefaultFlagBlob(typeKey);
-                        permQuery.saveIslandFlags(event.getIslandId(), flagsBlob);
+                        for (WorldConfig world : SkylliaAPI.getRegisteredWorlds()) {
+                            byte[] flagsBlob = ConfigLoader.islandFlags.buildDefaultFlagBlob(typeKey, world.getWorldName());
+                            permQuery.saveIslandFlags(event.getIslandId(), flagsBlob, world.getWorldName());
+                        }
                     }
                 }
 
@@ -303,10 +343,8 @@ public class SkyblockManager {
         return priv;
     }
 
-    public @Nullable Island getIslandByPosition(Position position) {
-        if (position == null) return null;
-
-        long key = pack(position.x(), position.z());
+    public @Nullable Island getIslandByRegion(int rx, int rz) {
+        long key = pack(rx, rz);
         UUID islandId = islandByRegion.get(key);
 
         // Fix: Prevent wrong cached island keys returned to a new query
@@ -323,28 +361,20 @@ public class SkyblockManager {
             if (cached != null) {
                 return cached;
             }
-
             Island fromDbById = plugin.getInterneAPI()
-                    .getIslandQuery()
-                    .getIslandDataQuery()
-                    .getIslandByIslandId(islandId);
-
+                    .getIslandQuery().getIslandDataQuery().getIslandByIslandId(islandId);
             if (fromDbById != null) {
                 cacheIslandAndIndex(fromDbById);
                 return fromDbById;
             } else {
-                // index stale
                 islandByRegion.remove(key, islandId);
             }
         }
 
+        RegionCoordinate position = new RegionCoordinate(rx, rz);
         Island island = plugin.getInterneAPI()
-                .getIslandQuery()
-                .getIslandDataQuery()
-                .getIslandByPosition(position);
-
-        if (island != null)
-            cacheIslandAndIndex(island);
+                .getIslandQuery().getIslandDataQuery().getIslandByRegion(position);
+        if (island != null) cacheIslandAndIndex(island);
         return island;
     }
 
@@ -361,10 +391,24 @@ public class SkyblockManager {
     }
 
     public @Nullable Island getIslandByChunk(int chunkX, int chunkZ) {
-        int rx = chunkToRegion(chunkX);
-        int rz = chunkToRegion(chunkZ);
-        return getIslandByPosition(new Position(rx, rz));
+        return getIslandByRegion(chunkToRegion(chunkX), chunkToRegion(chunkZ));
     }
+
+    public @Nullable Island getIslandByRegion(RegionCoordinate region) {
+        if (region == null) return null;
+        return getIslandByRegion(region.x(), region.z());
+    }
+
+    /**
+     * @deprecated Use {@link #getIslandByRegion(RegionCoordinate)} instead.
+     */
+    @Deprecated(forRemoval = true, since = "3.x")
+    @ApiStatus.ScheduledForRemoval(inVersion = "4.x")
+    public @Nullable Island getIslandByRegion(Position position) {
+        if (position == null) return null;
+        return getIslandByRegion(position.x(), position.z());
+    }
+
 
     /**
      * Retrieves the island owned by a specific player.
@@ -639,15 +683,17 @@ public class SkyblockManager {
     }
 
     /**
-     * Deletes a member from the island.
+     * Deletes a member from the island and fires {@link SkyblockRemoveMemberEvent}.
      *
      * @param island    The {@link Island}.
      * @param oldMember The {@link Players} object representing the member to delete.
-     * @return A {@link CompletableFuture} with {@code true} if deleted, {@code false} otherwise.
+     * @param cause     The reason the member is being removed.
+     * @return {@code true} if deleted, {@code false} otherwise.
      */
-    public Boolean deleteMember(Island island, Players oldMember) {
+    public Boolean deleteMember(Island island, Players oldMember, RemovalCause cause) {
         boolean ok = plugin.getInterneAPI().getIslandQuery().getIslandMemberQuery().deleteMember(island, oldMember);
         if (ok) {
+            new SkyblockRemoveMemberEvent(island, oldMember, cause).callEvent();
             cache.invalidateMembers(island.getId());
             cache.invalidatePlayerLink(oldMember.getMojangId());
             island.invalidateCompiledPermissions();
@@ -756,4 +802,55 @@ public class SkyblockManager {
                 .getCenterLocations(island.getId());
     }
 
+    public @Nullable String getIslandName(Island island) {
+        String islandName = cache.getIslandName(island.getId());
+        if (islandName == null) {
+            islandName = SkylliaAPI.getIslandCustomDataQuery().get(
+                    Keys.NAMESPACE_KEY_EXTRA, island, Keys.KEY_NAME, PersistentDataType.STRING
+            );
+            if (islandName != null) {
+                cache.putIslandName(island.getId(), islandName);
+            }
+        }
+        return islandName;
+    }
+
+    public boolean updateIslandName(Island island, @Nullable String name) {
+        if (name == null) {
+            cache.invalidateIslandName(island.getId());
+            return SkylliaAPI.getIslandCustomDataQuery().remove(
+                    Keys.NAMESPACE_KEY_EXTRA, island, Keys.KEY_NAME
+            );
+        }
+        cache.putIslandName(island.getId(), name);
+        return SkylliaAPI.getIslandCustomDataQuery().set(
+                Keys.NAMESPACE_KEY_EXTRA, island, Keys.KEY_NAME, PersistentDataType.STRING, name
+        );
+    }
+
+    public @Nullable String getIslandDescription(Island island) {
+        String description = cache.getIslandDescription(island.getId());
+        if (description == null) {
+            description = SkylliaAPI.getIslandCustomDataQuery().get(
+                    Keys.NAMESPACE_KEY_EXTRA, island, Keys.KEY_DESCRIPTION, PersistentDataType.STRING
+            );
+            if (description != null) {
+                cache.putIslandDescription(island.getId(), description);
+            }
+        }
+        return description;
+    }
+
+    public boolean updateIslandDescription(Island island, @Nullable String description) {
+        if (description == null) {
+            cache.invalidateIslandDescription(island.getId());
+            return SkylliaAPI.getIslandCustomDataQuery().remove(
+                    Keys.NAMESPACE_KEY_EXTRA, island, Keys.KEY_DESCRIPTION
+            );
+        }
+        cache.putIslandDescription(island.getId(), description);
+        return SkylliaAPI.getIslandCustomDataQuery().set(
+                Keys.NAMESPACE_KEY_EXTRA, island, Keys.KEY_DESCRIPTION, PersistentDataType.STRING, description
+        );
+    }
 }

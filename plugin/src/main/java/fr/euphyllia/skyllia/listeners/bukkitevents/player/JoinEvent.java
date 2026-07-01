@@ -9,6 +9,7 @@ import fr.euphyllia.skyllia.cache.commands.CacheCommands;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
 import fr.euphyllia.skyllia.managers.skyblock.SkyblockManager;
 import fr.euphyllia.skyllia.utils.PlayerUtils;
+import fr.euphyllia.skyllia.utils.UpdateCheckerTask;
 import fr.euphyllia.skyllia.utils.WorldUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -29,6 +30,15 @@ public class JoinEvent implements Listener {
 
     public JoinEvent(InterneAPI interneAPI) {
         this.api = interneAPI;
+    }
+
+    @EventHandler(priority = EventPriority.LOW)
+    public void onPlayerJoinNotifUpdate(final PlayerJoinEvent event) {
+        final Player player = event.getPlayer();
+
+        player.getScheduler().execute(api.getPlugin(),
+                () -> UpdateCheckerTask.notifyIfUpdateAvailable(player),
+                null, 40L);
     }
 
     @EventHandler(priority = EventPriority.LOW)

@@ -19,20 +19,71 @@ import java.util.UUID;
 import static fr.euphyllia.skyllia.api.commands.SubCommandInterface.log;
 
 /**
- * Handles {@code %skyllia_visited_*%} placeholders based on player's current location.
+ * Handles location-aware placeholders that depend on the island the player
+ * is <em>currently standing on</em>, rather than the island they own or
+ * are a member of.
  *
- * <p>Requires the player to be online; returns empty string for offline players.
+ * <p>Unlike other handlers, these placeholders do not use the requesting
+ * player's home island as their context — they resolve the island at the
+ * player's current {@link Location}. They are typically used by other
+ * plugins to perform conditional checks based on the player's whereabouts.
  *
- * <p>Available placeholders:
- * <ul>
- *   <li>{@code visited_id} – UUID of the island at player's current location</li>
- *   <li>{@code visited_owner_name} – Owner name of that island</li>
- *   <li>{@code on_island} – {@code true} if player is considered part of that island
- *       (role is OWNER/CO_OWNER/MODERATOR/MEMBER or player is trusted), otherwise {@code false}</li>
- * </ul>
+ * <table>
+ *   <caption>Available placeholders</caption>
+ *   <tr><th>Placeholder</th><th>Returns</th></tr>
+ *   <tr><td>is_on_island</td>
+ *       <td>{@code true} if the player is currently standing on an island
+ *           they are part of (member or trusted), {@code false} otherwise</td></tr>
+ *   <tr><td>visited_id</td>
+ *       <td>UUID of the island the player is currently visiting,
+ *           or an empty string if not on an island</td></tr>
+ *   <tr><td>visited_owner_name</td>
+ *       <td>Last known name of the owner of the island the player is currently
+ *           visiting, or an empty string if not on an island or if the owner
+ *           cannot be resolved</td></tr>
+ * </table>
+ *
+ * <p>This handler uses an empty prefix and is invoked by the router as a
+ * fallback when no prefixed handler matches. It does not require the
+ * requesting player to own an island, since visiting an island doesn't
+ * imply ownership.
+ *
+ * <p>If the player is offline, all placeholders return an empty string
+ * (or {@code "false"} for boolean ones).
  */
 public class VisitedHandler implements PlaceholderHandler {
 
+    /**
+     * Resolves the island the given player is currently standing on,
+     * regardless of any membership relation.
+     *
+     * @param player the online player
+     * @return the island at the player's current location, or {@code null}
+     * if the player is not on any Skyblock island
+     */
+    private static @Nullable Island visitedIsland(@NotNull Player player) {
+        Location loc = player.getLocation();
+        if (loc.getWorld() == null) return null;
+        if (!SkylliaAPI.isWorldSkyblock(loc.getWorld())) return null;
+        int chunkX = loc.getBlockX() >> 4;
+        int chunkZ = loc.getBlockZ() >> 4;
+        return SkylliaAPI.getIslandByChunk(chunkX, chunkZ);
+    }
+
+    /**
+     * Checks whether the given player is part of the visited island,
+     * either as an official member (owner, co-owner, moderator, member)
+     * or as a trusted player.
+     *
+     * @param visited  the island the player is currently on
+     * @param playerId the UUID of the player
+     * @return {@code true} if the player is a member or trusted on the island
+     */
+    private static boolean isPartOfIsland(@NotNull Island visited, @NotNull UUID playerId) {
+        if (visited.getMember(playerId) != null) return true;
+        TrustService trustService = SkylliaAPI.getTrustService();
+        return trustService != null && trustService.isTrusted(visited.getId(), playerId);
+    }
     private final Logger logger = LogManager.getLogger(this);
 
     @Override
@@ -41,59 +92,37 @@ public class VisitedHandler implements PlaceholderHandler {
     }
 
     @Override
-    public @Nullable String handle(@NotNull OfflinePlayer offlinePlayer, @NotNull Island ignored, @NotNull String key) {
-        // Must be online to get location
-        //logger.info("Handle PAPI: player={}, key={}", offlinePlayer.getName(), key);
-        if (!offlinePlayer.isOnline()) return "false";
-        //logger.info("player={} is online", offlinePlayer.getName());
-        Player player = offlinePlayer.getPlayer();
-        if (player == null) return "";
-        //logger.info("player={} is not null", offlinePlayer.getName());
-
-        int chunkX = (int)player.getX()>>4;
-        int chunkZ = (int)player.getZ()>>4;
-        Position position = RegionHelper.getRegionFromChunk(chunkX, chunkZ);
-        //logger.info("player={}, ChunkXZ={} {}", offlinePlayer.getName(), chunkX, chunkZ);
-        Island islandAtLoc = SkylliaAPI.getIslandByPosition(position);
-        //logger.info("player={} visited island found! Owner={}", offlinePlayer.getName(), islandAtLoc.getOwner());
-        switch (key) {
-            case "id": {
-                if (islandAtLoc == null) return "";
-                return islandAtLoc.getId().toString();
-            }
-            case "owner_name": {
-                if (islandAtLoc == null) return "";
-                var owner = islandAtLoc.getOwner();
-                return owner != null ? owner.getLastKnowName() : "";
-            }
-            case "on_island" :{
-                if (islandAtLoc == null) return "false";
-                return String.valueOf(isPlayerPartOfIsland(offlinePlayer, islandAtLoc));
-            }
-            default: return null;
-        }
+    public boolean requiresIsland() {
+        return false;
     }
 
-    /**
-     * Checks whether the player is considered "on their own island" for the given island.
-     * True if the player's role on that island is OWNER, CO_OWNER, MODERATOR, MEMBER,
-     * OR the player is trusted on that island.
-     */
-    private boolean isPlayerPartOfIsland(OfflinePlayer player, Island island) {
-        UUID playerId = player.getUniqueId();
-
-        // Check member role
-        var member = island.getMember(playerId);
-        RoleType role = member != null ? member.getRoleType() : RoleType.VISITOR;
-
-        if (role == RoleType.OWNER ||
-                role == RoleType.CO_OWNER ||
-                role == RoleType.MODERATOR ||
-                role == RoleType.MEMBER) {
-            return true;
+    @Override
+    public @Nullable String handle(@NotNull OfflinePlayer player,
+                                   @Nullable Island island,
+                                   @NotNull String key) {
+        if (!player.isOnline() || player.getPlayer() == null) {
+            return switch (key) {
+                case "is_on_island" -> "false";
+                case "visited_id", "visited_owner_name" -> "";
+                default -> null;
+            };
         }
 
-        // Check trust
-        return Skyllia.getInstance().getInterneAPI().getTrustService().isTrusted(island.getId(), playerId);
+        Player online = player.getPlayer();
+        Island visited = visitedIsland(online);
+
+        return switch (key) {
+            case "is_on_island" -> {
+                if (visited == null) yield "false";
+                yield String.valueOf(isPartOfIsland(visited, online.getUniqueId()));
+            }
+            case "visited_id" -> visited != null ? visited.getId().toString() : "";
+            case "visited_owner_name" -> {
+                if (visited == null) yield "";
+                Players owner = visited.getOwner();
+                yield owner != null ? owner.getLastKnowName() : "";
+            }
+            default -> null;
+        };
     }
 }
