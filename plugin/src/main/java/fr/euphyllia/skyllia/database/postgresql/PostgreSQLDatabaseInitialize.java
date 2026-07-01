@@ -35,10 +35,30 @@ public class PostgreSQLDatabaseInitialize extends DatabaseInitializeQuery {
             );
             """;
 
+    /**
+     * Guarantees, at the database level, that at most one active
+     * (non-disabled) island may ever hold a given region — a partial unique
+     * index, deliberately scoped to {@code disable = FALSE}.
+     * <p>
+     * Island deletion is a soft-delete (see {@code updateDisable}): the row
+     * stays forever with {@code disable = TRUE}, and its former region is
+     * legitimately reassigned to a later island. A plain, non-partial unique
+     * index on (region_x, region_z) would incorrectly reject that reuse the
+     * moment a region is claimed a second time, so the WHERE clause is not
+     * optional here.
+     */
     private static final String CREATE_ISLANDS_REGION_UNIQUE = """
             CREATE UNIQUE INDEX IF NOT EXISTS islands_region_unique
             ON %s.islands (region_x, region_z)
             WHERE disable = FALSE;
+            """;
+
+    private static final String FIND_DUPLICATE_ACTIVE_REGIONS = """
+            SELECT region_x, region_z, STRING_AGG(island_id::text, ',') AS island_ids, COUNT(*) AS cnt
+            FROM %s.islands
+            WHERE disable = FALSE
+            GROUP BY region_x, region_z
+            HAVING COUNT(*) > 1;
             """;
 
     private static final String CREATE_ISLANDS_GAMERULE_TABLE = """
@@ -214,7 +234,7 @@ public class PostgreSQLDatabaseInitialize extends DatabaseInitializeQuery {
         final String s = sanitizeIdent(schema);
 
         exec(CREATE_ISLANDS_TABLE.formatted(s));
-        exec(CREATE_ISLANDS_REGION_UNIQUE.formatted(s));
+        ensureRegionUniqueConstraint(s);
 
         exec(CREATE_ISLANDS_MEMBERS_TABLE.formatted(s, s));
         exec(CREATE_ISLANDS_WARP_TABLE.formatted(s, s));
@@ -240,6 +260,44 @@ public class PostgreSQLDatabaseInitialize extends DatabaseInitializeQuery {
         if (configVersion < 5) {
             migrateV4ToV5(s);
         }
+    }
+
+    /**
+     * Creates {@link #CREATE_ISLANDS_REGION_UNIQUE}, unless pre-existing data
+     * already violates it — which could happen on a server that previously
+     * allowed island creations to run concurrently (including via the
+     * queue-bypass permission, which has always skipped the creation queue
+     * entirely). In that case the index creation is skipped and the
+     * conflicting islands are logged explicitly, rather than letting it fail
+     * with a generic, hard-to-act-on SQL error.
+     */
+    private void ensureRegionUniqueConstraint(String s) {
+        List<String> duplicates = SQLExecute.queryMap(databaseLoader, FIND_DUPLICATE_ACTIVE_REGIONS.formatted(s), null, rs -> {
+            List<String> found = new ArrayList<>();
+            try {
+                while (rs.next()) {
+                    found.add("(%d,%d) -> islands [%s]".formatted(
+                            rs.getInt("region_x"), rs.getInt("region_z"), rs.getString("island_ids")));
+                }
+            } catch (Exception e) {
+                logger.log(Level.ERROR, "Failed to scan for duplicate active regions", e);
+            }
+            return found;
+        });
+
+        if (duplicates != null && !duplicates.isEmpty()) {
+            logger.log(Level.ERROR, "══════════════════════════════════════════════════════");
+            logger.log(Level.ERROR, "  Found {} active island(s) sharing a region with another active island:", duplicates.size());
+            for (String d : duplicates) {
+                logger.log(Level.ERROR, "    {}", d);
+            }
+            logger.log(Level.ERROR, "  The unique-region safety index was NOT created. Disable (or move) all");
+            logger.log(Level.ERROR, "  but one island per listed region, then restart the server to apply it.");
+            logger.log(Level.ERROR, "══════════════════════════════════════════════════════");
+            return;
+        }
+
+        exec(CREATE_ISLANDS_REGION_UNIQUE.formatted(s));
     }
 
     private void initializeSpiralTable() {

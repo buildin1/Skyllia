@@ -116,6 +116,37 @@ public class SQLiteDatabaseInitialize extends DatabaseInitializeQuery {
                 ON islands (region_x, region_z, disable);
             """;
 
+    /**
+     * Guarantees, at the database level, that at most one active
+     * (non-disabled) island may ever hold a given region — a partial unique
+     * index, deliberately scoped to {@code disable = 0}.
+     * <p>
+     * Island deletion is a soft-delete (see {@code updateDisable}): the row
+     * stays forever with {@code disable = 1}, and its former region is
+     * legitimately reassigned to a later island. A plain, non-partial unique
+     * index on (region_x, region_z) would incorrectly reject that reuse the
+     * moment a region is claimed a second time, so the WHERE clause is not
+     * optional here.
+     * <p>
+     * This closes, at the schema level and regardless of any
+     * application-level locking, a gap that nothing else in SQLite's schema
+     * covered: without it, two different island_id rows could share the same
+     * active (region_x, region_z).
+     */
+    private static final String CREATE_ISLANDS_REGION_UNIQUE = """
+            CREATE UNIQUE INDEX IF NOT EXISTS islands_region_unique
+                ON islands (region_x, region_z)
+                WHERE disable = 0;
+            """;
+
+    private static final String FIND_DUPLICATE_ACTIVE_REGIONS = """
+            SELECT region_x, region_z, GROUP_CONCAT(island_id) AS island_ids, COUNT(*) AS cnt
+            FROM islands
+            WHERE disable = 0
+            GROUP BY region_x, region_z
+            HAVING COUNT(*) > 1;
+            """;
+
     private static final String CREATE_SPIRAL_INDEX = """
             CREATE INDEX IF NOT EXISTS region_xz
                 ON spiral (region_x, region_z);
@@ -191,6 +222,45 @@ public class SQLiteDatabaseInitialize extends DatabaseInitializeQuery {
         if (!hasColumn("islands_flags", "world_name")) {
             migrateV4ToV5();
         }
+        ensureRegionUniqueConstraint();
+    }
+
+    /**
+     * Creates {@link #CREATE_ISLANDS_REGION_UNIQUE}, unless pre-existing data
+     * already violates it — which could happen on a server that previously
+     * allowed island creations to run concurrently (including via the
+     * queue-bypass permission, which has always skipped the creation queue
+     * entirely). In that case the index creation is skipped and the
+     * conflicting islands are logged explicitly, rather than letting it fail
+     * with a generic, hard-to-act-on SQL error.
+     */
+    private void ensureRegionUniqueConstraint() {
+        List<String> duplicates = SQLExecute.queryMap(databaseLoader, FIND_DUPLICATE_ACTIVE_REGIONS, null, rs -> {
+            List<String> found = new ArrayList<>();
+            try {
+                while (rs.next()) {
+                    found.add("(%d,%d) -> islands [%s]".formatted(
+                            rs.getInt("region_x"), rs.getInt("region_z"), rs.getString("island_ids")));
+                }
+            } catch (Exception e) {
+                logger.log(Level.ERROR, "Failed to scan for duplicate active regions", e);
+            }
+            return found;
+        });
+
+        if (duplicates != null && !duplicates.isEmpty()) {
+            logger.log(Level.ERROR, "══════════════════════════════════════════════════════");
+            logger.log(Level.ERROR, "  Found {} active island(s) sharing a region with another active island:", duplicates.size());
+            for (String d : duplicates) {
+                logger.log(Level.ERROR, "    {}", d);
+            }
+            logger.log(Level.ERROR, "  The unique-region safety index was NOT created. Disable (or move) all");
+            logger.log(Level.ERROR, "  but one island per listed region, then restart the server to apply it.");
+            logger.log(Level.ERROR, "══════════════════════════════════════════════════════");
+            return;
+        }
+
+        exec(CREATE_ISLANDS_REGION_UNIQUE);
     }
 
     private boolean hasColumn(String table, String column) {
