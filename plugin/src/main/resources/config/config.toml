@@ -97,6 +97,10 @@ player-link = -1
 members = -1
 # Duration (in seconds) before cached island state expires (disabled, private, locked, max members, size). -1 = never expires, 0 = disabled.
 state = -1
+# Duration (in seconds) before cached island name expires. -1 = never expires, 0 = disabled.
+island-name = -1
+# Duration (in seconds) before cached island description expires. -1 = never expires, 0 = disabled.
+island-description = -1
 
 [settings.update-checker]
 # Enables automatic update checking from Modrinth.

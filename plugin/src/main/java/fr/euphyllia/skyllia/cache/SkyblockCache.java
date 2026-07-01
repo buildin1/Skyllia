@@ -30,6 +30,9 @@ public class SkyblockCache {
 
     private final ConcurrentHashMap<UUID, ExpiringValue<IslandStateSnapshot>> stateByIsland = new ConcurrentHashMap<>();
 
+    private final ConcurrentHashMap<UUID, ExpiringValue<String>> islandNameById = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, ExpiringValue<String>> islandDescriptionById = new ConcurrentHashMap<>();
+
     private static <K, V> @Nullable V getIfValid(ConcurrentHashMap<K, ExpiringValue<V>> map, K key) {
         ExpiringValue<V> ev = map.get(key);
         if (ev == null) return null;
@@ -151,6 +154,22 @@ public class SkyblockCache {
         put(stateByIsland, islandId, state, ConfigLoader.general.getCacheTtlSettings().state());
     }
 
+    public @Nullable String getIslandName(UUID islandId) {
+        return getIfValid(islandNameById, islandId);
+    }
+
+    public void putIslandName(UUID islandId, String name) {
+        put(islandNameById, islandId, name, ConfigLoader.general.getCacheTtlSettings().islandName());
+    }
+
+    public @Nullable String getIslandDescription(UUID islandId) {
+        return getIfValid(islandDescriptionById, islandId);
+    }
+
+    public void putIslandDescription(UUID islandId, String description) {
+        put(islandDescriptionById, islandId, description, ConfigLoader.general.getCacheTtlSettings().islandDescription());
+    }
+
     public void invalidateIsland(UUID islandId) {
         islandById.remove(islandId);
         stateByIsland.remove(islandId);
@@ -181,6 +200,14 @@ public class SkyblockCache {
 
     public void invalidateState(UUID islandId) {
         stateByIsland.remove(islandId);
+    }
+
+    public void invalidateIslandName(UUID id) {
+        islandNameById.remove(id);
+    }
+
+    public void invalidateIslandDescription(UUID id) {
+        islandDescriptionById.remove(id);
     }
 
     private record MemberKey(UUID islandId, UUID playerId) {

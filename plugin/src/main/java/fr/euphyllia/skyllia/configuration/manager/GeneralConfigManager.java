@@ -79,7 +79,9 @@ public class GeneralConfigManager implements IConfigurationProvider {
                 getOrSetDefault("settings.cache.ttl.island", -1L, Long.class),
                 getOrSetDefault("settings.cache.ttl.player-link", -1L, Long.class),
                 getOrSetDefault("settings.cache.ttl.members", -1L, Long.class),
-                getOrSetDefault("settings.cache.ttl.state", -1L, Long.class)
+                getOrSetDefault("settings.cache.ttl.state", -1L, Long.class),
+                getOrSetDefault("settings.cache.ttl.island-name", -1L, Long.class),
+                getOrSetDefault("settings.cache.ttl.island-description", -1L, Long.class)
         );
 
         this.permissionsSettings = new PermissionsSettings(
@@ -253,7 +255,7 @@ public class GeneralConfigManager implements IConfigurationProvider {
     }
 
     public record CacheTtlSettings(long warps, long nameRole, long role, long island, long playerLink, long members,
-                                   long state) {
+                                   long state, long islandName, long islandDescription) {
     }
 
     public record PermissionsSettings(boolean checkOwner, boolean checkBan) {

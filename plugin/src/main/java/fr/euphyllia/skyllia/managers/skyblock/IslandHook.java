@@ -80,40 +80,22 @@ public class IslandHook extends Island {
 
     @Override
     public @Nullable String getName() {
-        return SkylliaAPI.getIslandCustomDataQuery().get(
-                Keys.NAMESPACE_KEY_EXTRA, this, Keys.KEY_NAME, PersistentDataType.STRING
-        );
+        return this.plugin.getInterneAPI().getSkyblockManager().getIslandName(this);
     }
 
     @Override
     public boolean setName(@Nullable String name) {
-        if (name == null) {
-            return SkylliaAPI.getIslandCustomDataQuery().remove(
-                    Keys.NAMESPACE_KEY_EXTRA, this, Keys.KEY_NAME
-            );
-        }
-        return SkylliaAPI.getIslandCustomDataQuery().set(
-                Keys.NAMESPACE_KEY_EXTRA, this, Keys.KEY_NAME, PersistentDataType.STRING, name
-        );
+        return this.plugin.getInterneAPI().getSkyblockManager().updateIslandName(this, name);
     }
 
     @Override
     public @Nullable String getDescription() {
-        return SkylliaAPI.getIslandCustomDataQuery().get(
-                Keys.NAMESPACE_KEY_EXTRA, this, Keys.KEY_DESCRIPTION, PersistentDataType.STRING
-        );
+        return this.plugin.getInterneAPI().getSkyblockManager().getIslandDescription(this);
     }
 
     @Override
     public boolean setDescription(@Nullable String description) {
-        if (description == null) {
-            return SkylliaAPI.getIslandCustomDataQuery().remove(
-                    Keys.NAMESPACE_KEY_EXTRA, this, Keys.KEY_DESCRIPTION
-            );
-        }
-        return SkylliaAPI.getIslandCustomDataQuery().set(
-                Keys.NAMESPACE_KEY_EXTRA, this, Keys.KEY_DESCRIPTION, PersistentDataType.STRING, description
-        );
+        return this.plugin.getInterneAPI().getSkyblockManager().updateIslandDescription(this, description);
     }
 
     /**

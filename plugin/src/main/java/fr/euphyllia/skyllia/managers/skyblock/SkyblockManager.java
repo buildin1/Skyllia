@@ -14,6 +14,7 @@ import fr.euphyllia.skyllia.api.skyblock.model.IslandSettings;
 import fr.euphyllia.skyllia.api.skyblock.model.Position;
 import fr.euphyllia.skyllia.api.skyblock.model.RoleType;
 import fr.euphyllia.skyllia.api.skyblock.model.WarpIsland;
+import fr.euphyllia.skyllia.api.utils.Keys;
 import fr.euphyllia.skyllia.cache.SkyblockCache;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
 import org.apache.logging.log4j.LogManager;
@@ -21,6 +22,7 @@ import org.apache.logging.log4j.Logger;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
+import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
@@ -791,4 +793,55 @@ public class SkyblockManager {
                 .getCenterLocations(island.getId());
     }
 
+    public @Nullable String getIslandName(Island island) {
+        String islandName = cache.getIslandName(island.getId());
+        if (islandName == null) {
+            islandName = SkylliaAPI.getIslandCustomDataQuery().get(
+                    Keys.NAMESPACE_KEY_EXTRA, island, Keys.KEY_NAME, PersistentDataType.STRING
+            );
+            if (islandName != null) {
+                cache.putIslandName(island.getId(), islandName);
+            }
+        }
+        return islandName;
+    }
+
+    public boolean updateIslandName(Island island, @Nullable String name) {
+        if (name == null) {
+            cache.invalidateIslandName(island.getId());
+            return SkylliaAPI.getIslandCustomDataQuery().remove(
+                    Keys.NAMESPACE_KEY_EXTRA, island, Keys.KEY_NAME
+            );
+        }
+        cache.putIslandName(island.getId(), name);
+        return SkylliaAPI.getIslandCustomDataQuery().set(
+                Keys.NAMESPACE_KEY_EXTRA, island, Keys.KEY_NAME, PersistentDataType.STRING, name
+        );
+    }
+
+    public @Nullable String getIslandDescription(Island island) {
+        String description = cache.getIslandDescription(island.getId());
+        if (description == null) {
+            description = SkylliaAPI.getIslandCustomDataQuery().get(
+                    Keys.NAMESPACE_KEY_EXTRA, island, Keys.KEY_DESCRIPTION, PersistentDataType.STRING
+            );
+            if (description != null) {
+                cache.putIslandDescription(island.getId(), description);
+            }
+        }
+        return description;
+    }
+
+    public boolean updateIslandDescription(Island island, @Nullable String description) {
+        if (description == null) {
+            cache.invalidateIslandDescription(island.getId());
+            return SkylliaAPI.getIslandCustomDataQuery().remove(
+                    Keys.NAMESPACE_KEY_EXTRA, island, Keys.KEY_DESCRIPTION
+            );
+        }
+        cache.putIslandDescription(island.getId(), description);
+        return SkylliaAPI.getIslandCustomDataQuery().set(
+                Keys.NAMESPACE_KEY_EXTRA, island, Keys.KEY_DESCRIPTION, PersistentDataType.STRING, description
+        );
+    }
 }
