@@ -99,7 +99,7 @@ public class CreateSubCommand implements SubCommandInterface {
             new SkyblockCreateEvent(island, playerId).callEvent();
 
             return new IslandCreationContext(island, schematicSettingMap);
-        }).thenCompose(context -> {
+        }, command -> Bukkit.getAsyncScheduler().runNow(plugin, scheduledTask -> command.run())).thenCompose(context -> {
             if (context == null) {
                 return CompletableFuture.completedFuture(null);
             }
@@ -182,7 +182,7 @@ public class CreateSubCommand implements SubCommandInterface {
                                 return teleportAndApplyBorder(player, island, center);
                             }
                             return CompletableFuture.completedFuture(null);
-                        });
+                        }, command -> Bukkit.getAsyncScheduler().runNow(plugin, scheduledTask -> command.run()));
             });
         }
         return chain;
