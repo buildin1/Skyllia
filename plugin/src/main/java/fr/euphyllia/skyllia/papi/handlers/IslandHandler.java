@@ -165,6 +165,7 @@ public class IslandHandler implements PlaceholderHandler {
             case "size_int" -> String.valueOf((int) island.getSize());
             case "members_size" -> String.valueOf(island.getMembers().size());
             case "members_max_size" -> String.valueOf(island.getMaxMembers());
+            case "banned_members_size" -> String.valueOf(island.getBannedMembers().size());
 
             case "role", "rank" -> SkylliaPAPIUtils.resolveRole(island, player.getUniqueId()).name();
             case "role_value" -> String.valueOf(SkylliaPAPIUtils.resolveRole(island, player.getUniqueId()).getValue());

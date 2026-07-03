@@ -86,10 +86,12 @@ public class VisitSubCommand implements SubCommandInterface {
                     ConfigLoader.language.sendMessage(player, "island.visit.island-private");
                     return;
                 }
-                Players memberIsland = island.getMember(player.getUniqueId());
-                if (memberIsland != null && memberIsland.getRoleType().equals(RoleType.BAN)) {
-                    ConfigLoader.language.sendMessage(player, "island.visit.banned");
-                    return;
+
+                for (Players banned : island.getBannedMembers()) {
+                    if (player.getUniqueId().equals(banned.getMojangId())) {
+                        ConfigLoader.language.sendMessage(player, "island.visit.banned");
+                        return;
+                    }
                 }
             }
 
