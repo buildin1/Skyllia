@@ -18,13 +18,19 @@ public class BankManager {
         return dbGenerator.getBankAccount(islandId);
     }
 
+    private static boolean isInvalidAmount(double amount) {
+        return !Double.isFinite(amount);
+    }
+
     public Boolean deposit(UUID islandId, double amount) {
+        if (isInvalidAmount(amount) || amount <= 0) return false;
         boolean ok = dbGenerator.deposit(islandId, amount);
         if (ok) SkylliaBank.getInstance().getPapiCache().invalidate(islandId);
         return ok;
     }
 
     public Boolean withdraw(UUID islandId, double amount) {
+        if (isInvalidAmount(amount) || amount <= 0) return false;
         boolean ok = dbGenerator.withdraw(islandId, amount);
         if (ok) SkylliaBank.getInstance().getPapiCache().invalidate(islandId);
         return ok;
@@ -32,6 +38,7 @@ public class BankManager {
     }
 
     public Boolean setBalance(UUID islandId, double balance) {
+        if (isInvalidAmount(balance) || balance < 0) return false;
         boolean ok = dbGenerator.setBalance(islandId, balance);
         if (ok) SkylliaBank.getInstance().getPapiCache().invalidate(islandId);
         return ok;

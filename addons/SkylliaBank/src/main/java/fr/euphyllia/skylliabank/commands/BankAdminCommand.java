@@ -97,7 +97,7 @@ public class BankAdminCommand implements SubCommandInterface {
         double amount;
         try {
             amount = Double.parseDouble(args[2]);
-            if (amount <= 0) {
+            if (!Double.isFinite(amount) || amount <= 0) {
                 ConfigLoader.language.sendMessage(sender, "addons.bank.admin.invalid-amount-positive");
                 return;
             }
@@ -149,7 +149,7 @@ public class BankAdminCommand implements SubCommandInterface {
         double amount;
         try {
             amount = Double.parseDouble(args[2]);
-            if (amount <= 0) {
+            if (!Double.isFinite(amount) || amount <= 0) {
                 ConfigLoader.language.sendMessage(sender, "addons.bank.admin.invalid-amount-positive");
                 return;
             }
@@ -200,7 +200,7 @@ public class BankAdminCommand implements SubCommandInterface {
         double amount;
         try {
             amount = Double.parseDouble(args[2]);
-            if (amount < 0) {
+            if (!Double.isFinite(amount) || amount < 0) {
                 ConfigLoader.language.sendMessage(sender, "addons.bank.admin.invalid-amount-negative");
                 return;
             }
