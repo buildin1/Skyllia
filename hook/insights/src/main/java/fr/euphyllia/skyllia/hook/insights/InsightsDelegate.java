@@ -20,7 +20,7 @@ public class InsightsDelegate implements InsightsAddon {
 
     @Override
     public String getAreaName() {
-        return SkylliaAPI.getPlugin().getName().toLowerCase();
+        return SkylliaAPI.getPlugin().getName();
     }
 
     @Override
