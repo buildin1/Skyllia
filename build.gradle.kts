@@ -34,6 +34,7 @@ dependencies {
     implementation(project(":hook:luckperms"))
     implementation(project(":hook:quickshop"))
     implementation(project(":hook:cmi"))
+    implementation(project(":hook:insights"))
 
     // NMS Version
     implementation(project(":nms:v1_20_R4"))

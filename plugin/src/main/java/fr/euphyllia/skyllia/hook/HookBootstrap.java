@@ -6,6 +6,7 @@ import fr.euphyllia.skyllia.hook.canvas.CanvasHook;
 import fr.euphyllia.skyllia.hook.cmi.CMISpawnHook;
 import fr.euphyllia.skyllia.hook.essentialsx.EssentialsSpawnHook;
 import fr.euphyllia.skyllia.hook.fastasyncworldedit.FAWESchematicHook;
+import fr.euphyllia.skyllia.hook.insights.InsightsHook;
 import fr.euphyllia.skyllia.hook.internal.InternalSchematicHook;
 import fr.euphyllia.skyllia.hook.luckperms.LuckPermsHook;
 import fr.euphyllia.skyllia.hook.luminol.LuminolHook;
@@ -28,7 +29,8 @@ public class HookBootstrap {
             new LuckPermsHook(),
             new CMISpawnHook(),
             new EssentialsSpawnHook(),
-            new QuickShopHook()
+            new QuickShopHook(),
+            new InsightsHook()
     );
 
     static final FAWESchematicHook faweHook = new FAWESchematicHook();
