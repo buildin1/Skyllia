@@ -179,7 +179,7 @@ public class PostgreSQLDatabaseInitialize extends DatabaseInitializeQuery {
 
     private static final String CREATE_ISLANDS_BUILD_HEIGHT_TABLE = """
             CREATE TABLE IF NOT EXISTS %s.islands_build_height (
-                island_id  CHAR(36)     NOT NULL,
+                island_id  UUID         NOT NULL,
                 world_name VARCHAR(255) NOT NULL,
                 min_height INT          NOT NULL,
                 max_height INT          NOT NULL,
@@ -187,6 +187,12 @@ public class PostgreSQLDatabaseInitialize extends DatabaseInitializeQuery {
                 CONSTRAINT islands_build_height_FK
                     FOREIGN KEY (island_id) REFERENCES %s.islands (island_id) ON DELETE CASCADE
             );
+            """;
+
+    private static final String MIGRATE_BUILD_HEIGHT_ISLAND_ID_TO_UUID = """
+            ALTER TABLE %s.islands_build_height
+            ALTER COLUMN island_id TYPE UUID
+            USING island_id::uuid;
             """;
 
     private final String schema;
@@ -259,6 +265,9 @@ public class PostgreSQLDatabaseInitialize extends DatabaseInitializeQuery {
         final String s = sanitizeIdent(schema);
         if (configVersion < 5) {
             migrateV4ToV5(s);
+        }
+        if (configVersion < 6) {
+            migrateV5ToV6(s);
         }
     }
 
@@ -366,5 +375,11 @@ public class PostgreSQLDatabaseInitialize extends DatabaseInitializeQuery {
                 """.formatted(s));
 
         logger.info("Migration V4 -> V5 applied: islands_flags now has per-world support.");
+    }
+
+    private void migrateV5ToV6(String s) {
+        exec(MIGRATE_BUILD_HEIGHT_ISLAND_ID_TO_UUID.formatted(s));
+
+        logger.info("Migration V5 -> V6 applied: islands_build_height.island_id is now UUID.");
     }
 }

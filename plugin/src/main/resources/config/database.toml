@@ -1,5 +1,5 @@
 # Configuration file version. Do not modify manually.
-config-version = 5
+config-version = 6
 
 # ============================================================================
 # Defaults are sized for ~300-500 concurrent active islands. Tested OK up to
