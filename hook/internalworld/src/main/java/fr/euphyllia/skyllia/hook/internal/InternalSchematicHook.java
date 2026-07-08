@@ -30,11 +30,9 @@ public class InternalSchematicHook implements SchematicHook {
     private static final Gson GSON = new GsonBuilder().disableHtmlEscaping().create();
     private static final Logger log = LoggerFactory.getLogger(InternalSchematicHook.class);
     private static final Map<File, SchematicDTO> cache = new ConcurrentHashMap<>();
-    private final Plugin plugin;
     private InternalListener internalListener;
 
     public InternalSchematicHook() {
-        this.plugin = SkylliaAPI.getPlugin();
     }
 
     private static boolean isAir(BlockData bd) {
@@ -96,7 +94,7 @@ public class InternalSchematicHook implements SchematicHook {
             return future;
         }
 
-        File file = new File(plugin.getDataFolder() + File.separator + settings.schematicFile());
+        File file = new File(SkylliaAPI.getPlugin().getDataFolder() + File.separator + settings.schematicFile());
         SchematicDTO schematicDTO = cache.computeIfAbsent(file, f -> {
             try (var in = Files.newInputStream(f.toPath());
                  var r = new InputStreamReader(in, StandardCharsets.UTF_8)) {

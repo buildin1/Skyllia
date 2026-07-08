@@ -34,7 +34,7 @@ public class CreateSubCommand implements SubCommandInterface {
 
     private final Logger logger = LogManager.getLogger(CreateSubCommand.class);
 
-    public CompletableFuture<Void> runCreateIsland(Skyllia plugin, Player player, String[] args) {
+    public CompletableFuture<Void> runCreateIsland(Player player, String[] args) {
         final UUID playerId = player.getUniqueId();
         final AtomicBoolean acquired = new AtomicBoolean(false);
 
@@ -52,7 +52,7 @@ public class CreateSubCommand implements SubCommandInterface {
 
             Island existingIsland = SkylliaAPI.getIslandByPlayerId(playerId);
             if (existingIsland != null) {
-                new HomeSubCommand().onExecute(plugin, player, args);
+                new HomeSubCommand().onExecute(Skyllia.getInstance(), player, args);
                 return null;
             }
 
@@ -99,12 +99,12 @@ public class CreateSubCommand implements SubCommandInterface {
             new SkyblockCreateEvent(island, playerId).callEvent();
 
             return new IslandCreationContext(island, schematicSettingMap);
-        }, command -> Bukkit.getAsyncScheduler().runNow(plugin, scheduledTask -> command.run())).thenCompose(context -> {
+        }, command -> Bukkit.getAsyncScheduler().runNow(Skyllia.getInstance(), scheduledTask -> command.run())).thenCompose(context -> {
             if (context == null) {
                 return CompletableFuture.completedFuture(null);
             }
 
-            return pasteAllSchematics(plugin, player, context.island(), context.schematicSettingMap())
+            return pasteAllSchematics(player, context.island(), context.schematicSettingMap())
                     .handle((result, throwable) -> {
                         if (throwable != null) {
                             logger.error("Island creation failed for {}: {}", context.island().getId(), throwable.getMessage(), throwable);
@@ -138,7 +138,7 @@ public class CreateSubCommand implements SubCommandInterface {
         return schematicsKeys.getFirst();
     }
 
-    private CompletableFuture<Void> pasteAllSchematics(Skyllia plugin, Player player, Island island,
+    private CompletableFuture<Void> pasteAllSchematics(Player player, Island island,
                                                        Map<String, SchematicSetting> schematicMap) {
         CompletableFuture<Void> chain = CompletableFuture.completedFuture(null);
         AtomicBoolean isFirst = new AtomicBoolean(true);
@@ -182,7 +182,7 @@ public class CreateSubCommand implements SubCommandInterface {
                                 return teleportAndApplyBorder(player, island, center);
                             }
                             return CompletableFuture.completedFuture(null);
-                        }, command -> Bukkit.getAsyncScheduler().runNow(plugin, scheduledTask -> command.run()));
+                        }, command -> Bukkit.getAsyncScheduler().runNow(Skyllia.getInstance(), scheduledTask -> command.run()));
             });
         }
         return chain;
@@ -229,7 +229,7 @@ public class CreateSubCommand implements SubCommandInterface {
                 && PlayerUtils.hasPermission(player, "skyllia.island.bypass.queue");
 
         if (bypass) {
-            runCreateIsland(Skyllia.getInstance(), player, args);
+            runCreateIsland(player, args);
         } else {
             IslandCreationQueue.queuePlayer(player, args);
         }
