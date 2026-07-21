@@ -364,14 +364,12 @@ public class WorldNMS extends fr.euphyllia.skyllia.api.utils.nms.WorldNMS {
         final int chunkX = position.x();
         final int chunkZ = position.z();
 
-        TickThread.ensureTickThread(nms, chunkX, chunkZ, "Cannot reset chunk asynchronously");
-
         LevelChunk chunk = nms.getChunkSource().getChunkNow(chunkX, chunkZ);
         if (chunk == null) {
             chunk = nms.getChunkSource().getChunk(chunkX, chunkZ, true);
         }
         if (chunk == null) {
-            log.error("Cannot reset chunk asynchronously");
+            TickThread.ensureTickThread(nms, chunkX, chunkZ, "Cannot reset chunk asynchronously");
             return;
         }
 
