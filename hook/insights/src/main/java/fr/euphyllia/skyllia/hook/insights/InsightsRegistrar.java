@@ -5,7 +5,8 @@ import fr.euphyllia.skyllia.api.SkylliaAPI;
 
 final class InsightsRegistrar {
 
-    private InsightsRegistrar() {}
+    private InsightsRegistrar() {
+    }
 
     static boolean register() {
         return InsightsPlugin.getInstance()

@@ -3,7 +3,11 @@ package fr.euphyllia.skyllia.api.permissions.modules;
 import fr.euphyllia.skyllia.api.permissions.PermissionRegistry;
 import org.bukkit.plugin.Plugin;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Set;
 
 public final class PermissionModuleManager {
     private final Plugin core;

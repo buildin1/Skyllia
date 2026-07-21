@@ -1,7 +1,11 @@
 package fr.euphyllia.skyllia.hook;
 
 import fr.euphyllia.skyllia.Skyllia;
-import fr.euphyllia.skyllia.api.hooks.*;
+import fr.euphyllia.skyllia.api.hooks.PermissionHook;
+import fr.euphyllia.skyllia.api.hooks.PluginHook;
+import fr.euphyllia.skyllia.api.hooks.SchematicHook;
+import fr.euphyllia.skyllia.api.hooks.ServerHook;
+import fr.euphyllia.skyllia.api.hooks.SpawnHook;
 import fr.euphyllia.skyllia.hook.canvas.CanvasHook;
 import fr.euphyllia.skyllia.hook.cmi.CMISpawnHook;
 import fr.euphyllia.skyllia.hook.essentialsx.EssentialsSpawnHook;

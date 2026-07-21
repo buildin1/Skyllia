@@ -190,31 +190,30 @@ public class GeneralConfigManager implements IConfigurationProvider {
             ChunkProcessingSettings chunkProcessing
     ) {
         /**
-     * Resolves the configured maximum number of islands that may be
-     * created concurrently across the whole server.
-     * <p>
-     * -1 means "auto": derived from the number of available CPU cores,
-     * capped at 4 so that servers running the default SQLite backend —
-     * whose HikariCP pool is itself capped at 4 connections, see
-     * database.toml — never end up with more concurrent creations than
-     * the connection pool can actually serve. Raise {@code
-     * settings.island.queue.max-concurrent} explicitly past 4 if you run
-     * MariaDB/PostgreSQL with a larger pool and want more parallelism.
-     *
-     * @return the resolved concurrency limit, always &gt;= 1
-     */
-    public int resolvedMaxConcurrentCreations() {
-        if (maxConcurrentCreations == -1) {
-            return Math.max(1, Math.min(4, Runtime.getRuntime().availableProcessors() / 4));
+         * Resolves the configured maximum number of islands that may be
+         * created concurrently across the whole server.
+         * <p>
+         * -1 means "auto": derived from the number of available CPU cores,
+         * capped at 4 so that servers running the default SQLite backend —
+         * whose HikariCP pool is itself capped at 4 connections, see
+         * database.toml — never end up with more concurrent creations than
+         * the connection pool can actually serve. Raise {@code
+         * settings.island.queue.max-concurrent} explicitly past 4 if you run
+         * MariaDB/PostgreSQL with a larger pool and want more parallelism.
+         *
+         * @return the resolved concurrency limit, always &gt;= 1
+         */
+        public int resolvedMaxConcurrentCreations() {
+            if (maxConcurrentCreations == -1) {
+                return Math.max(1, Math.min(4, Runtime.getRuntime().availableProcessors() / 4));
+            }
+            if (maxConcurrentCreations > 0) {
+                return maxConcurrentCreations;
+            }
+            log.warn("Invalid settings.island.queue.max-concurrent value ({}), falling back to 1.", maxConcurrentCreations);
+            return 1;
         }
-        if (maxConcurrentCreations > 0) {
-            return maxConcurrentCreations;
-        }
-        log.warn("Invalid settings.island.queue.max-concurrent value ({}), falling back to 1.", maxConcurrentCreations);
-        return 1;
     }
-    }
-
 
 
     public record ChunkProcessingSettings(

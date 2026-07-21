@@ -1,6 +1,5 @@
 package fr.euphyllia.skyllia.cache.island;
 
-import fr.euphyllia.skyllia.Skyllia;
 import fr.euphyllia.skyllia.commands.common.subcommands.CreateSubCommand;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
 import org.apache.logging.log4j.LogManager;
