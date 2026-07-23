@@ -69,7 +69,7 @@ public class ItemReward implements ChallengeReward {
         }
 
         item.setItemMeta(meta);
-        player.getInventory().addItem(item).forEach((_, leftover) ->
+        player.getInventory().addItem(item).forEach((task, leftover) ->
                 player.getWorld().dropItemNaturally(player.getLocation(), leftover));
     }
 

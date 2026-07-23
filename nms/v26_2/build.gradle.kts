@@ -3,6 +3,12 @@ plugins {
     id("io.papermc.paperweight.userdev")
 }
 
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(25))
+    }
+}
+
 dependencies {
     paperweight.paperDevBundle("26.2.build.+")
     compileOnly(project(":nms:v1_21_R7"))

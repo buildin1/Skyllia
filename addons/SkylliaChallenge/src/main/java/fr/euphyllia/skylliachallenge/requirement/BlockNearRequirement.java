@@ -1,7 +1,7 @@
 package fr.euphyllia.skylliachallenge.requirement;
 
 import fr.euphyllia.skyllia.api.skyblock.Island;
-import fr.euphyllia.skyllia.api.skyblock.model.Position;
+import fr.euphyllia.skyllia.api.coordinate.RegionCoordinate;
 import fr.euphyllia.skyllia.api.utils.helper.RegionHelper;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
 import fr.euphyllia.skylliachallenge.api.requirement.ChallengeRequirement;
@@ -64,7 +64,7 @@ public class BlockNearRequirement implements ChallengeRequirement {
 
     private boolean checkBlocks(Island island, Location loc) {
         World world = loc.getWorld();
-        Position islandPos = island.getPosition();
+        RegionCoordinate islandPos = island.getRegionCoordinate();
         int centerX = loc.getBlockX();
         int centerY = loc.getBlockY();
         int centerZ = loc.getBlockZ();
@@ -79,7 +79,7 @@ public class BlockNearRequirement implements ChallengeRequirement {
 
                     int cx = x >> 4;
                     int cz = z >> 4;
-                    Position blockRegion = RegionHelper.getRegionFromChunk(cx, cz);
+                    RegionCoordinate blockRegion = RegionHelper.getRegionCoordinateFromChunk(cx, cz);
                     if (blockRegion.x() == islandPos.x() && blockRegion.z() == islandPos.z()) {
                         count++;
                         if (count >= amount) return true;

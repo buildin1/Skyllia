@@ -1,7 +1,7 @@
 package fr.euphyllia.skylliachallenge.requirement;
 
 import fr.euphyllia.skyllia.api.skyblock.Island;
-import fr.euphyllia.skyllia.api.skyblock.model.Position;
+import fr.euphyllia.skyllia.api.coordinate.RegionCoordinate;
 import fr.euphyllia.skyllia.api.utils.helper.RegionHelper;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
 import fr.euphyllia.skylliachallenge.api.requirement.ChallengeRequirement;
@@ -66,12 +66,12 @@ public class NearEntityRequirement implements ChallengeRequirement {
     private boolean checkNearby(Island island, Location loc) {
         List<Entity> nearby = (List<Entity>) loc.getWorld().getNearbyEntities(
                 loc, radius, radius, radius, e -> e.getType() == type);
-        Position islandPos = island.getPosition();
+        RegionCoordinate islandPos = island.getRegionCoordinate();
         nearby.removeIf(e -> {
             Location eLoc = e.getLocation();
             int cx = eLoc.getBlockX() >> 4;
             int cz = eLoc.getBlockZ() >> 4;
-            Position entityRegion = RegionHelper.getRegionFromChunk(cx, cz);
+            RegionCoordinate entityRegion = RegionHelper.getRegionCoordinateFromChunk(cx, cz);
             return entityRegion.x() != islandPos.x() || entityRegion.z() != islandPos.z();
         });
         return nearby.size() >= amount;

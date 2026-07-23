@@ -58,7 +58,7 @@ public class ProgressStorage {
         AtomicInteger count = new AtomicInteger(0);
 
         backend.preloadProgress(row -> {
-            CACHE.computeIfAbsent(row.islandId(), _ -> new ConcurrentHashMap<>())
+            CACHE.computeIfAbsent(row.islandId(), task -> new ConcurrentHashMap<>())
                     .put(row.challengeId(), row.timesCompleted());
             LAST_COMPLETED_CACHE.computeIfAbsent(row.islandId(), _ -> new ConcurrentHashMap<>())
                     .put(row.challengeId(), row.lastCompletedAt());

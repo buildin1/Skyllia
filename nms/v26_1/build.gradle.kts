@@ -3,6 +3,12 @@ plugins {
     id("io.papermc.paperweight.userdev")
 }
 
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(25))
+    }
+}
+
 dependencies {
     paperweight.foliaDevBundle("26.1.2.build.+")
     compileOnly(project(":nms:v1_21_R7"))

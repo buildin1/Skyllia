@@ -152,7 +152,7 @@ public class SkylliaChallenge extends JavaPlugin {
 
         Bukkit.getAsyncScheduler().runAtFixedRate(
                 this,
-                _ -> ProgressStoragePartial.flushDirty(),
+                task -> ProgressStoragePartial.flushDirty(),
                 1, 1, TimeUnit.MINUTES
         );
 

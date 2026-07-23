@@ -171,7 +171,7 @@ public class ChallengeGui {
 
         int finalLevel1 = level;
         int finalSubPage = subPage;
-        Bukkit.getAsyncScheduler().runNow(plugin, _ -> {
+        Bukkit.getAsyncScheduler().runNow(plugin, task -> {
             for (Map.Entry<Integer, Challenge> entry : pendingUpdates.entrySet()) {
                 int slot = entry.getKey();
                 Challenge c = entry.getValue();
