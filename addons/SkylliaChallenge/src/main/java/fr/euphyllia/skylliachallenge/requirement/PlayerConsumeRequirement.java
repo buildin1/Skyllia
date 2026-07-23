@@ -5,6 +5,7 @@ import fr.euphyllia.skyllia.configuration.ConfigLoader;
 import fr.euphyllia.skylliachallenge.api.requirement.ChallengeRequirement;
 import fr.euphyllia.skylliachallenge.storage.ProgressStoragePartial;
 import net.kyori.adventure.text.Component;
+import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.slf4j.Logger;
@@ -22,43 +23,31 @@ public record PlayerConsumeRequirement(int requirementId, NamespacedKey challeng
         this(requirementId, challengeKey, material, count, null, null);
     }
 
-
     public boolean isCustom() {
         return customNamespace != null && customId != null;
     }
 
-    /**
-     * Checks whether this requirement is currently fulfilled by the given player and island.
-     *
-     * @param player the player attempting the challenge (never {@code null})
-     * @param island the island associated with the challenge (never {@code null})
-     * @return {@code true} if the requirement is met and ready to be validated
-     */
     @Override
     public boolean isMet(Player player, Island island) {
         long collected = ProgressStoragePartial.getPartial(island.getId(), challengeKey, requirementId);
         return collected >= count;
     }
 
-    /**
-     * Returns a human-readable description of this requirement.
-     * <p>
-     * Used in GUIs and lore displays to inform the player about what is needed.
-     * For example: {@code "Avoir 64 Blé"} or {@code "Posséder 5000$ en banque"}.
-     * </p>
-     *
-     * @param locale
-     * @return a short displayable string
-     */
     @Override
     public Component getDisplay(Locale locale) {
         String displayMaterial;
         if (isCustom()) {
             displayMaterial = customNamespace + ":" + customId;
         } else if (material.startsWith("potion[")) {
-            displayMaterial = parsePotion();
+            displayMaterial = parsePotion(); // potion special handling
         } else {
-            displayMaterial = this.material;
+            Material mat = Material.matchMaterial(material);
+            if (mat != null) {
+                String prefix = mat.isBlock() ? "block.minecraft." : "item.minecraft.";
+                displayMaterial = "<lang:" + prefix + mat.getKey().getKey() + ">";
+            } else {
+                displayMaterial = material;
+            }
         }
         return ConfigLoader.language.translate(locale, "addons.challenge.requirement.player_consume.display", Map.of(
                 "%amount%", String.valueOf(count),
@@ -75,9 +64,8 @@ public record PlayerConsumeRequirement(int requirementId, NamespacedKey challeng
     }
 
     public String parsePotion() {
-        // Retourne au format: potion[type=INSTANT_HEALTH,level=2]
         if (material.startsWith("potion[")) {
-            String content = material.substring(7, material.length() - 1); // entre les []
+            String content = material.substring(7, material.length() - 1);
             String[] parts = content.split(",");
             String type = "";
             String level = "1";
@@ -103,4 +91,3 @@ public record PlayerConsumeRequirement(int requirementId, NamespacedKey challeng
         return normalizedConfig.equalsIgnoreCase(potionConsume);
     }
 }
-

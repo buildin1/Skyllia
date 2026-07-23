@@ -15,10 +15,6 @@ import org.bukkit.inventory.meta.ItemMeta;
 import java.util.Locale;
 import java.util.Map;
 
-/**
- * @param customModelData Avant 1.21.4, -1 si pas utilisé
- * @param itemModel       Depuis 1.21.4
- */
 public record ItemRequirement(int requirementId, NamespacedKey challengeKey, Material material, int count,
                               String itemName, int customModelData,
                               NamespacedKey itemModel,
@@ -44,6 +40,20 @@ public record ItemRequirement(int requirementId, NamespacedKey challengeKey, Mat
 
     public boolean isCustom() {
         return customNamespace != null && customId != null;
+    }
+
+    /**
+     * 获取用于 GUI 显示的当前总进度（已上交 + 背包中符合条件物品数量）
+     */
+    public long getDisplayProgress(Player player, Island island) {
+        long already = ProgressStoragePartial.getPartial(island.getId(), challengeKey, requirementId);
+        int have = 0;
+        for (ItemStack is : player.getInventory().getContents()) {
+            if (matchesItem(is)) {
+                have += is.getAmount();
+            }
+        }
+        return already + have;
     }
 
     @Override
@@ -87,7 +97,10 @@ public record ItemRequirement(int requirementId, NamespacedKey challengeKey, Mat
         return deposited == needed;
     }
 
-    private boolean matchesItem(ItemStack is) {
+    /**
+     * 检查 ItemStack 是否符合本需求定义的物品（包括自定义物品、Material、customModelData 或 itemModel）
+     */
+    public boolean matchesItem(ItemStack is) {
         if (is == null || is.getType().isAir()) return false;
 
         if (isCustom()) {
@@ -102,17 +115,26 @@ public record ItemRequirement(int requirementId, NamespacedKey challengeKey, Mat
         if (itemModel != null) {
             if (!HAS_ITEM_MODEL_METHOD) return false;
             NamespacedKey key = meta.getItemModel();
-            if (key == null || !key.equals(itemModel)) return false;
+            return key != null && key.equals(itemModel);
         } else if (customModelData != -1) {
-            if (!meta.hasCustomModelData() || meta.getCustomModelData() != customModelData) return false;
+            return meta.hasCustomModelData() && meta.getCustomModelData() == customModelData;
         }
         return true;
     }
 
     @Override
     public Component getDisplay(Locale locale) {
+        String displayName;
+        if (isCustom()) {
+            displayName = itemName;
+        } else if (material != null) {
+            String prefix = material.isBlock() ? "block.minecraft." : "item.minecraft.";
+            displayName = "<lang:" + prefix + material.getKey().getKey() + ">";
+        } else {
+            displayName = itemName;
+        }
         return ConfigLoader.language.translate(locale, "addons.challenge.requirement.item.display", Map.of(
-                "%item_name%", itemName,
+                "%item_name%", displayName,
                 "%amount%", String.valueOf(count)
         ), false);
     }

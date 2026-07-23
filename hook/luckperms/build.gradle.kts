@@ -11,8 +11,3 @@ dependencies {
     compileOnly("net.luckperms:api:5.4")
 }
 
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
-    }
-}

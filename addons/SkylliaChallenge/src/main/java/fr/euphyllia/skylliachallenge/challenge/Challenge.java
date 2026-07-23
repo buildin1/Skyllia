@@ -35,6 +35,21 @@ public class Challenge {
     private long cooldownMillis;
 
     /**
+     * 挑战等级：1=入门, 2=前期, 3=中期, 4=后期, 5=终极
+     * 默认为 1
+     */
+    private int level = 1;
+
+    public int getLevel() {
+        return level;
+    }
+
+    public Challenge setLevel(int level) {
+        this.level = level;
+        return this;
+    }
+
+    /**
      * Maximum number of times an Island can complete this challenge.
      * <p>
      * Use {@code -1} to indicate no limit (infinite completions).

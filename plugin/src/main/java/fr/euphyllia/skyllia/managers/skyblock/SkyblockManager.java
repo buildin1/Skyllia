@@ -419,9 +419,12 @@ public class SkyblockManager {
         if (islandId != null) {
             Island cachedIsland = cache.getIsland(islandId);
             // Validate the cachedIsland position
-            if (cachedIsland != null && !cachedIsland.getPosition().equals(position)) {
-                islandByRegion.remove(key); // Clean the wrong key
-                islandId = null;            // Force query again
+            if (cachedIsland != null) {
+                RegionCoordinate reg = cachedIsland.getRegionCoordinate();
+                if (reg.x() != rx || reg.z() != rz) {
+                    islandByRegion.remove(key); // Clean the wrong key
+                    islandId = null;            // Force query again
+                }
             }
         }
         if (islandId != null) {

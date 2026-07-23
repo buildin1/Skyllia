@@ -25,12 +25,6 @@ dependencies {
     compileOnly("com.nexomc:nexo:1.16.1")
 }
 
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(25))
-    }
-}
-
 tasks {
     compileJava {
         options.encoding = "UTF-8"

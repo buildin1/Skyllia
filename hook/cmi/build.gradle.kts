@@ -17,8 +17,3 @@ dependencies {
     compileOnly("com.github.Zrips:CMILib:1.5.9.6")
 }
 
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
-    }
-}

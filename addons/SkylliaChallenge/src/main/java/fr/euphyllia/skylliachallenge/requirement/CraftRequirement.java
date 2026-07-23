@@ -40,33 +40,25 @@ public record CraftRequirement(int requirementId, NamespacedKey challengeKey, Ma
         return customNamespace != null && customId != null;
     }
 
-    /**
-     * Checks whether this requirement is currently fulfilled by the given player and island.
-     *
-     * @param player the player attempting the challenge (never {@code null})
-     * @param island the island associated with the challenge (never {@code null})
-     * @return {@code true} if the requirement is met and ready to be validated
-     */
     @Override
     public boolean isMet(Player player, Island island) {
         long collected = ProgressStoragePartial.getPartial(island.getId(), challengeKey, requirementId);
         return collected >= count;
     }
 
-    /**
-     * Returns a human-readable description of this requirement.
-     * <p>
-     * Used in GUIs and lore displays to inform the player about what is needed.
-     * For example: {@code "Avoir 64 Blé"} or {@code "Posséder 5000$ en banque"}.
-     * </p>
-     *
-     * @param locale the locale to use for translation
-     * @return a short displayable string
-     */
     @Override
     public Component getDisplay(Locale locale) {
+        String displayName;
+        if (isCustom()) {
+            displayName = itemName;
+        } else if (material != null) {
+            String prefix = material.isBlock() ? "block.minecraft." : "item.minecraft.";
+            displayName = "<lang:" + prefix + material.getKey().getKey() + ">";
+        } else {
+            displayName = itemName;
+        }
         return ConfigLoader.language.translate(locale, "addons.challenge.requirement.craft.display", Map.of(
-                "%item_name%", itemName,
+                "%item_name%", displayName,
                 "%amount%", String.valueOf(count)
         ), false);
     }

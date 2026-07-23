@@ -201,14 +201,14 @@ public class PermissionsV2ConfigManager implements IConfigurationProvider {
         roleKeys.sort(String::compareTo);
 
         String typeLabel = (islandType == null) ? "global" : islandType;
-        log.info("Reading permission defaults for type '{}'...", typeLabel);
+        //log.info("Reading permission defaults for type '{}'...", typeLabel);
 
         for (String roleKey : roleKeys) {
             RoleType role;
             try {
                 role = RoleType.valueOf(roleKey);
             } catch (Exception ignored) {
-                log.warn("Unknown role '{}' in defaults, skipping.", roleKey);
+                //log.warn("Unknown role '{}' in defaults, skipping.", roleKey);
                 continue;
             }
 
@@ -226,32 +226,32 @@ public class PermissionsV2ConfigManager implements IConfigurationProvider {
 
                 if (valueObj instanceof CommentedConfig) {
                     // 嵌套结构（理论上已被展平），打印警告
-                    log.warn("Found nested structure under permission key '{}' (role={}, type={}), ignoring.", permString, role, typeLabel);
+                    //log.warn("Found nested structure under permission key '{}' (role={}, type={}), ignoring.", permString, role, typeLabel);
                     continue;
                 }
 
                 Boolean value = coerceBoolean(valueObj);
                 if (value == null) {
-                    log.warn("Unable to parse boolean value for permission '{}' (role={}, type={}), skipping.", permString, role, typeLabel);
+                    //log.warn("Unable to parse boolean value for permission '{}' (role={}, type={}), skipping.", permString, role, typeLabel);
                     continue;
                 }
 
                 NamespacedKey key = parseNamespacedKey(permString);
                 if (key == null) {
-                    log.warn("Malformed permission key '{}' (role={}, type={}), skipping.", permString, role, typeLabel);
+                    //log.warn("Malformed permission key '{}' (role={}, type={}), skipping.", permString, role, typeLabel);
                     continue;
                 }
 
                 PermissionId pid = registry.getIfPresent(key);
                 if (pid == null) {
-                    log.warn("Unknown permission '{}' in defaults (type='{}', role='{}'). It is not registered. Check spelling or namespace.",
-                            key, typeLabel, role);
+                    //log.warn("Unknown permission '{}' in defaults (type='{}', role='{}'). It is not registered. Check spelling or namespace.",
+                    //        key, typeLabel, role);
                     continue;
                 }
 
                 perms.put(pid, value);
                 // 打印每个成功读取的权限条目
-                log.info("  Default permission: [{}] {} = {}", typeLabel, permString, value);
+                //log.info("  Default permission: [{}] {} = {}", typeLabel, permString, value);
             }
         }
     }
@@ -261,7 +261,7 @@ public class PermissionsV2ConfigManager implements IConfigurationProvider {
         List<NamespacedKey> keys = stableKeys(registry);
 
         String typeLabel = (defaultsRoot == config.get("defaults")) ? "global" : "island-type";
-        log.info("Ensuring all registered permissions exist in defaults ({}). Missing entries will be filled with default value.", typeLabel);
+        //log.info("Ensuring all registered permissions exist in defaults ({}). Missing entries will be filled with default value.", typeLabel);
 
         for (RoleType role : roles) {
             CommentedConfig roleNode = getOrCreateSub(defaultsRoot, role.name());
@@ -271,8 +271,8 @@ public class PermissionsV2ConfigManager implements IConfigurationProvider {
                 if (getLiteral(roleNode, flatKey) != null) continue;
 
                 // 缺失的权限，打印提示
-                log.info("  Missing permission '{}' for role '{}' ({}), filling with default: {}",
-                        flatKey, role, typeLabel, defaultValueFor(role, k));
+                //log.info("  Missing permission '{}' for role '{}' ({}), filling with default: {}",
+                //        flatKey, role, typeLabel, defaultValueFor(role, k));
 
                 setLiteral(roleNode, flatKey, defaultValueFor(role, k));
                 changed = true;

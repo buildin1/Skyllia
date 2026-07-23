@@ -12,12 +12,6 @@ dependencies {
     compileOnly("me.clip:placeholderapi:2.11.6")
 }
 
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
-    }
-}
-
 tasks {
     compileJava {
         options.encoding = "UTF-8"

@@ -53,11 +53,6 @@ public class CreateSubCommand implements SubCommandInterface {
             }
             acquired.set(true);
 
-            if (!PlayerUtils.hasPermission(player, "skyllia.island.command.create")) {
-                ConfigLoader.language.sendMessage(player, "island.player.permission-denied");
-                return null;
-            }
-
             Island existingIsland = SkylliaAPI.getIslandByPlayerId(playerId);
             if (existingIsland != null) {
                 new HomeSubCommand().onExecute(Skyllia.getInstance(), player, args);

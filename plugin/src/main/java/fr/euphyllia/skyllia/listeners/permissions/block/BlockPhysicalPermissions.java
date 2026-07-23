@@ -13,6 +13,7 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -36,7 +37,6 @@ public class BlockPhysicalPermissions implements PermissionModule {
         final int bx = clicked.getX();
         final int by = clicked.getY();
         final int bz = clicked.getZ();
-        if (!SkylliaAPI.isWorldSkyblock(location.getWorld()) || player.isOp()) return;
 
         final Island island = ListenersUtils.islandAtBlock(world, bx, bz);
         if (island == null) {
@@ -46,6 +46,7 @@ public class BlockPhysicalPermissions implements PermissionModule {
         }
 
         final Player player = event.getPlayer();
+        if (!SkylliaAPI.isWorldSkyblock(world) || player.isOp()) return;
         final boolean hasBypass = PlayerUtils.hasPermission(player, "skyllia.player.physical.bypass");
         final boolean hasPermission = hasBypass || SkylliaAPI.getPermissionsManager()
                 .hasPermission(player, island, BLOCK_PHYSICAL, null, ConfigLoader.general.getDebugSettings().permission());

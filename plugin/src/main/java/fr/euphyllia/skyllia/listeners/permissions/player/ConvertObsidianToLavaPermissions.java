@@ -147,16 +147,6 @@ public class ConvertObsidianToLavaPermissions implements PermissionModule {
         checkLavaPlaceCooldown(event.getPlayer(), event);
     }
 
-    // 为了调试，继续保留 PlayerInteractEvent 的监听，但不再用于拦截（仅观察）
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    public void onLavaPlaceInteract(final PlayerInteractEvent event) {
-        if (!event.getAction().isRightClick()) return;
-        if (event.getHand() == EquipmentSlot.OFF_HAND) return;
-        ItemStack item = event.getItem();
-        if (item == null || item.getType() != Material.LAVA_BUCKET) return;
-        // 实际拦截由 PlayerBucketEmptyEvent 负责，这里仅观察
-    }
-
     private void checkLavaPlaceCooldown(Player player, Cancellable cancellable) {
         Long lastPlace = lavaPlaceCooldown.get(player.getUniqueId());
         if (lastPlace == null) {

@@ -21,8 +21,3 @@ dependencies {
     compileOnly("net.essentialsx:EssentialsXSpawn:2.21.2") { isTransitive = false }
 }
 
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(25))
-    }
-}

@@ -13,6 +13,7 @@ import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
@@ -28,12 +29,16 @@ public class EntityInteractPermissions implements PermissionModule {
     public void onInteractEntity(final PlayerInteractEntityEvent event) {
         final Player player = event.getPlayer();
         final Entity target = event.getRightClicked();
+
+        // 村民/流浪商人的交互已拆分至 EntityTradePermissions(entity.trade)
+        if (target.getType() == EntityType.VILLAGER || target.getType() == EntityType.WANDERING_TRADER) return;
+
         final World world = target.getWorld();
 
         final int bx = Location.locToBlock(target.getX());
         final int by = Location.locToBlock(target.getY());
         final int bz = Location.locToBlock(target.getZ());
-        if (!SkylliaAPI.isWorldSkyblock(location.getWorld()) || player.isOp()) return;
+        if (!SkylliaAPI.isWorldSkyblock(world) || player.isOp()) return;
 
         final Island island = ListenersUtils.islandAtBlock(world, bx, bz);
         if (island == null) return;

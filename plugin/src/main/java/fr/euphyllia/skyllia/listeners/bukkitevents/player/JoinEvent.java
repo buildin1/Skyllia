@@ -2,9 +2,14 @@ package fr.euphyllia.skyllia.listeners.bukkitevents.player;
 
 import fr.euphyllia.skyllia.api.InterneAPI;
 import fr.euphyllia.skyllia.api.SkylliaAPI;
+import fr.euphyllia.skyllia.api.permissions.PermissionId;
+import fr.euphyllia.skyllia.api.permissions.PermissionRegistry;
 import fr.euphyllia.skyllia.api.skyblock.Island;
 import fr.euphyllia.skyllia.api.skyblock.Players;
 import fr.euphyllia.skyllia.api.skyblock.enums.RemovalCause;
+import fr.euphyllia.skyllia.api.skyblock.model.RoleType;
+import fr.euphyllia.skyllia.api.coordinate.RegionCoordinate;
+import fr.euphyllia.skyllia.api.utils.helper.RegionHelper;
 import fr.euphyllia.skyllia.cache.commands.CacheCommands;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
 import fr.euphyllia.skyllia.managers.skyblock.SkyblockManager;
@@ -15,11 +20,15 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
+import org.bukkit.Location;
+import org.bukkit.NamespacedKey;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerTeleportEvent;
 
 import java.util.UUID;
 
@@ -46,8 +55,11 @@ public class JoinEvent implements Listener {
         final Player player = event.getPlayer();
         final UUID playerId = player.getUniqueId();
         final String worldName = player.getWorld().getName();
+        // 在事件线程中捕获坐标，避免跨线程读取 location
+        final int joinChunkX = player.getLocation().getBlockX() >> 4;
+        final int joinChunkZ = player.getLocation().getBlockZ() >> 4;
 
-        Bukkit.getAsyncScheduler().runNow(api.getPlugin(), scheduledTask -> {
+        Bukkit.getAsyncScheduler().runNow(api.getPlugin(), _ -> {
             try {
                 CacheCommands.refreshFor(playerId);
 
@@ -63,6 +75,15 @@ public class JoinEvent implements Listener {
                             member.setLastKnowName(currentName);
                             skyblockManager.updateMember(island, member);
                         }
+                    }
+                }
+
+                // ── 登录安全检查：如果玩家当前位于不应访问的空岛上，强制传送 ──
+                if (WorldUtils.isWorldSkyblock(worldName)) {
+                    Island currentIsland = SkylliaAPI.getIslandByChunk(joinChunkX, joinChunkZ);
+                    if (currentIsland != null && !isPlayerAllowedOnIsland(player, currentIsland)) {
+                        teleportToSafeLocation(player, island);
+                        return;  // 跳过后续的 shouldTeleportSpawn
                     }
                 }
 
@@ -83,6 +104,77 @@ public class JoinEvent implements Listener {
         });
     }
 
+
+    /**
+     * 判断玩家是否有权访问当前所在的岛屿。
+     * 被拉黑、岛屿不开放且无 bypass、或缺少 player.teleport 权限 → 无权限。
+     */
+    private boolean isPlayerAllowedOnIsland(Player player, Island currentIsland) {
+        UUID playerId = player.getUniqueId();
+
+        // 岛主永远允许
+        if (currentIsland.getOwner() != null && currentIsland.getOwner().getMojangId().equals(playerId)) {
+            return true;
+        }
+
+        // 被拉黑 → 不允许
+        Players member = currentIsland.getMember(playerId);
+        if (member != null && member.getRoleType() == RoleType.BAN && !player.isOp()) {
+            ConfigLoader.language.sendMessage(player, "island.visit.banned");
+            return false;
+        }
+
+        // 成员/访客：检查 player.teleport 权限
+        PermissionRegistry registry = SkylliaAPI.getPermissionRegistry();
+        PermissionId teleportPid = registry.getIfPresent(new NamespacedKey("skyllia", "player.teleport"));
+        boolean hasTeleport = teleportPid != null && SkylliaAPI.getPermissionsManager().hasPermission(
+                player, currentIsland, teleportPid, null, ConfigLoader.general.getDebugSettings().permission());
+        if (!player.isOp() && !hasTeleport) {
+            ConfigLoader.language.sendMessage(player, "island.player.permission-denied");
+            return false;
+        }
+
+        // 私有岛屿额外检查 bypass
+        if (currentIsland.isPrivateIsland()) {
+            PermissionId bypassPid = registry.getIfPresent(new NamespacedKey("skyllia", "command.island.visit.bypass"));
+            boolean bypass = bypassPid != null && SkylliaAPI.getPermissionsManager().hasPermission(
+                    player, currentIsland, bypassPid, null, ConfigLoader.general.getDebugSettings().permission());
+            if(player.isOp() || bypass) {
+                return true;
+            }
+            ConfigLoader.language.sendMessage(player, "island.visit.island-closed");
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * 将玩家传送到安全位置：若有空岛则传回自己空岛，否则传送到主世界 (256.5, 64, 256.5)。
+     */
+    private void teleportToSafeLocation(Player player, Island ownIsland) {
+        if (ownIsland != null) {
+            // 传送到玩家自己的空岛中心
+            player.getScheduler().run(api.getPlugin(), _ -> {
+                if (!player.isOnline()) return;
+                World world = player.getWorld();
+                RegionCoordinate region = ownIsland.getRegionCoordinate();
+                Location center = RegionHelper.getCenterRegion(world, region.x(), region.z());
+                center.setY(64);
+                player.teleportAsync(center, PlayerTeleportEvent.TeleportCause.PLUGIN);
+            }, null);
+        } else {
+            // 没有空岛 → 传送到主世界固定坐标
+            player.getScheduler().run(api.getPlugin(), _ -> {
+                if (!player.isOnline()) return;
+                World world = Bukkit.getWorld("world");
+                if (world != null) {
+                    Location spawn = new Location(world, 256.5, 64, 256.5);
+                    player.teleportAsync(spawn, PlayerTeleportEvent.TeleportCause.PLUGIN);
+                }
+            }, null);
+        }
+    }
 
     private void checkAndClearPlayerStuffOnJoin(Player player) {
         UUID uuid = player.getUniqueId();

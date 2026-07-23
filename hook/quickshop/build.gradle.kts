@@ -17,8 +17,3 @@ dependencies {
     compileOnly("com.ghostchu:quickshop-api:6.2.0.11")
 }
 
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
-    }
-}

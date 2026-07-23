@@ -7,17 +7,12 @@ dependencies {
     paperweight.paperDevBundle("26.2.build.+")
     compileOnly(project(":nms:v1_21_R7"))
     compileOnly(project(":api"))
+    pluginRemapper("net.fabricmc:tiny-remapper:0.14.0")
 }
 
 tasks {
     compileJava {
         options.encoding = "UTF-8"
-    }
-}
-
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(25))
     }
 }
 

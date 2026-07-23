@@ -24,7 +24,7 @@ public class BlockUseBucketPermissions implements PermissionModule {
     @EventHandler(ignoreCancelled = true)
     public void onBucketEmpty(final PlayerBucketEmptyEvent event) {
         final Player player = event.getPlayer();
-        final Location location = event.getBlockClicked() != null ? event.getBlockClicked().getLocation() : player.getLocation();
+        final Location location = event.getBlockClicked().getLocation();
 
         if (!SkylliaAPI.isWorldSkyblock(location.getWorld()) || player.isOp()) return;
 
@@ -42,7 +42,7 @@ public class BlockUseBucketPermissions implements PermissionModule {
     @EventHandler(ignoreCancelled = true)
     public void onBucketFill(final PlayerBucketFillEvent event) {
         final Player player = event.getPlayer();
-        final Location location = event.getBlockClicked() != null ? event.getBlockClicked().getLocation() : player.getLocation();
+        final Location location = event.getBlockClicked().getLocation();
 
         if (!SkylliaAPI.isWorldSkyblock(location.getWorld()) || player.isOp()) return;
 

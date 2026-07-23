@@ -16,8 +16,3 @@ dependencies {
     compileOnly("me.earthme.luminol:luminol-api:1.21.11-R0.1-SNAPSHOT")
 }
 
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(25))
-    }
-}

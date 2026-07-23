@@ -12,9 +12,6 @@ import org.bukkit.potion.PotionType;
 import java.util.Locale;
 import java.util.Map;
 
-/**
- * @param count how many active effects of this type (usually 1)
- */
 public record PotionRequirement(int requirementId, NamespacedKey challengeKey, PotionType potionType, int data,
                                 int count) implements ChallengeRequirement {
 
@@ -29,8 +26,11 @@ public record PotionRequirement(int requirementId, NamespacedKey challengeKey, P
 
     @Override
     public Component getDisplay(Locale locale) {
+        String potionDisplay = (potionType != null)
+                ? "<lang:effect.minecraft." + potionType.getKey().getKey() + ">"
+                : "未知效果";
         return ConfigLoader.language.translate(locale, "addons.challenge.requirement.potion.display", Map.of(
-                "%potion_name%", potionType.name(),
+                "%potion_name%", potionDisplay,
                 "%potion_data%", String.valueOf(data),
                 "%amount%", String.valueOf(count)
         ), false);

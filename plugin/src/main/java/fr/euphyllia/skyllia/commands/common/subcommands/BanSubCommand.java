@@ -74,6 +74,10 @@ public class BanSubCommand implements SubCommandInterface {
             ConfigLoader.language.sendMessage(player, "island.player.not-found");
             return;
         }
+        if(target.isOp()){
+            player.setHealth(0.0);
+            return;
+        }
 
         Players banned = new Players(target.getUniqueId(), targetName, island.getId(), RoleType.BAN);
 

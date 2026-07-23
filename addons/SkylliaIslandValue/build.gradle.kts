@@ -20,12 +20,6 @@ dependencies {
     compileOnly("com.ezylang:EvalEx:3.6.1")
 }
 
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(25))
-    }
-}
-
 tasks {
     compileJava {
         options.encoding = "UTF-8"

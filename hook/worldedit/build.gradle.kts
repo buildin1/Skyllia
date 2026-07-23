@@ -12,8 +12,3 @@ dependencies {
     compileOnly("com.sk89q.worldedit:worldedit-core:7.3.12-SNAPSHOT") { isTransitive = false }
 }
 
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(25))
-    }
-}

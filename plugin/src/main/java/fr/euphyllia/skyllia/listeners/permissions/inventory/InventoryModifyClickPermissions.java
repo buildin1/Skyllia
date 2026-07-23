@@ -9,9 +9,11 @@ import fr.euphyllia.skyllia.api.skyblock.Island;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
+import org.bukkit.block.Container;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.plugin.Plugin;
 
 public class InventoryModifyClickPermissions implements PermissionModule {
@@ -22,6 +24,10 @@ public class InventoryModifyClickPermissions implements PermissionModule {
     public void onClick(final InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player player)) return;
 
+        // 过滤：只处理物理容器界面（顶部库存持有者为 Container）
+        InventoryHolder holder = event.getView().getTopInventory().getHolder();
+        if (!(holder instanceof Container) || player.isOp()) return;
+
         final Location location = player.getLocation();
         if (!SkylliaAPI.isWorldSkyblock(location.getWorld())) return;
 
@@ -30,7 +36,10 @@ public class InventoryModifyClickPermissions implements PermissionModule {
         final Island island = SkylliaAPI.getIslandByChunk(chunkX, chunkZ);
         if (island == null) return;
 
-        final boolean hasPermission = SkylliaAPI.getPermissionsManager().hasPermission(player, island, INVENTORY_MODIFY, "skyllia.player.inventory.modify.bypass", ConfigLoader.general.getDebugSettings().permission());
+        final boolean hasPermission = SkylliaAPI.getPermissionsManager().hasPermission(
+                player, island, INVENTORY_MODIFY,
+                null,
+                ConfigLoader.general.getDebugSettings().permission());
         if (!hasPermission) {
             event.setCancelled(true);
         }

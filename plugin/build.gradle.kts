@@ -4,12 +4,19 @@ plugins {
 }
 group = "fr.euphyllia.skyllia"
 
+repositories {
+    maven {
+        name = "Luminol"
+        url = uri("https://repo.menthamc.org/repository/maven-public/")
+    }
+}
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT") { isTransitive = false }
     compileOnly("net.kyori:adventure-text-minimessage:4.26.1")
     compileOnly("net.kyori:adventure-text-serializer-legacy:4.26.1")
     compileOnly("me.clip:placeholderapi:2.11.6")
+    compileOnly("me.earthme.luminol:luminol-api:1.21.11-R0.1-SNAPSHOT")
     compileOnly("dev.faststats.metrics:bukkit:0.27.0")
     compileOnly(project(":api"))
     compileOnly(project(":database"))
@@ -37,12 +44,6 @@ dependencies {
     compileOnly(project(":nms:v26_2"))
 }
 java.disableAutoTargetJvm()
-
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(25))
-    }
-}
 
 publishing {
     publications {

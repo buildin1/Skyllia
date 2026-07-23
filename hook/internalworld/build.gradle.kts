@@ -9,8 +9,3 @@ dependencies {
     compileOnly(project(":api"))
 }
 
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(25))
-    }
-}

@@ -31,7 +31,9 @@ public class BlockPlacePermissions implements PermissionModule {
         final int bx = placed.getX();
         final int by = placed.getY();
         final int bz = placed.getZ();
-        if (!SkylliaAPI.isWorldSkyblock(location.getWorld()) || player.isOp()) return;
+        final Player player = event.getPlayer();
+
+        if (!SkylliaAPI.isWorldSkyblock(world) || player.isOp()) return;
 
         final Island island = ListenersUtils.islandAtBlock(world, bx, bz);
         if (island == null) {
@@ -40,7 +42,6 @@ public class BlockPlacePermissions implements PermissionModule {
             return;
         }
 
-        final Player player = event.getPlayer();
         final boolean hasBypass = PlayerUtils.hasPermission(player, "skyllia.player.place.bypass");
         final boolean hasPermission = hasBypass || SkylliaAPI.getPermissionsManager()
                 .hasPermission(player, island, BLOCK_PLACE, null, ConfigLoader.general.getDebugSettings().permission());

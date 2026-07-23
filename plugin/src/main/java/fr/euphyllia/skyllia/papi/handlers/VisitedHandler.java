@@ -1,11 +1,9 @@
 package fr.euphyllia.skyllia.papi.handlers;
 
-import fr.euphyllia.skyllia.Skyllia;
 import fr.euphyllia.skyllia.api.SkylliaAPI;
+import fr.euphyllia.skyllia.api.service.TrustService;
 import fr.euphyllia.skyllia.api.skyblock.Island;
-import fr.euphyllia.skyllia.api.skyblock.model.Position;
-import fr.euphyllia.skyllia.api.skyblock.model.RoleType;
-import fr.euphyllia.skyllia.api.utils.helper.RegionHelper;
+import fr.euphyllia.skyllia.api.skyblock.Players;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.bukkit.Location;
@@ -15,8 +13,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
-
-import static fr.euphyllia.skyllia.api.commands.SubCommandInterface.log;
 
 /**
  * Handles location-aware placeholders that depend on the island the player
@@ -31,7 +27,7 @@ import static fr.euphyllia.skyllia.api.commands.SubCommandInterface.log;
  * <table>
  *   <caption>Available placeholders</caption>
  *   <tr><th>Placeholder</th><th>Returns</th></tr>
- *   <tr><td>is_on_island</td>
+ *   <tr><td>on_island</td>
  *       <td>{@code true} if the player is currently standing on an island
  *           they are part of (member or trusted), {@code false} otherwise</td></tr>
  *   <tr><td>visited_id</td>
@@ -102,8 +98,8 @@ public class VisitedHandler implements PlaceholderHandler {
                                    @NotNull String key) {
         if (!player.isOnline() || player.getPlayer() == null) {
             return switch (key) {
-                case "is_on_island" -> "false";
-                case "visited_id", "visited_owner_name" -> "";
+                case "on_island" -> "false";
+                case "id", "owner_name" -> "";
                 default -> null;
             };
         }
@@ -112,12 +108,12 @@ public class VisitedHandler implements PlaceholderHandler {
         Island visited = visitedIsland(online);
 
         return switch (key) {
-            case "is_on_island" -> {
+            case "on_island" -> {
                 if (visited == null) yield "false";
                 yield String.valueOf(isPartOfIsland(visited, online.getUniqueId()));
             }
-            case "visited_id" -> visited != null ? visited.getId().toString() : "";
-            case "visited_owner_name" -> {
+            case "id" -> visited != null ? visited.getId().toString() : "";
+            case "owner_name" -> {
                 if (visited == null) yield "";
                 Players owner = visited.getOwner();
                 yield owner != null ? owner.getLastKnowName() : "";

@@ -27,6 +27,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -129,8 +130,12 @@ public class SkylliaChallenge extends JavaPlugin {
         // ─────────────────────────────────────────────
         this.guiSettings = GuiSettings.load(getConfig());
         HookManager.init();
-
         this.challengeManager = new ChallengeManagers(this);
+
+        File levelsFile = new File(getDataFolder(), "levels.yml");
+        if (!levelsFile.exists()) saveResource("levels.yml", false);
+        this.challengeManager.loadLevelsConfig(levelsFile);
+
         this.challengeManager.loadChallenges(getDataFolder().toPath().resolve("challenges").toFile());
         logs.add(gray + " » " + white + "Challenges Loaded: " + violet + challengeManager.getChallenges().size());
 
@@ -147,7 +152,7 @@ public class SkylliaChallenge extends JavaPlugin {
 
         Bukkit.getAsyncScheduler().runAtFixedRate(
                 this,
-                task -> ProgressStoragePartial.flushDirty(),
+                _ -> ProgressStoragePartial.flushDirty(),
                 1, 1, TimeUnit.MINUTES
         );
 

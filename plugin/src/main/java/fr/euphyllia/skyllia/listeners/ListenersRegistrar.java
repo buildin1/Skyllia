@@ -5,15 +5,14 @@ import fr.euphyllia.skyllia.api.InterneAPI;
 import fr.euphyllia.skyllia.api.SkylliaAPI;
 import fr.euphyllia.skyllia.listeners.bukkitevents.blocks.GrowEvent;
 import fr.euphyllia.skyllia.listeners.bukkitevents.blocks.ObsidianFormHologramListener;
+import fr.euphyllia.skyllia.listeners.bukkitevents.blocks.OreDropPreventionListener;
 import fr.euphyllia.skyllia.listeners.bukkitevents.blocks.PistonEvent;
-import fr.euphyllia.skyllia.listeners.bukkitevents.paper.PortalAlternativePaperEvent;
+import fr.euphyllia.skyllia.listeners.bukkitevents.blocks.SheepEatGrassListener;
 import fr.euphyllia.skyllia.listeners.bukkitevents.player.*;
 import fr.euphyllia.skyllia.listeners.bukkitevents.world.ChunkEvent;
 import fr.euphyllia.skyllia.listeners.extra.IslandInfoExtraListener;
 import fr.euphyllia.skyllia.listeners.bukkitevents.entity.LightningVillagerTransformListener;
-import fr.euphyllia.skyllia.listeners.bukkitevents.player.JoinEvent;
-import fr.euphyllia.skyllia.listeners.bukkitevents.player.MoveEvent;
-import fr.euphyllia.skyllia.listeners.bukkitevents.player.WorldBorderAddEvent;
+import fr.euphyllia.skyllia.listeners.bukkitevents.player.*;
 import fr.euphyllia.skyllia.listeners.bukkitevents.portal.PortalOverrideListener;
 import fr.euphyllia.skyllia.listeners.permissions.block.*;
 import fr.euphyllia.skyllia.listeners.permissions.decor.DecorHangingBreakPermissions;
@@ -21,6 +20,7 @@ import fr.euphyllia.skyllia.listeners.permissions.decor.DecorHangingPlacePermiss
 import fr.euphyllia.skyllia.listeners.permissions.entity.EntityBreedPermissions;
 import fr.euphyllia.skyllia.listeners.permissions.entity.EntityDamagePermissions;
 import fr.euphyllia.skyllia.listeners.permissions.entity.EntityInteractPermissions;
+import fr.euphyllia.skyllia.listeners.permissions.entity.EntityTradePermissions;
 import fr.euphyllia.skyllia.listeners.permissions.flags.entity.*;
 import fr.euphyllia.skyllia.listeners.permissions.flags.explosion.IslandAllowExplosionsBlockPermissions;
 import fr.euphyllia.skyllia.listeners.permissions.flags.explosion.IslandAllowExplosionsEntityPermissions;
@@ -34,11 +34,7 @@ import fr.euphyllia.skyllia.listeners.permissions.flags.redstone.IslandAllowPist
 import fr.euphyllia.skyllia.listeners.permissions.inventory.InventoryModifyClickPermissions;
 import fr.euphyllia.skyllia.listeners.permissions.inventory.InventoryModifyDragPermissions;
 import fr.euphyllia.skyllia.listeners.permissions.inventory.InventoryOpenPermissions;
-import fr.euphyllia.skyllia.listeners.permissions.player.ConvertObsidianToLavaPermissions;
-import fr.euphyllia.skyllia.listeners.permissions.player.ItemDropPermissions;
-import fr.euphyllia.skyllia.listeners.permissions.player.ItemPickupPermissions;
-import fr.euphyllia.skyllia.listeners.permissions.player.TeleportPermissions;
-import fr.euphyllia.skyllia.listeners.skyblockevents.PortalTeleportListener;
+import fr.euphyllia.skyllia.listeners.permissions.player.*;
 import fr.euphyllia.skyllia.listeners.skyblockevents.SkyblockEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -76,6 +72,7 @@ public class ListenersRegistrar {
         registerEvent(pluginManager, new WorldBorderAddEvent(interneAPI));
         registerEvent(pluginManager, new PistonEvent(interneAPI));
         registerEvent(pluginManager, new GrowEvent(interneAPI));
+        registerEvent(pluginManager, new SheepEatGrassListener(interneAPI));
         registerEvent(pluginManager, new MoveEvent());
         registerEvent(pluginManager, new QuitEvent());
         registerEvent(pluginManager, new RespawnEvent(interneAPI));
@@ -87,11 +84,14 @@ public class ListenersRegistrar {
         registerEvent(pluginManager, portalListener);
         registerEvent(pluginManager, new ObsidianFormHologramListener(plugin));
         registerEvent(pluginManager, new LightningVillagerTransformListener());
+        registerEvent(pluginManager, new PlayerRegionChangeListener());
+        registerEvent(pluginManager, new FrostWalkerListener());
+        registerEvent(pluginManager, new ProjectileBlockBreakListener());
+        registerEvent(pluginManager, new OreDropPreventionListener());
         portalListener.startCleanupTask(); // 启动全局清理
 
         // Skyblock Events
         registerEvent(pluginManager, new SkyblockEvent(interneAPI));
-        registerEvent(pluginManager, new PortalTeleportListener());
         registerEvent(pluginManager, new IslandInfoExtraListener());
 
         // Permissions Listeners
@@ -106,6 +106,7 @@ public class ListenersRegistrar {
         moduleManager.addModule(plugin, new EntityBreedPermissions());
         moduleManager.addModule(plugin, new EntityDamagePermissions());
         moduleManager.addModule(plugin, new EntityInteractPermissions());
+        moduleManager.addModule(plugin, new EntityTradePermissions());
         moduleManager.addModule(plugin, new InventoryModifyClickPermissions());
         moduleManager.addModule(plugin, new InventoryModifyDragPermissions());
         moduleManager.addModule(plugin, new InventoryOpenPermissions());
@@ -113,6 +114,7 @@ public class ListenersRegistrar {
         moduleManager.addModule(plugin, new ItemPickupPermissions());
         moduleManager.addModule(plugin, new ItemDropPermissions());
         moduleManager.addModule(plugin, new TeleportPermissions());
+        moduleManager.addModule(plugin, new DamagePermissions());
 
         // Permissions flags island
         var flagModuleManager = SkylliaAPI.getFlagModuleManager();

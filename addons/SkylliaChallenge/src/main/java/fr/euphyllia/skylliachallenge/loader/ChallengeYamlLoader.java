@@ -34,9 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -76,6 +74,7 @@ public final class ChallengeYamlLoader {
         Challenge challenge = new Challenge(id)
                 .setName(yml.getString("name", idStr))
                 .setLore(lore)
+                .setLevel(yml.getInt("level", 1))
                 .setMaxTimes(yml.getInt("maxTimes", -1))
                 .setBroadcastCompletion(yml.getBoolean("broadcast", false))
                 .setShowInGUI(yml.getBoolean("showInGui", true))
@@ -213,9 +212,20 @@ public final class ChallengeYamlLoader {
                     EntityType t = EntityType.valueOf(head.substring("NEAR:".length()).toUpperCase(Locale.ROOT));
                     int amount = sp.length > 1 ? Integer.parseInt(sp[1]) : 1;
                     double radius = sp.length > 2 ? Double.parseDouble(sp[2]) : 8.0D;
-                    result.add(new NearEntityRequirement(t, amount, radius));
+                    result.add(new NearEntityRequirement(plugin, t, amount, radius));
                 } catch (Exception e) {
                     log.error("Invalid entity type for NEAR requirement in challenge {}: {}", challengeKey, head.substring("NEAR:".length()), e);
+                }
+            }
+            if (head.startsWith("BLOCKNEAR:")) {
+                try {
+                    Material material = Material.matchMaterial(head.substring("BLOCKNEAR:".length()));
+                    if (material == null || !material.isBlock()) continue;
+                    int amount = sp.length > 1 ? Integer.parseInt(sp[1]) : 1;
+                    double radius = sp.length > 2 ? Double.parseDouble(sp[2]) : 8.0D;
+                    result.add(new BlockNearRequirement(plugin, material, amount, radius));
+                } catch (Exception e) {
+                    log.error("Invalid block for BLOCKNEAR requirement in challenge {}: {}", challengeKey, head.substring("BLOCKNEAR:".length()), e);
                 }
             }
             if (head.startsWith("ENTITY:")) {
@@ -329,7 +339,7 @@ public final class ChallengeYamlLoader {
         return result;
     }
 
-    static List<ChallengeReward> parseRewards(List<String> lines) {
+    public static List<ChallengeReward> parseRewards(List<String> lines) {
         if (lines == null) return List.of();
         List<ChallengeReward> list = new ArrayList<>();
         for (String line : lines) {
@@ -338,9 +348,74 @@ public final class ChallengeYamlLoader {
             String head = sp[0];
             try {
                 if (head.startsWith("ITEM:")) {
-                    Material m = Material.matchMaterial(head.substring("ITEM:".length()));
-                    int count = sp.length > 1 ? Integer.parseInt(sp[1]) : 1;
-                    list.add(new ItemReward(m, count));
+                    // 解析材质
+                    Material material = Material.matchMaterial(head.substring("ITEM:".length()));
+                    if (material == null) continue;
+
+                    // 初始参数
+                    int count = 1;
+                    String displayName = null;
+                    List<String> lore = new ArrayList<>();
+                    Map<Enchantment, Integer> enchantments = new LinkedHashMap<>();
+
+                    // 合并剩余 token（方便按关键字切分）
+                    StringBuilder rest = new StringBuilder();
+                    for (int i = 1; i < sp.length; i++) {
+                        rest.append(sp[i]).append(' ');
+                    }
+                    String remainder = rest.toString().trim();
+
+                    // 如果剩余部分以数字开头，先提取数量
+                    if (!remainder.isEmpty() && Character.isDigit(remainder.charAt(0))) {
+                        int spaceIdx = remainder.indexOf(' ');
+                        if (spaceIdx == -1) {
+                            count = Integer.parseInt(remainder);
+                            remainder = "";
+                        } else {
+                            count = Integer.parseInt(remainder.substring(0, spaceIdx));
+                            remainder = remainder.substring(spaceIdx + 1).trim();
+                        }
+                    }
+
+                    // 解析关键字 NAME: LORE: ENCHANT:
+                    while (!remainder.isEmpty()) {
+                        if (remainder.startsWith("NAME:")) {
+                            int end = remainder.indexOf(" LORE:");
+                            int end2 = remainder.indexOf(" ENCHANT:");
+                            int nameEnd = remainder.length();
+                            if (end != -1) nameEnd = end;
+                            if (end2 != -1 && end2 < nameEnd) nameEnd = end2;
+                            displayName = remainder.substring("NAME:".length(), nameEnd).trim();
+                            remainder = remainder.substring(nameEnd).trim();
+                        } else if (remainder.startsWith("LORE:")) {
+                            int end = remainder.indexOf(" ENCHANT:");
+                            int loreEnd = (end != -1) ? end : remainder.length();
+                            String loreRaw = remainder.substring("LORE:".length(), loreEnd).trim();
+                            // 分号分割各行
+                            String[] loreLines = loreRaw.split(";");
+                            for (String l : loreLines) {
+                                if (!l.isEmpty()) lore.add(l.trim());
+                            }
+                            remainder = remainder.substring(loreEnd).trim();
+                        } else if (remainder.startsWith("ENCHANT:")) {
+                            String enchRaw = remainder.substring("ENCHANT:".length()).trim();
+                            // 分号分割成数组，每两个一组
+                            String[] enchParts = enchRaw.split(";");
+                            for (int i = 0; i < enchParts.length - 1; i += 2) {
+                                String enchName = enchParts[i].trim().toLowerCase();
+                                int level = Integer.parseInt(enchParts[i + 1].trim());
+                                Enchantment enchantment = Enchantment.getByKey(NamespacedKey.minecraft(enchName));
+                                if (enchantment != null) {
+                                    enchantments.put(enchantment, level);
+                                }
+                            }
+                            remainder = ""; // ENCHANT 后面没有其他关键字了
+                        } else {
+                            break; // 未知内容，忽略
+                        }
+                    }
+
+                    list.add(new ItemReward(material, count, displayName, lore, enchantments));
                 } else if (head.startsWith("CMD:")) {
                     String cmd = line.substring("CMD:".length()).trim();
                     list.add(new CommandReward(cmd));

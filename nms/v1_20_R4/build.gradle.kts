@@ -10,6 +10,7 @@ paperweight {
 dependencies {
     paperweight.foliaDevBundle("1.20.6-R0.1-SNAPSHOT")
     compileOnly(project(":api"))
+    pluginRemapper("net.fabricmc:tiny-remapper:0.14.0")
 }
 
 tasks {
@@ -21,8 +22,3 @@ tasks {
     }
 }
 
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(25))
-    }
-}

@@ -7,6 +7,7 @@ import fr.euphyllia.skyllia.api.permissions.PermissionId;
 import fr.euphyllia.skyllia.api.permissions.PermissionNode;
 import fr.euphyllia.skyllia.api.skyblock.Island;
 import fr.euphyllia.skyllia.api.skyblock.Players;
+import fr.euphyllia.skyllia.api.skyblock.model.RoleType;
 import fr.euphyllia.skyllia.api.skyblock.model.WarpIsland;
 import fr.euphyllia.skyllia.api.utils.helper.RegionHelper;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
@@ -25,11 +26,8 @@ import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class VisitSubCommand implements SubCommandInterface {
 
@@ -49,11 +47,6 @@ public class VisitSubCommand implements SubCommandInterface {
     public void onExecute(@NotNull Plugin plugin, @NotNull CommandSender sender, @NotNull String[] args) {
         if (!(sender instanceof Player player)) {
             ConfigLoader.language.sendMessage(sender, "island.player.player-only-command");
-            return;
-        }
-
-        if (!player.hasPermission("skyllia.island.command.visit")) {
-            ConfigLoader.language.sendMessage(player, "island.player.permission-denied");
             return;
         }
 
@@ -81,20 +74,17 @@ public class VisitSubCommand implements SubCommandInterface {
                 return;
             }
 
-            boolean bypass = PlayerUtils.hasPermission(player, "skyllia.island.command.visit.bypass")
-                    || SkylliaAPI.getPermissionsManager().hasPermission(player, island, ISLAND_VISIT_BYPASS_PERMISSION, null, ConfigLoader.general.getDebugSettings().permission());
+            boolean bypass = SkylliaAPI.getPermissionsManager().hasPermission(player, island, ISLAND_VISIT_BYPASS_PERMISSION, null, ConfigLoader.general.getDebugSettings().permission());
 
-            if (!bypass) {
+            if (!bypass && !player.isOp()) {
                 if (island.isPrivateIsland()) {
                     ConfigLoader.language.sendMessage(player, "island.visit.island-private");
                     return;
                 }
-
-                for (Players banned : island.getBannedMembers()) {
-                    if (player.getUniqueId().equals(banned.getMojangId())) {
-                        ConfigLoader.language.sendMessage(player, "island.visit.banned");
-                        return;
-                    }
+                Players memberIsland = island.getMember(player.getUniqueId());
+                if (memberIsland != null && memberIsland.getRoleType().equals(RoleType.BAN)) {
+                    ConfigLoader.language.sendMessage(player, "island.visit.banned");
+                    return;
                 }
             }
 
@@ -107,7 +97,7 @@ public class VisitSubCommand implements SubCommandInterface {
                 } else {
                     loc = warpIsland.location().clone();
                 }
-                loc.add(0, 0.5, 0);
+                loc.add(0, 0.1, 0);
                 player.teleportAsync(loc, PlayerTeleportEvent.TeleportCause.PLUGIN).thenRun(() -> {
                     if (PlayerUtils.hasPermission(player, "skyllia.island.worldborder.bypass")) {
                         return;

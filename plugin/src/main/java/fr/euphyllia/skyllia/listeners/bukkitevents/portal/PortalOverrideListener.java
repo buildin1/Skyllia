@@ -2,15 +2,14 @@ package fr.euphyllia.skyllia.listeners.bukkitevents.portal;
 
 import fr.euphyllia.skyllia.api.SkylliaAPI;
 import fr.euphyllia.skyllia.api.skyblock.Island;
+import fr.euphyllia.skyllia.api.coordinate.RegionCoordinate;
 import fr.euphyllia.skyllia.api.skyblock.model.WarpIsland;
+import fr.euphyllia.skyllia.api.utils.helper.RegionHelper;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
 import fr.euphyllia.skyllia.api.configuration.WorldConfig;
 import fr.euphyllia.skyllia.listeners.ListenersUtils;
 import fr.euphyllia.skyllia.api.event.players.PlayerPrepareChangeWorldSkyblockEvent;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.PortalType;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -187,7 +186,7 @@ public class PortalOverrideListener implements Listener {
             logger.info("[传送门覆写] 传送玩家 {} 到末地 {}，保留速度 {}", player.getName(), target.toVector(), velocity);
 
             Bukkit.getGlobalRegionScheduler().execute(SkylliaAPI.getPlugin(), () -> player.teleportAsync(target, TeleportCause.END_PORTAL).thenRun(() -> player.getScheduler().runDelayed(SkylliaAPI.getPlugin(),
-                    _ -> {
+                    ignored2 -> {
                         player.setVelocity(velocity);
                         processingPlayers.remove(uuid);
                         logger.info("[传送门覆写] 已恢复玩家 {} 的速度", player.getName());
@@ -196,39 +195,68 @@ public class PortalOverrideListener implements Listener {
             // 末地 → 家
             logger.info("[传送门覆写] 玩家 {} 使用末地返回传送门，传送回家", player.getName());
 
-            // 获取玩家当前所在末地区域的岛屿（优先于玩家自己的岛屿）
             int chunkX = player.getLocation().getBlockX() >> 4;
             int chunkZ = player.getLocation().getBlockZ() >> 4;
             Island currentIsland = SkylliaAPI.getIslandByChunk(chunkX, chunkZ);
             Island playerIsland = SkylliaAPI.getIslandByPlayerId(uuid);
-
-            // 优先使用当前末地岛屿，否则使用玩家自己的岛屿
             Island targetIsland = currentIsland != null ? currentIsland : playerIsland;
             World mainWorld = getMainWorld();
 
             if (targetIsland != null && mainWorld != null) {
-                Location home = getIslandHome(targetIsland, mainWorld);
+                Location home = getIslandHome(targetIsland, mainWorld); // 未加高
 
-                Bukkit.getGlobalRegionScheduler().execute(SkylliaAPI.getPlugin(), () -> player.teleportAsync(home, TeleportCause.END_PORTAL).thenRun(() -> {
-                    player.setVelocity(new Vector(0, 0, 0));
-                    player.setFallDistance(0);
-                    processingPlayers.remove(uuid);
-                    logger.info("[传送门覆写] 玩家 {} 已到家 (岛屿: {})", player.getName(), targetIsland.getId());
-                }));
+                // 出生点已经是主世界 → 直接传送
+                if (home.getWorld() != null && home.getWorld().getEnvironment() == World.Environment.NORMAL) {
+                    home.add(0, 0.5, 0);
+                    Bukkit.getGlobalRegionScheduler().execute(SkylliaAPI.getPlugin(),
+                            () -> player.teleportAsync(home, TeleportCause.END_PORTAL).thenRun(() -> {
+                        player.setVelocity(new Vector(0, 0, 0));
+                        player.setFallDistance(0);
+                        processingPlayers.remove(uuid);
+                        logger.debug("[传送门覆写] 玩家 {} 已到家", player.getName());
+                    }));
+                } else {
+                    // 出生点不是主世界 → 强制传送到主世界的岛屿中心 Y=64
+                    RegionCoordinate islandRegion = targetIsland.getRegionCoordinate();
+                    Location center = RegionHelper.getCenterRegion(mainWorld, islandRegion.x(), islandRegion.z());
+                    center.setY(64);
+
+                    // 在目标区域线程检查并放置圆石，然后传送
+                    SkylliaAPI.getPlugin().getServer().getRegionScheduler().execute(
+                            SkylliaAPI.getPlugin(),
+                            mainWorld,
+                            center.getBlockX() >> 4,
+                            center.getBlockZ() >> 4,
+                            () -> {
+                                Location below = center.clone().subtract(0, 1, 0);
+                                if (below.getBlock().getType().isAir()) {
+                                    below.getBlock().setType(Material.COBBLESTONE);
+                                }
+                                Location teleportDest = center.clone().add(0, 0.5, 0);
+                                player.teleportAsync(teleportDest, TeleportCause.END_PORTAL).thenRun(() -> {
+                                    player.setVelocity(new Vector(0, 0, 0));
+                                    player.setFallDistance(0);
+                                    processingPlayers.remove(uuid);
+                                    logger.debug("[传送门覆写] 玩家 {} 已送到主世界中心", player.getName());
+                                });
+                            }
+                    );
+                }
             } else {
-                // 安全处理：主世界出生点 或 末地备用坐标
+                // 安全处理：主世界出生点
                 Bukkit.getGlobalRegionScheduler().execute(SkylliaAPI.getPlugin(), () -> {
                     if (mainWorld != null) {
-                        logger.info("[传送门覆写] 玩家 {} 使用末地返回传送门，回到主世界出生点", player.getName());
                         player.teleportAsync(mainWorld.getSpawnLocation(), TeleportCause.END_PORTAL)
                                 .thenRun(() -> processingPlayers.remove(uuid));
                     } else {
-                        logger.info("[传送门覆写] 玩家 {} 使用末地返回传送门但世界不可用，不传送", player.getName());
+                        player.teleportAsync(new Location(fromWorld, 0, 64, 0), TeleportCause.END_PORTAL)
+                                .thenRun(() -> processingPlayers.remove(uuid));
                     }
                 });
             }
         }
     }
+
 
     private Location getIslandHome(Island island, World mainWorld) {
         WarpIsland homeWarp = island.getWarpByName("home");

@@ -15,12 +15,6 @@ dependencies {
     compileOnly(project(":plugin"))
 }
 
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(25))
-    }
-}
-
 tasks {
     compileJava {
         options.encoding = "UTF-8"

@@ -5,6 +5,7 @@ import org.bukkit.NamespacedKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -18,6 +19,7 @@ public class ProgressStorage {
 
     private static final ConcurrentHashMap<UUID, ConcurrentHashMap<String, Integer>> CACHE = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<UUID, ConcurrentHashMap<String, Long>> LAST_COMPLETED_CACHE = new ConcurrentHashMap<>();
+    private static final Map<UUID, Integer> unlockedLevelMap = new ConcurrentHashMap<>();
 
     private static ExecutorService EXECUTOR;
 
@@ -41,6 +43,14 @@ public class ProgressStorage {
         return (m != null) ? m.getOrDefault(cid, 0L) : 0L;
     }
 
+    public static int getUnlockedLevel(UUID islandId) {
+        return unlockedLevelMap.getOrDefault(islandId, 1);
+    }
+
+    public static void setUnlockedLevel(UUID islandId, int level) {
+        unlockedLevelMap.put(islandId, level);
+    }
+
     public static void preloadAllProgress() {
         log.debug("[SkylliaChallenge] Preloading challenge progress into memory...");
 
@@ -48,9 +58,9 @@ public class ProgressStorage {
         AtomicInteger count = new AtomicInteger(0);
 
         backend.preloadProgress(row -> {
-            CACHE.computeIfAbsent(row.islandId(), k -> new ConcurrentHashMap<>())
+            CACHE.computeIfAbsent(row.islandId(), _ -> new ConcurrentHashMap<>())
                     .put(row.challengeId(), row.timesCompleted());
-            LAST_COMPLETED_CACHE.computeIfAbsent(row.islandId(), k -> new ConcurrentHashMap<>())
+            LAST_COMPLETED_CACHE.computeIfAbsent(row.islandId(), _ -> new ConcurrentHashMap<>())
                     .put(row.challengeId(), row.lastCompletedAt());
 
             int c = count.incrementAndGet();
@@ -65,9 +75,9 @@ public class ProgressStorage {
     public static void updateCompletion(UUID islandId, NamespacedKey challengeId, long nowEpochMillis) {
         String cid = challengeId.asString();
 
-        CACHE.computeIfAbsent(islandId, k -> new ConcurrentHashMap<>())
+        CACHE.computeIfAbsent(islandId, _ -> new ConcurrentHashMap<>())
                 .merge(cid, 1, Integer::sum);
-        LAST_COMPLETED_CACHE.computeIfAbsent(islandId, k -> new ConcurrentHashMap<>())
+        LAST_COMPLETED_CACHE.computeIfAbsent(islandId, _ -> new ConcurrentHashMap<>())
                 .put(cid, nowEpochMillis);
 
         EXECUTOR.submit(() -> {

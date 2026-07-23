@@ -20,46 +20,7 @@ import org.bukkit.event.Listener;
 public class WorldBorderAddEvent implements Listener {
 
     private final InterneAPI api;
-    private final Logger logger = LogManager.getLogger(WorldBorderAddEvent.class);
-
     public WorldBorderAddEvent(InterneAPI interneAPI) {
         this.api = interneAPI;
-    }
-
-    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
-    public void onAddWorldBorder(final EntityAddToWorldEvent event) {
-        if (!(event.getEntity() instanceof Player player)) return;
-
-        final Location location = player.getLocation();
-        final World world = location.getWorld();
-
-        if (world == null || !SkylliaAPI.isWorldSkyblock(world)) {
-            return;
-        }
-
-        int chunkX = location.getBlockX() >> 4;
-        int chunkZ = location.getBlockZ() >> 4;
-
-        Bukkit.getAsyncScheduler().runNow(api.getPlugin(), scheduledTask -> {
-            Island island = SkylliaAPI.getIslandByChunk(chunkX, chunkZ);
-            if (island == null) {
-                return;
-            }
-            if (PlayerUtils.hasPermission(player, "skyllia.island.worldborder.bypass")) {
-                return;
-            }
-
-            Location centerIsland = RegionHelper.getCenterRegion(world, island.getRegionCoordinate().x(), island.getRegionCoordinate().z());
-
-            player.getScheduler().runDelayed(api.getPlugin(), playerTask -> {
-                WorldBorder border = player.getWorldBorder();
-                if (border == null) {
-                    border = Bukkit.createWorldBorder();
-                }
-                border.setCenter(centerIsland);
-                border.setSize(island.getSize());
-                //player.setWorldBorder(border);
-            }, null, 1L);
-        });
     }
 }

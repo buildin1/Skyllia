@@ -12,12 +12,12 @@ import fr.euphyllia.skylliachallenge.storage.ProgressStorage;
 import fr.euphyllia.skylliachallenge.storage.ProgressStoragePartial;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
-import java.util.Collection;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -37,9 +37,16 @@ import java.util.concurrent.ConcurrentHashMap;
  * validation and progression.
  */
 public class ChallengeManagers {
+    public static final int LEVEL_COUNT = 5;
+    private static final String[] DEFAULT_LEVEL_NAMES = {"入门", "前期", "中期", "后期", "终极"};
 
     private final SkylliaChallenge skylliaChallenge;
     private final Map<NamespacedKey, Challenge> challengeMap = new ConcurrentHashMap<>();
+
+    // 等级配置
+    private final Map<Integer, String> levelNames = new HashMap<>();
+    private final Map<Integer, List<String>> levelDescriptions = new HashMap<>();
+    private final Map<Integer, List<ChallengeReward>> levelUnlockRewards = new HashMap<>();
 
     /**
      * Creates a new manager bound to the plugin instance.
@@ -48,6 +55,10 @@ public class ChallengeManagers {
      */
     public ChallengeManagers(SkylliaChallenge challenge) {
         this.skylliaChallenge = challenge;
+        for (int i = 1; i <= 5; i++) {
+            levelNames.put(i, DEFAULT_LEVEL_NAMES[i - 1]);
+            levelDescriptions.put(i, new ArrayList<>());
+        }
     }
 
     public static String formatDurationShort(long millis) {
@@ -64,6 +75,141 @@ public class ChallengeManagers {
         if (minutes > 0 || hours > 0 || days > 0) sb.append(minutes).append("m ");
         sb.append(seconds).append("s");
         return sb.toString().trim();
+    }
+
+    /**
+     * 加载 levels.yml，包含等级名称、描述和解锁奖励。
+     */
+    public void loadLevelsConfig(File file) {
+        if (!file.exists()) return;
+        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
+        for (int i = 1; i <= 5; i++) {
+            String name = yml.getString("levels." + i + ".name");
+            if (name != null) levelNames.put(i, name);
+
+            // 支持字符串或列表
+            Object descObj = yml.get("levels." + i + ".description");
+            List<String> descLines = new ArrayList<>();
+            if (descObj instanceof String str) {
+                // 字符串：按 \n 分割
+                descLines.addAll(List.of(str.split("\\n")));
+            } else if (descObj instanceof List<?> list) {
+                for (Object item : list) {
+                    if (item instanceof String s) descLines.add(s);
+                }
+            }
+            levelDescriptions.put(i, descLines);
+        }
+        // 解析奖励（复用 ChallengeYamlLoader.parseRewards，需要将其改为 public static）
+        for (int level = 2; level <= 5; level++) {
+            List<String> raw = yml.getStringList("level-unlock-rewards." + level + ".rewards");
+            if (!raw.isEmpty()) {
+                levelUnlockRewards.put(level, ChallengeYamlLoader.parseRewards(raw));
+            }
+        }
+    }
+
+    /**
+     * 计算指定级别中已完成的挑战数量（完成次数 >= 1）
+     */
+    public int getCompletedCount(int level, Island island) {
+        return (int) getChallenges().stream()
+                .filter(c -> c.isShowInGUI() && c.getLevel() == level)
+                .filter(c -> ProgressStorage.getTimesCompleted(island.getId(), c.getId()) >= 1)
+                .count();
+    }
+
+    /**
+     * 计算指定级别中尚未完成的挑战数量（完成次数为 0）
+     */
+    public int getUncompletedCount(int level, Island island) {
+        return (int) getChallenges().stream()
+                .filter(c -> c.isShowInGUI() && c.getLevel() == level)
+                .filter(c -> ProgressStorage.getTimesCompleted(island.getId(), c.getId()) == 0)
+                .count();
+    }
+
+    /**
+     * 判断下一级是否已解锁（当前级别未完成数 ≤ 阈值）
+     */
+    public boolean isNextLevelUnlocked(int currentLevel, Island island) {
+        if (currentLevel >= 5) return true;
+        int threshold = switch (currentLevel) {
+            case 1 -> 4;
+            case 2 -> 3;
+            case 3 -> 2;
+            case 4 -> 1;
+            default -> 0;
+        };
+        return getUncompletedCount(currentLevel, island) <= threshold;
+    }
+
+    /**
+     * 判断指定级别是否已解锁。
+     * 规则：1 级始终解锁；2 级需 1 级未完成挑战数 ≤ 4；
+     * 3 级需 2 级未完成挑战数 ≤ 3；4 级需 3 级未完成挑战数 ≤ 2；
+     * 5 级需 4 级未完成挑战数 ≤ 1。
+     */
+    public boolean isLevelUnlocked(int level, Island island) {
+        if (level <= 1) return true;
+        int prevLevel = level - 1;
+        int threshold = switch (prevLevel) {
+            case 1 -> 4;
+            case 2 -> 3;
+            case 3 -> 2;
+            case 4 -> 1;
+            default -> Integer.MAX_VALUE;
+        };
+        long uncompleted = getChallenges().stream()
+                .filter(c -> c.isShowInGUI() && c.getLevel() == prevLevel)
+                .filter(c -> ProgressStorage.getTimesCompleted(island.getId(), c.getId()) == 0)
+                .count();
+        return uncompleted <= threshold;
+    }
+
+    /**
+     * 检测并发放等级解锁奖励（基于未完成数刚好达到阈值）
+     */
+    public void checkAndGrantLevelUpReward(Island island, Player player, int completedLevel) {
+        if (completedLevel >= 5) return;
+
+        int threshold = switch (completedLevel) {
+            case 1 -> 4;
+            case 2 -> 3;
+            case 3 -> 2;
+            case 4 -> 1;
+            default -> 0;
+        };
+        int uncompleted = getUncompletedCount(completedLevel, island);
+
+        // 刚好降到阈值时触发（从阈值+1 变为阈值）
+        if (uncompleted == threshold) {
+            int newLevel = completedLevel + 1;
+            List<ChallengeReward> rewards = levelUnlockRewards.get(newLevel);
+            if (rewards != null) {
+                for (ChallengeReward reward : rewards) {
+                    reward.apply(player, island, null);
+                }
+            }
+
+            // 广播当前完成的等级名称
+            String challengeName = getLevelName(completedLevel) + "级别";
+            Bukkit.broadcast(
+                    ConfigLoader.language.translate(player.locale(),
+                            "addons.challenge.player.notify-complete",
+                            Map.of("%player_name%", player.getName(),
+                                    "%challenge_name%", challengeName)),
+                    "skyllia.challenge.notify"
+            );
+        }
+    }
+
+    public String getLevelName(int level) {
+        return levelNames.getOrDefault(level, DEFAULT_LEVEL_NAMES[Math.min(level, LEVEL_COUNT)-1]);
+    }
+
+    public List<String> getLevelDescription(int level) {
+        return levelDescriptions.getOrDefault(level, Collections.emptyList());
     }
 
     /**
@@ -206,6 +352,7 @@ public class ChallengeManagers {
             levelManager.evaluate(island, actor);
         }
 
+        checkAndGrantLevelUpReward(island, actor, challenge.getLevel());
         return true;
     }
 
@@ -225,6 +372,6 @@ public class ChallengeManagers {
      * Opens the challenge GUI for a player.
      */
     public void openGui(Player player) {
-        new ChallengeGui(skylliaChallenge, this).open(player, 1);
+        new ChallengeGui(skylliaChallenge, this).open(player);
     }
 }
