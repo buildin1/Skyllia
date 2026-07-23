@@ -35,7 +35,12 @@ public class DatabaseConfigManager implements IConfigurationProvider {
     @Override
     public void loadConfig() throws DatabaseException {
         changed = false;
-        configVersion = getOrSetDefault("config-version", 5, Integer.class);
+        configVersion = getOrSetDefault("config-version", 6, Integer.class);
+        if (configVersion < 6) {
+            configVersion = 6;
+            config.set("config-version", 6);
+            saveIfChanged();
+        }
 
         // --------------------
         // MariaDB

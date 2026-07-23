@@ -47,7 +47,14 @@ import net.minecraft.world.level.storage.LevelStorageSource;
 import net.minecraft.world.level.storage.PrimaryLevelData;
 import net.minecraft.world.level.validation.ContentValidationException;
 import net.minecraft.world.phys.AABB;
-import org.bukkit.*;
+import org.bukkit.Bukkit;
+import org.bukkit.Chunk;
+import org.bukkit.GameMode;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
+import org.bukkit.World;
+import org.bukkit.WorldCreator;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
@@ -339,14 +346,12 @@ public class WorldNMS extends fr.euphyllia.skyllia.api.utils.nms.WorldNMS {
         final int chunkX = position.x();
         final int chunkZ = position.z();
 
-        TickThread.ensureTickThread(nms, chunkX, chunkZ, "Cannot reset chunk asynchronously");
-
         LevelChunk chunk = nms.getChunkSource().getChunkNow(chunkX, chunkZ);
         if (chunk == null) {
             chunk = nms.getChunkSource().getChunk(chunkX, chunkZ, true);
         }
         if (chunk == null) {
-            log.error("Cannot reset chunk asynchronously");
+            TickThread.ensureTickThread(nms, chunkX, chunkZ, "Cannot reset chunk asynchronously");
             return;
         }
 

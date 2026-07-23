@@ -65,3 +65,7 @@ dependencies:
       load: BEFORE
       required: false
       join-classpath: true
+    Insights:
+      load: BEFORE
+      required: false
+      join-classpath: true

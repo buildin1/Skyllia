@@ -6,8 +6,16 @@ import fr.euphyllia.skyllia.api.SkylliaAPI;
 import fr.euphyllia.skyllia.api.hooks.SchematicHook;
 import fr.euphyllia.skyllia.api.skyblock.model.SchematicSetting;
 import fr.euphyllia.skyllia.api.utils.schematics.SchematicDTO;
-import org.bukkit.*;
-import org.bukkit.block.*;
+import org.bukkit.Bukkit;
+import org.bukkit.DyeColor;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.World;
+import org.bukkit.block.BlockState;
+import org.bukkit.block.Container;
+import org.bukkit.block.CreatureSpawner;
+import org.bukkit.block.Sign;
+import org.bukkit.block.TileState;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.EntityType;
 import org.bukkit.event.HandlerList;
@@ -21,7 +29,11 @@ import java.io.File;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -30,11 +42,9 @@ public class InternalSchematicHook implements SchematicHook {
     private static final Gson GSON = new GsonBuilder().disableHtmlEscaping().create();
     private static final Logger log = LoggerFactory.getLogger(InternalSchematicHook.class);
     private static final Map<File, SchematicDTO> cache = new ConcurrentHashMap<>();
-    private final Plugin plugin;
     private InternalListener internalListener;
 
     public InternalSchematicHook() {
-        this.plugin = SkylliaAPI.getPlugin();
     }
 
     private static boolean isAir(BlockData bd) {
@@ -96,7 +106,7 @@ public class InternalSchematicHook implements SchematicHook {
             return future;
         }
 
-        File file = new File(plugin.getDataFolder() + File.separator + settings.schematicFile());
+        File file = new File(SkylliaAPI.getPlugin().getDataFolder() + File.separator + settings.schematicFile());
         SchematicDTO schematicDTO = cache.computeIfAbsent(file, f -> {
             try (var in = Files.newInputStream(f.toPath());
                  var r = new InputStreamReader(in, StandardCharsets.UTF_8)) {

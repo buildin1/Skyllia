@@ -14,6 +14,8 @@ import fr.euphyllia.skylliabank.api.BankAccount;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.economy.EconomyResponse;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.bukkit.NamespacedKey;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -28,6 +30,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class BankCommand implements SubCommandInterface {
+
+    private static final Logger logger = LogManager.getLogger(BankCommand.class);
 
     private final Plugin plugin;
     private final Economy economy;
@@ -118,7 +122,7 @@ public class BankCommand implements SubCommandInterface {
         double amount;
         try {
             amount = Double.parseDouble(args[1]);
-            if (amount <= 0) {
+            if (!Double.isFinite(amount) || amount <= 0) {
                 ConfigLoader.language.sendMessage(player, "addons.bank.player.invalid-amount-positive");
                 CommandCacheExecution.removeCommandExec(playerId, "bank");
                 return;
@@ -145,7 +149,7 @@ public class BankCommand implements SubCommandInterface {
                 if (refundResponse.transactionSuccess()) {
                     ConfigLoader.language.sendMessage(player, "addons.bank.player.error-deposit-refunded");
                 } else {
-                    log.error("CRITICAL: bank deposit failed AND refund failed. " +
+                    logger.error("CRITICAL: bank deposit failed AND refund failed. " +
                                     "Player={} ({}), island={}, amount={}, balanceBeforeRefund={}. " +
                                     "Manual compensation required.",
                             player.getName(), player.getUniqueId(), island.getId(),
@@ -188,7 +192,7 @@ public class BankCommand implements SubCommandInterface {
         double amount;
         try {
             amount = Double.parseDouble(args[1]);
-            if (amount <= 0) {
+            if (!Double.isFinite(amount) || amount <= 0) {
                 ConfigLoader.language.sendMessage(player, "addons.bank.player.invalid-amount-positive");
                 CommandCacheExecution.removeCommandExec(playerId, "bank");
                 return;

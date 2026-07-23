@@ -1,6 +1,5 @@
 package fr.euphyllia.skyllia.cache.island;
 
-import fr.euphyllia.skyllia.Skyllia;
 import fr.euphyllia.skyllia.commands.common.subcommands.CreateSubCommand;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
 import org.apache.logging.log4j.LogManager;
@@ -85,7 +84,7 @@ public class IslandCreationQueue {
     }
 
     private static void startCreation(IslandCreationRequest request, Player player) {
-        new CreateSubCommand().runCreateIsland(Skyllia.getInstance(), player, request.args())
+        new CreateSubCommand().runCreateIsland(player, request.args())
                 .whenComplete((result, throwable) -> {
                     if (throwable != null) {
                         logger.error("Island creation failed for {}", request.uuid(), throwable);

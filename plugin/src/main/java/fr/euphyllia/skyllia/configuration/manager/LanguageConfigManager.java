@@ -23,15 +23,16 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class LanguageConfigManager implements IConfigurationProvider, LanguageProvider {
 
     private static final Logger log = LogManager.getLogger(LanguageConfigManager.class);
     private final MiniMessage miniMessage = MiniMessage.miniMessage();
-    private final Map<Locale, Map<String, String>> translations = new HashMap<>();
+    private final Map<Locale, Map<String, String>> translations = new ConcurrentHashMap<>();
     private final Locale defaultLocale = Locale.of("en", "GB");
     private final Skyllia plugin = Skyllia.getInstance();
-    private final Map<Locale, CommentedFileConfig> localeFiles = new HashMap<>();
+    private final Map<Locale, CommentedFileConfig> localeFiles = new ConcurrentHashMap<>();
 
     @Override
     public void loadConfig() {
@@ -50,7 +51,7 @@ public class LanguageConfigManager implements IConfigurationProvider, LanguagePr
             tomlConfig.load();
             localeFiles.put(locale, tomlConfig);
 
-            Map<String, String> messages = new HashMap<>();
+            Map<String, String> messages = new ConcurrentHashMap<>();
             parseConfig("", tomlConfig, messages);
             translations.put(locale, messages);
 

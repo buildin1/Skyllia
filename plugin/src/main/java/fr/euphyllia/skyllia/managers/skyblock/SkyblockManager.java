@@ -31,6 +31,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Manages the creation, retrieval, and modification of Skyblock islands, including member management,
@@ -49,6 +50,35 @@ public class SkyblockManager {
     private final ConcurrentHashMap<Long, UUID> islandByRegion = new ConcurrentHashMap<>();
 
     private final ConcurrentHashMap<UUID, Set<Long>> regionsByIsland = new ConcurrentHashMap<>();
+
+    /**
+     * How long a confirmed "no island in this region" answer is remembered.
+     * <p>
+     * Kept deliberately short: a region can be claimed by a new island at any
+     * time, and while {@link #reindexIslandCoverage} proactively clears the
+     * negative entries it covers, a short TTL is the safety net for any path
+     * that indexes coverage lazily.
+     */
+    private static final long NEGATIVE_REGION_TTL_NANOS = TimeUnit.SECONDS.toNanos(30);
+
+    /**
+     * Negative cache for region lookups: packed region key → absolute expiry
+     * ({@link System#nanoTime()}-based) until which the region is known to
+     * contain no island.
+     * <p>
+     * Without this, every event fired in a region that belongs to no island
+     * (the buffer zones between islands — with the default
+     * {@code region-distance}, the vast majority of regions) triggers a
+     * synchronous SQL query on the tick thread that handles it:
+     * {@code PlayerMoveEvent} alone can produce ~20 queries per second per
+     * player flying through a buffer zone. A confirmed miss is therefore worth
+     * remembering just as much as a hit.
+     * <p>
+     * Entries are cleared when {@link #reindexIslandCoverage} claims the
+     * region for an island, and expire on their own after
+     * {@link #NEGATIVE_REGION_TTL_NANOS} otherwise.
+     */
+    private final ConcurrentHashMap<Long, Long> noIslandRegions = new ConcurrentHashMap<>();
 
     /**
      * Guards the single database write that claims the next free region for a
@@ -127,6 +157,9 @@ public class SkyblockManager {
         for (int rx = minRx; rx <= maxRx; rx++) {
             for (int rz = minRz; rz <= maxRz; rz++) {
                 long k = pack(rx, rz);
+                // This region is now covered by an island: any remembered
+                // "no island here" answer is obsolete.
+                noIslandRegions.remove(k);
                 UUID previous = islandByRegion.put(k, id);
                 if (previous != null && !previous.equals(id)) {
                     LOGGER.debug("Region collision: ({},{}) was claimed by {}, now overwritten by {} (root={}, size={})",
@@ -227,6 +260,12 @@ public class SkyblockManager {
                         .updateMember(futureIsland, owners);
 
                 invalidateIsland(event.getIslandId());
+                // Load and index the freshly created island right away. This
+                // closes the window where a recent negative region entry
+                // (a player flying through the buffer zone moments before)
+                // could mask the new island's regions, and warms the cache
+                // before the owner is teleported onto it.
+                loadIslandFromDb(event.getIslandId());
                 return true;
             } else {
                 LOGGER.fatal("Exception while creating a new island asynchronously");
@@ -244,9 +283,18 @@ public class SkyblockManager {
     }
 
     public @Nullable Players getOwnerByIslandId(UUID islandId) {
-        Players cached = cache.getOwner(islandId);
+        Players cached = cache.getOwner(islandId, () -> loadOwnerFromDb(islandId));
         if (cached != null) return cached;
 
+        return loadOwnerFromDb(islandId);
+    }
+
+    /**
+     * Loads the island owner from the database and populates the cache.
+     * Called synchronously on a cold miss, and asynchronously as the
+     * stale-while-revalidate reload.
+     */
+    private @Nullable Players loadOwnerFromDb(UUID islandId) {
         Players owner = plugin.getInterneAPI().getIslandQuery().getIslandMemberQuery().getOwnerByIslandId(islandId);
         if (owner != null) cache.putOwner(islandId, owner);
         return owner;
@@ -259,9 +307,18 @@ public class SkyblockManager {
      * @return A {@link CompletableFuture} containing the {@link Island}, or {@code null} if not found.
      */
     public Island getIslandByIslandId(UUID islandId) {
-        Island cached = cache.getIsland(islandId);
+        Island cached = cache.getIsland(islandId, () -> loadIslandFromDb(islandId));
         if (cached != null) return cached;
 
+        return loadIslandFromDb(islandId);
+    }
+
+    /**
+     * Loads an island by id from the database, populating the cache and the
+     * region index. Called synchronously on a cold miss, and asynchronously as
+     * the stale-while-revalidate reload.
+     */
+    private @Nullable Island loadIslandFromDb(UUID islandId) {
         Island island = plugin.getInterneAPI().getIslandQuery().getIslandDataQuery().getIslandByIslandId(islandId);
         if (island != null) {
             cacheIslandAndIndex(island);
@@ -295,17 +352,38 @@ public class SkyblockManager {
      * @return A {@link CompletableFuture} with {@code true} if disabled, {@code false} otherwise.
      */
     public Boolean isDisabledIsland(Island island) {
-        SkyblockCache.IslandStateSnapshot state = cache.getState(island.getId());
-        if (state != null) return state.disabled();
+        SkyblockCache.IslandStateSnapshot state = getStateSnapshot(island);
+        return state.disabled();
+    }
 
-        boolean disabled = plugin.getInterneAPI().getIslandQuery().getIslandUpdateQuery().isDisabledIsland(island);
-        boolean priv = plugin.getInterneAPI().getIslandQuery().getIslandUpdateQuery().isPrivateIsland(island);
-        boolean locked = plugin.getInterneAPI().getIslandQuery().getIslandUpdateQuery().isLockedIsland(island);
+    /**
+     * Returns the island state snapshot, serving a fresh or stale cached value
+     * when available and falling back to a synchronous load on a cold miss.
+     */
+    private SkyblockCache.IslandStateSnapshot getStateSnapshot(Island island) {
+        SkyblockCache.IslandStateSnapshot state = cache.getState(island.getId(), () -> loadStateSnapshotFromDb(island));
+        if (state != null) return state;
+        return loadStateSnapshotFromDb(island);
+    }
+
+    /**
+     * Loads the full island state (disabled, private, locked, max members, size)
+     * from the database in one pass and populates the state cache. Called
+     * synchronously on a cold miss, and asynchronously as the
+     * stale-while-revalidate reload.
+     */
+    private SkyblockCache.IslandStateSnapshot loadStateSnapshotFromDb(Island island) {
+        var updateQuery = plugin.getInterneAPI().getIslandQuery().getIslandUpdateQuery();
+        boolean disabled = updateQuery.isDisabledIsland(island);
+        boolean priv = updateQuery.isPrivateIsland(island);
+        boolean locked = updateQuery.isLockedIsland(island);
         int max = plugin.getInterneAPI().getIslandQuery().getIslandDataQuery().getMaxMemberInIsland(island);
         double size = island.getSize();
 
-        cache.putState(island.getId(), new SkyblockCache.IslandStateSnapshot(disabled, priv, locked, max, size));
-        return disabled;
+        SkyblockCache.IslandStateSnapshot snapshot =
+                new SkyblockCache.IslandStateSnapshot(disabled, priv, locked, max, size);
+        cache.putState(island.getId(), snapshot);
+        return snapshot;
     }
 
     /**
@@ -330,17 +408,7 @@ public class SkyblockManager {
      * @return A {@link CompletableFuture} with {@code true} if private, {@code false} otherwise.
      */
     public Boolean isPrivateIsland(Island island) {
-        SkyblockCache.IslandStateSnapshot state = cache.getState(island.getId());
-        if (state != null) return state.priv();
-
-        boolean disabled = plugin.getInterneAPI().getIslandQuery().getIslandUpdateQuery().isDisabledIsland(island);
-        boolean priv = plugin.getInterneAPI().getIslandQuery().getIslandUpdateQuery().isPrivateIsland(island);
-        boolean locked = plugin.getInterneAPI().getIslandQuery().getIslandUpdateQuery().isLockedIsland(island);
-        int max = plugin.getInterneAPI().getIslandQuery().getIslandDataQuery().getMaxMemberInIsland(island);
-        double size = island.getSize();
-
-        cache.putState(island.getId(), new SkyblockCache.IslandStateSnapshot(disabled, priv, locked, max, size));
-        return priv;
+        return getStateSnapshot(island).priv();
     }
 
     public @Nullable Island getIslandByRegion(int rx, int rz) {
@@ -357,24 +425,37 @@ public class SkyblockManager {
             }
         }
         if (islandId != null) {
-            Island cached = cache.getIsland(islandId);
+            final UUID knownId = islandId;
+            Island cached = cache.getIsland(knownId, () -> loadIslandFromDb(knownId));
             if (cached != null) {
                 return cached;
             }
-            Island fromDbById = plugin.getInterneAPI()
-                    .getIslandQuery().getIslandDataQuery().getIslandByIslandId(islandId);
+            Island fromDbById = loadIslandFromDb(knownId);
             if (fromDbById != null) {
-                cacheIslandAndIndex(fromDbById);
                 return fromDbById;
             } else {
                 islandByRegion.remove(key, islandId);
             }
         }
 
+        // Negative cache: the database recently confirmed there is no island
+        // in this region. Answer without a JDBC round-trip on the tick thread.
+        Long negativeUntil = noIslandRegions.get(key);
+        if (negativeUntil != null) {
+            if (System.nanoTime() < negativeUntil) {
+                return null;
+            }
+            noIslandRegions.remove(key, negativeUntil);
+        }
+
         RegionCoordinate position = new RegionCoordinate(rx, rz);
         Island island = plugin.getInterneAPI()
                 .getIslandQuery().getIslandDataQuery().getIslandByRegion(position);
-        if (island != null) cacheIslandAndIndex(island);
+        if (island != null) {
+            cacheIslandAndIndex(island);
+        } else {
+            noIslandRegions.put(key, System.nanoTime() + NEGATIVE_REGION_TTL_NANOS);
+        }
         return island;
     }
 
@@ -417,12 +498,16 @@ public class SkyblockManager {
      * @return A {@link CompletableFuture} that completes with the {@link Island}, or {@code null} if none.
      */
     public @Nullable Island getIslandByOwner(UUID playerId) {
-        UUID cachedIslandId = cache.getIslandIdByPlayer(playerId);
+        UUID cachedIslandId = cache.getIslandIdByPlayer(playerId, () -> loadIslandByOwnerFromDb(playerId));
         if (cachedIslandId != null) {
-            Island island = cache.getIsland(cachedIslandId);
+            Island island = cache.getIsland(cachedIslandId, () -> loadIslandFromDb(cachedIslandId));
             if (island != null) return island;
         }
 
+        return loadIslandByOwnerFromDb(playerId);
+    }
+
+    private @Nullable Island loadIslandByOwnerFromDb(UUID playerId) {
         Island island = plugin.getInterneAPI().getIslandQuery().getIslandDataQuery().getIslandByOwnerId(playerId);
         if (island != null) {
             cache.putIslandIdByPlayer(playerId, island.getId());
@@ -438,12 +523,41 @@ public class SkyblockManager {
      * @return A {@link CompletableFuture} that completes with the {@link Island}, or {@code null} if none.
      */
     public @Nullable Island getIslandByPlayerId(UUID playerId) {
-        UUID cachedIslandId = cache.getIslandIdByPlayer(playerId);
+        UUID cachedIslandId = cache.getIslandIdByPlayer(playerId, () -> loadIslandByPlayerFromDb(playerId));
         if (cachedIslandId != null) {
-            Island cachedIsland = cache.getIsland(cachedIslandId);
+            Island cachedIsland = cache.getIsland(cachedIslandId, () -> loadIslandFromDb(cachedIslandId));
             if (cachedIsland != null) return cachedIsland;
         }
 
+        return loadIslandByPlayerFromDb(playerId);
+    }
+
+    /**
+     * Cache-only variant of {@link #getIslandByPlayerId(UUID)} for callers that
+     * must never block on a JDBC round-trip (e.g. PlaceholderAPI resolution on
+     * the main thread). On a miss, an asynchronous load is scheduled and
+     * {@code null} is returned; the value becomes available on a later call.
+     */
+    public @Nullable Island getIslandByPlayerIdCachedOnly(UUID playerId) {
+        UUID cachedIslandId = cache.getIslandIdByPlayer(playerId, () -> loadIslandByPlayerFromDb(playerId));
+        if (cachedIslandId != null) {
+            Island cachedIsland = cache.getIsland(cachedIslandId, () -> loadIslandFromDb(cachedIslandId));
+            if (cachedIsland != null) return cachedIsland;
+        }
+
+        cache.refreshAsync(
+                new SkyblockCache.RefreshKey(SkyblockCache.DOMAIN_PLAYER_LINK, playerId),
+                () -> loadIslandByPlayerFromDb(playerId)
+        );
+        return null;
+    }
+
+    /**
+     * Loads the island a player belongs to from the database, populating both
+     * the player link and the island caches. Called synchronously on a cold
+     * miss, and asynchronously as the stale-while-revalidate reload.
+     */
+    private @Nullable Island loadIslandByPlayerFromDb(UUID playerId) {
         Island island = plugin.getInterneAPI().getIslandQuery().getIslandDataQuery().getIslandByPlayerId(playerId);
         if (island != null) {
             cache.putIslandIdByPlayer(playerId, island.getId());
@@ -488,9 +602,13 @@ public class SkyblockManager {
      * @param name     The warp name.
      */
     public @Nullable WarpIsland getWarpIslandByName(UUID islandId, String name) {
-        WarpIsland cached = cache.getWarp(islandId, name);
+        WarpIsland cached = cache.getWarp(islandId, name, () -> loadWarpFromDb(islandId, name));
         if (cached != null) return cached;
 
+        return loadWarpFromDb(islandId, name);
+    }
+
+    private @Nullable WarpIsland loadWarpFromDb(UUID islandId, String name) {
         WarpIsland warp = plugin.getInterneAPI().getIslandQuery().getIslandWarpQuery().getWarpByName(islandId, name);
         if (warp != null) cache.putWarp(islandId, name, warp);
         return warp;
@@ -502,12 +620,33 @@ public class SkyblockManager {
      * @param islandId The UUID of the island.
      */
     public @Nullable List<WarpIsland> getWarpsIsland(UUID islandId) {
-        List<WarpIsland> cached = cache.getWarps(islandId);
+        List<WarpIsland> cached = cache.getWarps(islandId, () -> loadWarpsFromDb(islandId));
         if (cached != null) return cached;
 
+        return loadWarpsFromDb(islandId);
+    }
+
+    private @Nullable List<WarpIsland> loadWarpsFromDb(UUID islandId) {
         List<WarpIsland> warps = plugin.getInterneAPI().getIslandQuery().getIslandWarpQuery().getListWarp(islandId);
         if (warps != null) cache.putWarps(islandId, warps);
         return warps;
+    }
+
+    /**
+     * Cache-only variant of {@link #getWarpsIsland(UUID)} for callers that must
+     * never block on a JDBC round-trip (e.g. PlaceholderAPI handlers on the main
+     * thread). On a miss, an asynchronous load is scheduled and an empty list is
+     * returned; the data becomes available on a later call.
+     */
+    public List<WarpIsland> getWarpsIslandCachedOnly(UUID islandId) {
+        List<WarpIsland> cached = cache.getWarps(islandId, () -> loadWarpsFromDb(islandId));
+        if (cached != null) return cached;
+
+        cache.refreshAsync(
+                new SkyblockCache.RefreshKey(SkyblockCache.DOMAIN_WARPS, islandId),
+                () -> loadWarpsFromDb(islandId)
+        );
+        return List.of();
     }
 
     /**
@@ -532,21 +671,63 @@ public class SkyblockManager {
      * @param island The {@link Island}.
      */
     public List<Players> getMembersInIsland(Island island) {
-        List<Players> cached = cache.getMembers(island.getId());
+        List<Players> cached = cache.getMembers(island.getId(), () -> loadMembersFromDb(island));
         if (cached != null) return cached;
 
-        List<Players> members = plugin.getInterneAPI().getIslandQuery().getIslandMemberQuery().getMembersInIsland(island);
-        if (members != null) cache.putMembers(island.getId(), members);
+        List<Players> members = loadMembersFromDb(island);
         return members != null ? members : List.of();
     }
 
-    public List<Players> getBannedMembersInIsland(Island island) {
-        List<Players> cached = cache.getBanned(island.getId());
+    /**
+     * Cache-only variant of {@link #getMembersInIsland(Island)} for callers that
+     * must never block on a JDBC round-trip (e.g. PlaceholderAPI handlers on the
+     * main thread). On a miss, an asynchronous load is scheduled and an empty
+     * list is returned; the data becomes available on a later call.
+     */
+    public List<Players> getMembersInIslandCachedOnly(Island island) {
+        List<Players> cached = cache.getMembers(island.getId(), () -> loadMembersFromDb(island));
         if (cached != null) return cached;
 
+        cache.refreshAsync(
+                new SkyblockCache.RefreshKey(SkyblockCache.DOMAIN_MEMBERS, island.getId()),
+                () -> loadMembersFromDb(island)
+        );
+        return List.of();
+    }
+
+    private @Nullable List<Players> loadMembersFromDb(Island island) {
+        List<Players> members = plugin.getInterneAPI().getIslandQuery().getIslandMemberQuery().getMembersInIsland(island);
+        if (members != null) cache.putMembers(island.getId(), members);
+        return members;
+    }
+
+    public List<Players> getBannedMembersInIsland(Island island) {
+        List<Players> cached = cache.getBanned(island.getId(), () -> loadBannedFromDb(island));
+        if (cached != null) return cached;
+
+        List<Players> banned = loadBannedFromDb(island);
+        return banned != null ? banned : List.of();
+    }
+
+    /**
+     * Cache-only variant of {@link #getBannedMembersInIsland(Island)}; same
+     * contract as {@link #getMembersInIslandCachedOnly(Island)}.
+     */
+    public List<Players> getBannedMembersInIslandCachedOnly(Island island) {
+        List<Players> cached = cache.getBanned(island.getId(), () -> loadBannedFromDb(island));
+        if (cached != null) return cached;
+
+        cache.refreshAsync(
+                new SkyblockCache.RefreshKey(SkyblockCache.DOMAIN_BANNED, island.getId()),
+                () -> loadBannedFromDb(island)
+        );
+        return List.of();
+    }
+
+    private @Nullable List<Players> loadBannedFromDb(Island island) {
         List<Players> banned = plugin.getInterneAPI().getIslandQuery().getIslandMemberQuery().getBannedMembersInIsland(island);
         if (banned != null) cache.putBanned(island.getId(), banned);
-        return banned != null ? banned : List.of();
+        return banned;
     }
 
     /**
@@ -718,12 +899,10 @@ public class SkyblockManager {
      * @return A {@link CompletableFuture} with the max member count, or -1 if not found.
      */
     public Integer getMaxMemberInIsland(Island island) {
-        SkyblockCache.IslandStateSnapshot state = cache.getState(island.getId());
-        if (state != null) return state.maxMembers();
-
-        int max = plugin.getInterneAPI().getIslandQuery().getIslandDataQuery().getMaxMemberInIsland(island);
-        cache.invalidateState(island.getId());
-        return max;
+        // Note: previously this path invalidated the state cache after a DB
+        // fetch instead of populating it, forcing a fresh query on every call.
+        // Routing through the shared snapshot loader fixes that.
+        return getStateSnapshot(island).maxMembers();
     }
 
     /**
@@ -775,17 +954,7 @@ public class SkyblockManager {
      * Vérifie si l'île est actuellement "locked".
      */
     public Boolean isLockedIsland(Island island) {
-        SkyblockCache.IslandStateSnapshot state = cache.getState(island.getId());
-        if (state != null) return state.locked();
-
-        boolean disabled = plugin.getInterneAPI().getIslandQuery().getIslandUpdateQuery().isDisabledIsland(island);
-        boolean priv = plugin.getInterneAPI().getIslandQuery().getIslandUpdateQuery().isPrivateIsland(island);
-        boolean locked = plugin.getInterneAPI().getIslandQuery().getIslandUpdateQuery().isLockedIsland(island);
-        int max = plugin.getInterneAPI().getIslandQuery().getIslandDataQuery().getMaxMemberInIsland(island);
-        double size = island.getSize();
-
-        cache.putState(island.getId(), new SkyblockCache.IslandStateSnapshot(disabled, priv, locked, max, size));
-        return locked;
+        return getStateSnapshot(island).locked();
     }
 
     public boolean updateCenterLocation(Island island, Location location) {
@@ -803,14 +972,19 @@ public class SkyblockManager {
     }
 
     public @Nullable String getIslandName(Island island) {
-        String islandName = cache.getIslandName(island.getId());
+        String islandName = cache.getIslandName(island.getId(), () -> loadIslandNameFromDb(island));
         if (islandName == null) {
-            islandName = SkylliaAPI.getIslandCustomDataQuery().get(
-                    Keys.NAMESPACE_KEY_EXTRA, island, Keys.KEY_NAME, PersistentDataType.STRING
-            );
-            if (islandName != null) {
-                cache.putIslandName(island.getId(), islandName);
-            }
+            islandName = loadIslandNameFromDb(island);
+        }
+        return islandName;
+    }
+
+    private @Nullable String loadIslandNameFromDb(Island island) {
+        String islandName = SkylliaAPI.getIslandCustomDataQuery().get(
+                Keys.NAMESPACE_KEY_EXTRA, island, Keys.KEY_NAME, PersistentDataType.STRING
+        );
+        if (islandName != null) {
+            cache.putIslandName(island.getId(), islandName);
         }
         return islandName;
     }
@@ -829,14 +1003,19 @@ public class SkyblockManager {
     }
 
     public @Nullable String getIslandDescription(Island island) {
-        String description = cache.getIslandDescription(island.getId());
+        String description = cache.getIslandDescription(island.getId(), () -> loadIslandDescriptionFromDb(island));
         if (description == null) {
-            description = SkylliaAPI.getIslandCustomDataQuery().get(
-                    Keys.NAMESPACE_KEY_EXTRA, island, Keys.KEY_DESCRIPTION, PersistentDataType.STRING
-            );
-            if (description != null) {
-                cache.putIslandDescription(island.getId(), description);
-            }
+            description = loadIslandDescriptionFromDb(island);
+        }
+        return description;
+    }
+
+    private @Nullable String loadIslandDescriptionFromDb(Island island) {
+        String description = SkylliaAPI.getIslandCustomDataQuery().get(
+                Keys.NAMESPACE_KEY_EXTRA, island, Keys.KEY_DESCRIPTION, PersistentDataType.STRING
+        );
+        if (description != null) {
+            cache.putIslandDescription(island.getId(), description);
         }
         return description;
     }

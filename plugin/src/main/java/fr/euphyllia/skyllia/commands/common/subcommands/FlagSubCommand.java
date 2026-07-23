@@ -5,7 +5,13 @@ import fr.euphyllia.skyllia.api.SkylliaAPI;
 import fr.euphyllia.skyllia.api.commands.SubCommandInterface;
 import fr.euphyllia.skyllia.api.configuration.WorldConfig;
 import fr.euphyllia.skyllia.api.database.IslandPermissionQuery;
-import fr.euphyllia.skyllia.api.permissions.*;
+import fr.euphyllia.skyllia.api.permissions.FlagId;
+import fr.euphyllia.skyllia.api.permissions.FlagNode;
+import fr.euphyllia.skyllia.api.permissions.IslandFlagRegistry;
+import fr.euphyllia.skyllia.api.permissions.IslandFlags;
+import fr.euphyllia.skyllia.api.permissions.PermissionId;
+import fr.euphyllia.skyllia.api.permissions.PermissionNode;
+import fr.euphyllia.skyllia.api.permissions.PermissionSetCodec;
 import fr.euphyllia.skyllia.api.skyblock.Island;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
 import fr.euphyllia.skyllia.utils.PlayerUtils;
@@ -17,7 +23,11 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 public class FlagSubCommand implements SubCommandInterface {
 

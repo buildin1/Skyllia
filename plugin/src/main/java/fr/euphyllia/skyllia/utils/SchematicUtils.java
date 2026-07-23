@@ -3,12 +3,21 @@ package fr.euphyllia.skyllia.utils;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import fr.euphyllia.skyllia.Skyllia;
-import fr.euphyllia.skyllia.api.utils.schematics.*;
+import fr.euphyllia.skyllia.api.utils.schematics.BlockEntityDTO;
+import fr.euphyllia.skyllia.api.utils.schematics.EntityDTO;
+import fr.euphyllia.skyllia.api.utils.schematics.SchematicDTO;
+import fr.euphyllia.skyllia.api.utils.schematics.Size3i;
+import fr.euphyllia.skyllia.api.utils.schematics.Vec3i;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.block.*;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockState;
+import org.bukkit.block.Container;
+import org.bukkit.block.CreatureSpawner;
+import org.bukkit.block.Sign;
+import org.bukkit.block.TileState;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -20,7 +29,12 @@ import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 public class SchematicUtils {
 

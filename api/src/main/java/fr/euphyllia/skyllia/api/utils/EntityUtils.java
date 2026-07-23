@@ -1,6 +1,10 @@
 package fr.euphyllia.skyllia.api.utils;
 
-import org.bukkit.entity.*;
+import org.bukkit.entity.Ambient;
+import org.bukkit.entity.Animals;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Monster;
 
 public class EntityUtils {
 

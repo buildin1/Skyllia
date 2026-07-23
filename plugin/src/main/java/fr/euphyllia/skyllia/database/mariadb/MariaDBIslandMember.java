@@ -193,8 +193,7 @@ public class MariaDBIslandMember extends IslandMemberQuery {
                 while (rs.next()) {
                     UUID playerId = UUID.fromString(rs.getString("uuid_player"));
                     String playerName = rs.getString("player_name");
-                    RoleType roleType = RoleType.valueOf(rs.getString("role"));
-                    players.add(new Players(playerId, playerName, island.getId(), roleType));
+                    players.add(new Players(playerId, playerName, island.getId(), RoleType.BAN));
                 }
             } catch (Exception e) {
                 log.error("Error fetching banned members in island {}", island.getId(), e);

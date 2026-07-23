@@ -7,13 +7,24 @@ import com.electronwill.nightconfig.core.io.WritingMode;
 import com.electronwill.nightconfig.toml.TomlWriter;
 import fr.euphyllia.skyllia.api.SkylliaAPI;
 import fr.euphyllia.skyllia.api.configuration.IConfigurationProvider;
-import fr.euphyllia.skyllia.api.permissions.*;
+import fr.euphyllia.skyllia.api.permissions.FlagId;
+import fr.euphyllia.skyllia.api.permissions.FlagNode;
+import fr.euphyllia.skyllia.api.permissions.IslandFlagRegistry;
+import fr.euphyllia.skyllia.api.permissions.IslandFlags;
+import fr.euphyllia.skyllia.api.permissions.PermissionSetCodec;
 import org.bukkit.NamespacedKey;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.TreeSet;
 
 public class IslandFlagsConfigManager implements IConfigurationProvider {
 

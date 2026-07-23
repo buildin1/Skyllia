@@ -134,9 +134,9 @@ public class VaultIslandEconomy implements Economy {
 
     @Override
     public EconomyResponse withdrawPlayer(OfflinePlayer player, double amount) {
-        if (amount < 0) {
+        if (!Double.isFinite(amount) || amount < 0) {
             return new EconomyResponse(amount, 0, EconomyResponse.ResponseType.FAILURE,
-                    "Cannot withdraw a negative amount.");
+                    "Cannot withdraw a negative or non-finite amount.");
         }
         if (player == null) {
             return new EconomyResponse(amount, 0, EconomyResponse.ResponseType.FAILURE,
@@ -181,9 +181,9 @@ public class VaultIslandEconomy implements Economy {
 
     @Override
     public EconomyResponse depositPlayer(OfflinePlayer player, double amount) {
-        if (amount < 0) {
+        if (!Double.isFinite(amount) || amount < 0) {
             return new EconomyResponse(amount, 0, EconomyResponse.ResponseType.FAILURE,
-                    "Cannot deposit a negative amount.");
+                    "Cannot deposit a negative or non-finite amount.");
         }
         if (player == null) {
             return new EconomyResponse(amount, 0, EconomyResponse.ResponseType.FAILURE,

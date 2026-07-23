@@ -6,7 +6,12 @@ import fr.euphyllia.skyllia.api.hooks.PermissionHook;
 import fr.euphyllia.skyllia.api.hooks.SchematicHook;
 import fr.euphyllia.skyllia.api.hooks.SpawnHook;
 import fr.euphyllia.skyllia.api.service.TrustService;
-import fr.euphyllia.skyllia.api.utils.nms.*;
+import fr.euphyllia.skyllia.api.skyblock.model.SchematicPlugin;
+import fr.euphyllia.skyllia.api.utils.nms.BiomesImpl;
+import fr.euphyllia.skyllia.api.utils.nms.ExplosionEntityImpl;
+import fr.euphyllia.skyllia.api.utils.nms.MobsSpawnImpl;
+import fr.euphyllia.skyllia.api.utils.nms.PlayerNMS;
+import fr.euphyllia.skyllia.api.utils.nms.WorldNMS;
 import fr.euphyllia.skyllia.cache.SkyblockCache;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
 import fr.euphyllia.skyllia.database.IslandQuery;
@@ -71,7 +76,9 @@ public class InterneAPI {
         this.setVersionNMS();
 
         // Must be available immediately (no DB dependency)
-        this.skyblockCache = new SkyblockCache();
+        this.skyblockCache = new SkyblockCache(
+                command -> Bukkit.getAsyncScheduler().runNow(this.plugin, task -> command.run())
+        );
         this.trustService = new TrustService();
 
         // Inject cache to avoid plugin.getInterneAPI() during boot
@@ -243,7 +250,7 @@ public class InterneAPI {
         return this.worldModifier;
     }
 
-    public @NotNull SchematicHook getSchematicHook(@NotNull fr.euphyllia.skyllia.api.skyblock.model.SchematicPlugin requested) {
+    public @NotNull SchematicHook getSchematicHook(@NotNull SchematicPlugin requested) {
         return this.schematicHookResolver.resolve(requested);
     }
 

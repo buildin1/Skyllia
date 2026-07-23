@@ -83,7 +83,7 @@ public class WorldModifier {
             final ChunkCoordinate chunkPos = chunks.get(i);
             final long delay = (long) i * ConfigLoader.general.getIslandSettings().chunkProcessing().deleteDelayMs();
             deleteScheduler.schedule(() -> {
-                world.getChunkAtAsync(chunkPos.x(), chunkPos.z()).thenAccept(ignored -> {
+                world.getChunkAtAsync(chunkPos.x(), chunkPos.z()).thenAccept(chunk -> {
                     try {
                         SkylliaAPI.getWorldNMS().resetChunk(world, chunkPos);
                         if (!SkylliaAPI.getBiomesImpl().setBiome(world, chunkPos.x(), chunkPos.z(), defaultBiome)) {

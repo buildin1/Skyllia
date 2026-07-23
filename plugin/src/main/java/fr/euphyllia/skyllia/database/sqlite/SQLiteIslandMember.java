@@ -191,9 +191,8 @@ public class SQLiteIslandMember extends IslandMemberQuery {
             try {
                 while (rs.next()) {
                     UUID uuid = UUID.fromString(rs.getString("uuid_player"));
-                    RoleType roleType = RoleType.valueOf(rs.getString("role"));
                     String name = rs.getString("player_name");
-                    players.add(new Players(uuid, name, island.getId(), roleType));
+                    players.add(new Players(uuid, name, island.getId(), RoleType.BAN));
                 }
             } catch (Exception ex) {
                 logger.error("getBannedMembersInIsland", ex);
