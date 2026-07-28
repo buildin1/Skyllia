@@ -115,7 +115,7 @@ public class VisitSubCommand implements SubCommandInterface {
 
                     border.setCenter(center);
                     border.setSize(island.getSize());
-                    //player.setWorldBorder(border);
+                    player.setWorldBorder(border);
                 });
             }, null, 1L);
         } catch (Exception exception) {

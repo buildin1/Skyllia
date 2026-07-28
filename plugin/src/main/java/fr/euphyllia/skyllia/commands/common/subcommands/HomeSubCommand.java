@@ -79,7 +79,7 @@ public class HomeSubCommand implements SubCommandInterface {
                 }
                 border.setCenter(center);
                 border.setSize(rayon);
-                //player.setWorldBorder(border);
+                player.setWorldBorder(border);
             });
         } catch (Exception exception) {
             logger.log(Level.FATAL, exception.getMessage(), exception);

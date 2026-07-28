@@ -24,6 +24,7 @@ import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
+import org.bukkit.WorldBorder;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -103,6 +104,10 @@ public class JoinEvent implements Listener {
                     return;
                 }
 
+                // 玩家已经在空岛世界（常见于断线重连）：重新下发边境，
+                // 否则边境只在建岛那一刻发过一次，重新登录后客户端就再也收不到
+                applyIslandBorder(player, island);
+
                 checkAndClearPlayerStuffOnJoin(player);
 
             } catch (Exception e) {
@@ -173,6 +178,7 @@ public class JoinEvent implements Listener {
         System.out.println("[Skyllia-加入] 传送玩家 " + player.getName() + " 到岛屿: " + loc);
         // NMS 层面传送（绕过 Bukkit 事件）
         SkylliaAPI.getPlayerNMS().teleport(player, loc);
+        applyIslandBorder(player, island);
     }
 
     private void teleportToSkyWorldSpawn(Player player) {
@@ -196,6 +202,7 @@ public class JoinEvent implements Listener {
                 Location center = RegionHelper.getCenterRegion(world, region.x(), region.z());
                 center.setY(64);
                 SkylliaAPI.getPlayerNMS().teleport(player, center);
+                applyIslandBorder(player, ownIsland);
             }, null);
         } else {
             player.getScheduler().run(api.getPlugin(), _ -> {
@@ -207,6 +214,29 @@ public class JoinEvent implements Listener {
                 }
             }, null);
         }
+    }
+
+    /**
+     * 重新给玩家下发自己岛屿的独立边境。WorldBorder 是逐次连接下发的客户端状态，
+     * 不会跨重连保留，只在建岛那一刻发一次是不够的，每次登录都要重新发。
+     */
+    private void applyIslandBorder(Player player, Island island) {
+        if (PlayerUtils.hasPermission(player, "skyllia.island.worldborder.bypass")) return;
+
+        player.getScheduler().run(api.getPlugin(), _ -> {
+            if (!player.isOnline()) return;
+            World islandWorld = WorldUtils.getWorldConfigs().getFirst().getWorld();
+            if (islandWorld == null) return;
+
+            RegionCoordinate region = island.getRegionCoordinate();
+            Location center = RegionHelper.getCenterRegion(islandWorld, region.x(), region.z());
+
+            WorldBorder border = player.getWorldBorder();
+            if (border == null) border = Bukkit.createWorldBorder();
+            border.setCenter(center);
+            border.setSize(island.getSize());
+            player.setWorldBorder(border);
+        }, null);
     }
 
     private void checkAndClearPlayerStuffOnJoin(Player player) {

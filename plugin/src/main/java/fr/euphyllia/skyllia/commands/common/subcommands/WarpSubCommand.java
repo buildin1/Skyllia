@@ -106,7 +106,7 @@ public class WarpSubCommand implements SubCommandInterface {
                 }
                 border.setCenter(center);
                 border.setSize(rayon);
-                //player.setWorldBorder(border);
+                player.setWorldBorder(border);
             });
         } catch (Exception e) {
             logger.log(Level.FATAL, e.getMessage(), e);
