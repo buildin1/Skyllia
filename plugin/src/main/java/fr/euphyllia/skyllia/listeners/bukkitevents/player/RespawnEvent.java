@@ -8,6 +8,7 @@ import fr.euphyllia.skyllia.api.event.players.PlayerRespawnSkylliaEvent;
 import fr.euphyllia.skyllia.api.skyblock.Island;
 import fr.euphyllia.skyllia.api.skyblock.model.WarpIsland;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
+import fr.euphyllia.skyllia.utils.PlayerUtils;
 import fr.euphyllia.skyllia.utils.WorldUtils;
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import org.apache.logging.log4j.LogManager;
@@ -203,6 +204,10 @@ public class RespawnEvent implements Listener {
     private void correctIfNeeded(Player player) {
         Island island = SkylliaAPI.getIslandByPlayerId(player.getUniqueId());
         Location current = player.getLocation();
+
+        // 重生后重新下发边境：WorldBorder 是逐次下发的客户端状态，死亡重生跟重新连接
+        // 一样会丢失，必须在每次确认落地后重发一次。这里已经保证运行在正确的 region 线程上。
+        PlayerUtils.applyIslandBorder(player, island);
 
         // current 是玩家自己当前所在的位置：EntityScheduler 保证这段代码运行在
         // 玩家当前所属 region 的线程上，读这里的方块是安全的。

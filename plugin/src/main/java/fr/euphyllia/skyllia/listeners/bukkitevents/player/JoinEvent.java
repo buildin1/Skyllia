@@ -24,7 +24,6 @@ import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
-import org.bukkit.WorldBorder;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -219,23 +218,12 @@ public class JoinEvent implements Listener {
     /**
      * 重新给玩家下发自己岛屿的独立边境。WorldBorder 是逐次连接下发的客户端状态，
      * 不会跨重连保留，只在建岛那一刻发一次是不够的，每次登录都要重新发。
+     * 调用点可能来自异步线程，这里统一跳到玩家自己的 region 线程再执行。
      */
     private void applyIslandBorder(Player player, Island island) {
-        if (PlayerUtils.hasPermission(player, "skyllia.island.worldborder.bypass")) return;
-
         player.getScheduler().run(api.getPlugin(), _ -> {
             if (!player.isOnline()) return;
-            World islandWorld = WorldUtils.getWorldConfigs().getFirst().getWorld();
-            if (islandWorld == null) return;
-
-            RegionCoordinate region = island.getRegionCoordinate();
-            Location center = RegionHelper.getCenterRegion(islandWorld, region.x(), region.z());
-
-            WorldBorder border = player.getWorldBorder();
-            if (border == null) border = Bukkit.createWorldBorder();
-            border.setCenter(center);
-            border.setSize(island.getSize());
-            player.setWorldBorder(border);
+            PlayerUtils.applyIslandBorder(player, island);
         }, null);
     }
 

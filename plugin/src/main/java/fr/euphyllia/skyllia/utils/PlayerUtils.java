@@ -2,13 +2,18 @@ package fr.euphyllia.skyllia.utils;
 
 import fr.euphyllia.skyllia.Skyllia;
 import fr.euphyllia.skyllia.api.SkylliaAPI;
+import fr.euphyllia.skyllia.api.coordinate.RegionCoordinate;
 import fr.euphyllia.skyllia.api.event.players.PlayerTeleportSpawnEvent;
 import fr.euphyllia.skyllia.api.hooks.PermissionHook;
 import fr.euphyllia.skyllia.api.hooks.SpawnHook;
+import fr.euphyllia.skyllia.api.skyblock.Island;
+import fr.euphyllia.skyllia.api.utils.helper.RegionHelper;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.World;
+import org.bukkit.WorldBorder;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerTeleportEvent;
@@ -49,6 +54,30 @@ public class PlayerUtils {
             player.teleportAsync(playerTeleportSpawnEvent.getFinalLocation(), PlayerTeleportEvent.TeleportCause.PLUGIN);
         }, null, 1L);
 
+    }
+
+    /**
+     * 给玩家下发自己岛屿的独立边境（WorldBorder）。
+     * <p>
+     * 调用方必须保证当前线程已经拥有目标 region 的归属权（比如已经在玩家自己的
+     * {@code EntityScheduler} 回调里），本方法内部不做任何线程调度。
+     * </p>
+     */
+    public static void applyIslandBorder(Player player, @Nullable Island island) {
+        if (island == null) return;
+        if (hasPermission(player, "skyllia.island.worldborder.bypass")) return;
+
+        World islandWorld = fr.euphyllia.skyllia.utils.WorldUtils.getWorldConfigs().getFirst().getWorld();
+        if (islandWorld == null) return;
+
+        RegionCoordinate region = island.getRegionCoordinate();
+        Location center = RegionHelper.getCenterRegion(islandWorld, region.x(), region.z());
+
+        WorldBorder border = player.getWorldBorder();
+        if (border == null) border = Bukkit.createWorldBorder();
+        border.setCenter(center);
+        border.setSize(island.getSize());
+        player.setWorldBorder(border);
     }
 
     public static boolean hasPermission(Player player, String key) {
