@@ -24,18 +24,25 @@ public class ItemReward implements ChallengeReward {
     private final String displayName;          // MiniMessage 格式，可为 null
     private final List<String> lore;           // MiniMessage 列表，可为空
     private final Map<Enchantment, Integer> enchantments; // 附魔
+    private final int customModelData;         // -1 表示不设置；用于匹配其它 addon 定义的自定义物品（如领地拓展令）
 
     public ItemReward(Material material, int count) {
-        this(material, count, null, List.of(), Map.of());
+        this(material, count, null, List.of(), Map.of(), -1);
     }
 
     public ItemReward(Material material, int count, String displayName,
                       List<String> lore, Map<Enchantment, Integer> enchantments) {
+        this(material, count, displayName, lore, enchantments, -1);
+    }
+
+    public ItemReward(Material material, int count, String displayName,
+                      List<String> lore, Map<Enchantment, Integer> enchantments, int customModelData) {
         this.material = material;
         this.count = count;
         this.displayName = displayName;
         this.lore = (lore != null) ? new ArrayList<>(lore) : new ArrayList<>();
         this.enchantments = (enchantments != null) ? new LinkedHashMap<>(enchantments) : new LinkedHashMap<>();
+        this.customModelData = customModelData;
     }
 
     @Override
@@ -55,6 +62,10 @@ public class ItemReward implements ChallengeReward {
                 }
             }
             meta.lore(loreComponents);
+        }
+
+        if (customModelData >= 0) {
+            meta.setCustomModelData(customModelData);
         }
 
         // 处理附魔：附魔书使用 EnchantmentStorageMeta，其他物品使用普通 addEnchant

@@ -155,7 +155,7 @@ public class LanguageConfigManager implements IConfigurationProvider, LanguagePr
         for (Map.Entry<String, String> entry : placeholders.entrySet()) {
             message = message.replace(entry.getKey(), entry.getValue());
         }
-        String prefix = langMessages.getOrDefault("prefix", "<light_purple>[Skyllia]</light_purple> :");
+        String prefix = langMessages.getOrDefault("prefix", "<light_purple>[空岛]</light_purple> :");
 
         if (usePrefix) {
             message = prefix + " " + message;

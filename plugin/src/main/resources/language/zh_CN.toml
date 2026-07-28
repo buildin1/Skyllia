@@ -1,0 +1,1113 @@
+config-version = 2
+verbose = false
+prefix = "<light_purple>[Skyllia]</light_purple>: "
+
+[island]
+create-in-progress = "空岛正在创建中"
+create-finish = "欢迎来到你的空岛！"
+delete-success = "空岛已成功删除"
+delete-only-owner = "抱歉，只有岛主可以执行此命令"
+delete-has-members = "无法删除空岛，因为还有成员。请先移除所有成员后再删除。"
+type-not-exist = "所选空岛类型不存在。"
+schematic-not-exist = "创建空岛所需的原理图不存在。"
+generic-error = "创建空岛时发生错误"
+only-owner = "只有空岛岛主可以执行此命令。"
+
+[island.create]
+already-in-queue = "⏳ 你已在空岛创建队列中。当前位置：#%position%"
+queued = "⌛ 你已加入空岛创建队列。位置：#%position%"
+position-update = "📣 你在队列中的新位置为：#%position%"
+
+[island.banlist]
+title = "<gold>📌 空岛封禁列表 <gray>(%count%)</gray>"
+line = "<red>-</red> <white>%name%</white>"
+empty = "<gray>你的空岛没有封禁任何玩家。</gray>"
+
+[island.home]
+success = "你已被传送到你的空岛。"
+
+[island.home.set]
+success = "已设置你的空岛家园点。"
+
+[island.expel]
+not-enough-args = "你必须指定要驱逐的玩家。"
+player-not-in-island = "该玩家不在你的空岛上。"
+
+[island.delete]
+args-missing = "你需要在命令末尾加上 'confirm'。"
+
+[island.leave]
+he-is-owner = "你是岛主，无法离开空岛！"
+confirm = "你需要在命令末尾加上 'confirm'。"
+success = "你已离开 %owner% 的空岛。"
+failed = "无法离开空岛。如果问题持续，请联系管理员。"
+
+[island.access]
+open = "你的空岛现已开放访客进入。"
+close = "你的空岛现已关闭访客进入。"
+
+[island.permission]
+usage = "<gray>用法：</gray> <light_purple>/is permission list [filter]</light_purple>\n<gray> - </gray><light_purple>/is permission <role> <namespace:key> [true|false]</light_purple>\n<gray> - </gray><light_purple>/is permission toggle <role> <namespace:key></light_purple>\n<gray> - </gray><light_purple>/is permission set <role> <namespace:key> <true|false></light_purple>"
+value = "<light_purple>%role%</light_purple> <gray>-></gray> <white>%perm%</white> <gray>=</gray> <aqua>%value%</aqua>"
+permission-denied = "<red>你没有权限修改此权限。</red>"
+
+[island.permission.role]
+invalid = "<red>无效角色：</red> <white>%role%</white>"
+
+[island.permission.perm]
+invalid-format = "<red>权限格式无效：</red> <white>%perm%</white> <gray>(应为 namespace:key)</gray>"
+unknown = "<red>未知权限：</red> <white>%perm%</white>"
+
+[island.permission.bool]
+invalid = "<red>无效的布尔值：</red> <white>%value%</white> <gray>(请用 true/false 或 on/off)</gray>"
+
+[island.permission.list]
+empty = "<red>未找到权限。</red>"
+header = "<light_purple>已注册权限</light_purple> <gray>(</gray><white>%count%</white><gray>)</gray>:"
+entry = "<gray>-</gray> <white>%perm%</white>"
+more = "<gray>... 还有</gray> <white>%more%</white> <gray>项（请使用筛选）</gray>"
+
+[island.permission.update]
+success = "<green>已更新：</green> <light_purple>%role%</light_purple> <gray>-></gray> <white>%perm%</white> <gray>:</gray> <yellow>%old%</yellow> <gray>-></gray> <aqua>%new%</aqua>"
+failed = "<red>数据库更新失败。</red>"
+
+[island.flag]
+usage = """<gray>用法：</gray> <light_purple>/is flag list [filter]</light_purple>
+<gray> - </gray><light_purple>/is flag <namespace:key> [true|false] [world]</light_purple>
+<gray> - </gray><light_purple>/is flag toggle <namespace:key> [world]</light_purple>
+<gray> - </gray><light_purple>/is flag set <namespace:key> <true|false> [world]</light_purple>"""
+value = "<white>%flag%</white> <gray>=</gray> <aqua>%value%</aqua>"
+permission-denied = "<red>你没有权限修改此标记。</red>"
+no-world = "<red>未配置空岛世界。</red>"
+
+[island.flag.flag]
+invalid-format = "<red>标记格式无效：</red> <white>%flag%</white> <gray>(应为 namespace:key)</gray>"
+unknown = "<red>未知标记：</red> <white>%flag%</white>"
+
+[island.flag.bool]
+invalid = "<red>无效的布尔值：</red> <white>%value%</white> <gray>(请用 true/false 或 on/off)</gray>"
+
+[island.flag.list]
+empty = "<red>未找到标记。</red>"
+header = "<light_purple>已注册标记</light_purple> <gray>(</gray><white>%count%</white><gray>)</gray>:"
+entry = "<gray>-</gray> <white>%flag%</white>"
+more = "<gray>... 还有</gray> <white>%more%</white> <gray>项（请使用筛选）</gray>"
+
+[island.flag.update]
+success = "<green>已更新：</green> <white>%flag%</white> <gray>:</gray> <yellow>%old%</yellow> <gray>-></gray> <aqua>%new%</aqua>"
+failed = "<red>数据库更新失败。</red>"
+
+[island.player]
+no-island = "你还没有空岛！"
+already-has-island = "你已经有空岛了。"
+not-found = "未找到玩家。"
+not-on-island = "你必须在空岛上。"
+not-on-own-island = "你必须在自己的空岛上。"
+permission-denied = "你没有权限执行此操作。"
+not-connected = "该玩家不在线。"
+player-only-command = "此命令只能由玩家执行。"
+outside-island = "你不能离开空岛范围！"
+delete-has-members = "无法删除空岛，因为还有成员。请先移除所有成员后再删除。"
+
+[island.transfer]
+success = "你已成功将岛主转让给 %new_owner%。"
+notify-old-owner = "%old_owner% 已将你设为空岛岛主。"
+confirm = "你即将将空岛岛主转让给 %new_owner%；此操作不可逆。输入 /is transfer %new_owner% confirm 确认。"
+specify-player = "请指定要转让岛主的玩家。"
+already-owner = "你已经是空岛岛主。"
+only-co-owner = "你只能将岛主转让给副岛主。"
+
+[island.rank]
+demote-success = "玩家 %s 已被降级。"
+demote-failed = "玩家 %s 无法被降级。"
+demote-high-rank = "你不能降级与自己同级或更高的玩家。"
+demote-args-missing = "命令不完整：/skyllia demote <member>"
+promote-failed = "玩家 %s 无法被升级。"
+promote-high-rank = "你不能将玩家升级到与你同级或更高。"
+promote-args-missing = "命令不完整：/skyllia promote <member>"
+
+[island.invite]
+already-on-island = "你已经在空岛上了！"
+args-missing = "命令不完整：/skyllia invite <add/accept/decline> <player/island_owner>"
+accept-args-missing = "你必须指定要加入哪个空岛：/skyllia invite accept <island_owner>"
+remove-args-missing = "命令不完整：/skyllia invite remove <island_owner>"
+decline-args-missing = "你必须指定要拒绝哪个邀请：/skyllia invite decline <island_owner>"
+invite-yourself = "你不能邀请自己。"
+player-invited = "已邀请玩家 %s。等待回复中..."
+invite-deleted = "你已删除 %s 的邀请。"
+player-notified = "玩家 %player_invite% 邀请你加入他的空岛。接受：/skyllia invite accept %player_invite%。拒绝：/skyllia invite decline %player_invite%"
+island-not-found = "未找到玩家 %s 的空岛。"
+join-success = "你已成为该空岛的成员！"
+member-limit-reached = "空岛成员已达上限，无法加入。"
+decline-success = "你已拒绝 %player_invite% 的邀请。"
+invite-not-found = "你未收到该玩家的邀请。"
+accept-notify-owner = "玩家 %player_accept% 已接受你的空岛邀请。"
+decline-notify-owner = "玩家 %player_decline% 已拒绝你的空岛邀请。"
+home-not-found = "未找到空岛家园点。"
+
+[island.info]
+no-owner = "该空岛没有岛主。"
+no-permission = "你没有权限查看此空岛的信息。"
+
+[island.info.display]
+title = "<gold>=== 空岛信息 ===</gold>"
+id = "<yellow>空岛 ID：</yellow><white>%id%</white>"
+owner = "<yellow>岛主：</yellow><white>%owner%</white>"
+size = "<yellow>大小：</yellow><white>%size% 方块</white>"
+private = "<yellow>私密：</yellow><white>%private%</white>"
+max-members = "<yellow>成员上限：</yellow><white>%max%</white>"
+created = "<yellow>创建日期：</yellow><white>%created%</white>"
+online-members = "<yellow>在线成员：</yellow><white>%online%/%total%</white>"
+location = "<yellow>位置：</yellow><white>X: %x% Z: %z%</white>"
+members-title = "<gold>=== 成员 ===</gold>"
+member-line = "%color%- [%role%] %name%"
+
+[island.kick]
+success = "已将该玩家踢出你的空岛。"
+failed = "无法踢出该玩家。如果问题持续，请联系管理员。"
+high-rank = "你不能踢出与自己同级或更高的玩家。"
+args-missing = "命令不完整：/skyllia kick <player>"
+
+[island.ban]
+args-missing = "命令不完整：/skyllia ban <player>"
+failed-player-in-island = "该玩家是空岛成员，无法封禁。"
+already-banned = "该玩家已被封禁。"
+success = "已将该玩家封禁出你的空岛。"
+
+[island.unban]
+not-enough-args = "你必须指定要解封的玩家。"
+player-not-banned = "该玩家未被封禁。"
+success = "已解封该玩家。"
+failed = "因未知原因无法解封该玩家。"
+
+[island.biome]
+args-missing = "命令不完整：/skyllia biome <biome>"
+only-on-island = "此命令只能在空岛上执行。"
+not-exist = "生物群系 %s 不存在。"
+permission-denied = "你没有权限使用此生物群系。"
+change-in-progress = "生物群系更换中。完成时会发送消息通知。"
+chunk-success = "你所在区块的生物群系更换完成！离开后返回可见变化。"
+island-success = "你空岛的生物群系更换完成！离开后返回可见变化。"
+
+[island.visit]
+args-missing = "你必须指定要访问的空岛名称：/skyllia visit <player>"
+no-island = "该玩家没有空岛。"
+island-private = "该空岛已关闭。"
+island-closed = "该空岛已关闭。"
+banned = "你已被该空岛封禁。"
+success = "你已被传送到 %player% 的空岛。"
+no-island-location = "未在该位置找到空岛。"
+
+[island.visit.set]
+success = "你的空岛访问点已设为当前位置。"
+
+[island.generic]
+unexpected-error = "发生错误。请联系管理员。"
+location-unsafe = "该位置不安全！无法传送。"
+command-in-progress = "命令正在执行中，请稍候。"
+
+[island.warp]
+create-success = "已创建你的传送点 %s。"
+args-missing = "你必须指定要注册的传送点名称：/skyllia <set/del>warp <warp_name>"
+delete-home-forbidden = "无法删除家园传送点。"
+reserved-name = "此传送点名称为保留名，无法使用。"
+delete-spawn-forbidden = "无法删除出生点传送点。请用 /skyllia setspawn 移动它。"
+delete-success = "已删除该传送点。"
+warp-not-exist = "请求的传送点不存在。"
+teleport-success = "你已被传送到请求的传送点。"
+
+[island.trust]
+success = "该玩家已被加入你的信任列表，直到下次重启或你移除他。注意：被信任的人拥有与空岛成员相同的权限。"
+args-missing = "命令不完整：/skyllia trust <player>"
+already-trusted = "该玩家已在你信任列表中。"
+
+[island.untrust]
+success = "该成员已不在你的信任列表中。"
+failed = "从信任列表移除该玩家时发生错误。"
+args-missing = "命令不完整：/skyllia untrust <player>"
+
+[island.admin]
+delete-args-missing = "缺少玩家名。"
+delete-no-confirm = "你需要在命令末尾加上 'confirm'。"
+transfer-args-missing = "命令不完整：/skylliadmin transfer <previousOwner> <newOwner> confirm"
+transfer-no-confirm = "你需要在命令末尾加上 'confirm'。"
+reload = "配置已重载。"
+size-args-missing = "命令不完整：/skylliadmin setsize <player/uuid> <number> confirm"
+size-success = "空岛大小已更改。"
+size-failed = "无法完成更改。"
+size-nan = "你提供的整数无效。"
+max-members-nan = "提供的数字不正确。"
+create-args-missing = "缺少玩家名。"
+create-already-has-island = "该玩家已拥有空岛。"
+player-not-found = "未找到玩家。"
+
+[island.admin.max-members]
+args-missing = "命令不完整：/skylliadmin setmaxmembers <player/uuid> <number> confirm"
+no-confirm = "你需要在命令末尾加上 'confirm'。"
+
+[island.admin.rank]
+promote-success = "玩家 %s 已被升级。"
+
+[island.admin.schematic]
+pos1-selected = "已选择位置 1。"
+pos2-selected = "已选择位置 2。"
+positions-not-set = "保存原理图前必须先设置两个位置。"
+save-success = "原理图已成功保存为 %schematic_name%。"
+save-failed = "保存原理图时发生错误。"
+args-missing = "命令不完整：/skylliadmin schematic <pos1|pos2|save> [name]"
+player-only = "此命令只能由玩家执行。"
+
+[island.admin.current]
+no-island-here = "你当前位置没有空岛。"
+no-permission = "你没有权限管理此空岛。"
+no-owner = "此空岛没有岛主。"
+info = "你当前在 %owner_name% 的空岛上（空岛 ID：%island_id%，岛主 ID：%owner_uuid%）。"
+
+[island.admin.height]
+args-missing = "命令不完整：/skylliadmin setheight <player> <min|max> <value> confirm"
+invalid-type = "无效类型。请用 'min' 或 'max'。"
+not-an-number = "值必须是整数。"
+no-world = "未找到空岛世界。"
+below-world-min = "min 值已在世界底部。请使用更大的值。"
+above-world-max = "max 值已在世界顶部。请使用更小的值。"
+success = "空岛建造高度已成功更新。"
+failed = "无法更新建造高度。请查看控制台获取更多信息。"
+
+[misc]
+unknown-command = "此子命令不存在。"
+
+# ───────────────────────────────────────────
+#  附加组件
+# ───────────────────────────────────────────
+
+[addons.bank]
+no-permissions = "<red>你没有权限使用此命令。"
+
+[addons.bank.display]
+title = "<gold>=== 空岛银行 ===</gold>"
+balance = "<yellow>空岛银行余额：</yellow><white>%amount%</white>"
+
+[addons.bank.player]
+player-only = "<red>此命令只能由玩家使用。"
+no-island = "<red>你还没有空岛。"
+unknown-command = "<yellow>未知命令。用法 /is bank [deposit|withdraw|balance|top]"
+# 排行榜
+no-permission-top = "<red>你没有权限查看银行排行榜。</red>"
+invalid-page = "<red>%input% 不是有效的页码。</red>"
+top-header = "<gold>=== 第 %page%/%max_page% 页，共 %total% 名玩家 ===</gold>"
+top-empty = "<red>暂无玩家上榜。</red>"
+top-line = "<yellow>#%rank%</yellow> <white>%owner%</white> <gray>-</gray> <white>%amount%</white>"
+top-self = "<yellow>#%rank%</yellow> <white>%owner%（你）</white> <gray>-</gray> <white>%amount%</white>"
+top-self-unranked = "<white>%owner%（你）</white> 因未知原因尚未上榜。"
+
+# 存款
+no-permission-deposit = "<red>你没有权限存款。"
+usage-deposit = "<yellow>用法：/is bank deposit <金额>"
+invalid-amount = "<red>金额无效。"
+invalid-amount-positive = "<red>金额必须为正数。"
+not-enough-money-player = "<red>你的钱不够。"
+success-deposit = "<green>已存入 %amount% 到你的空岛银行。"
+error-deposit-refunded = "<red>发生错误。你的钱已退还。"
+critical-error-deposit = "<red>严重错误：存款失败，退款也失败。请联系管理员。"
+error-withdraw-player = "<red>取款错误：%errorMessage%"
+# 取款
+no-permission-withdraw = "<red>你没有权限取款。"
+usage-withdraw = "<yellow>用法：/is bank withdraw <金额>"
+not-enough-money-island = "<red>你的空岛银行余额不足。"
+success-withdraw = "<green>已从你的空岛银行取出 %amount%。"
+error-deposit-player-refund-island = "<red>存入你的钱包时出错。空岛银行已退还。"
+critical-error-withdraw = "<red>严重错误：存入钱包和退还空岛都失败。请联系管理员。"
+error-withdraw-island = "<red>从空岛银行取款时发生错误。"
+# 余额
+no-permission-balance = "<red>你没有权限查看余额。"
+balance = "<green>你的空岛银行余额：%amount%"
+error-get-balance = "<red>无法获取你的空岛余额。"
+
+[addons.bank.admin]
+usage-root = "<yellow>用法：/skylliadmin bank <balance|deposit|withdraw|setbalance> <player> [amount]"
+unknown-command = "<yellow>未知命令。用法 /skylliadmin bank <balance|deposit|withdraw|setbalance> <player> [amount]"
+usage-balance = "<yellow>用法：/skylliadmin bank balance <player>"
+usage-deposit = "<yellow>用法：/skylliadmin bank deposit <player> <amount>"
+usage-withdraw = "<yellow>用法：/skylliadmin bank withdraw <player> <amount>"
+usage-set-balance = "<yellow>用法：/skylliadmin bank setbalance <player> <amount>"
+player-not-found = "<red>该玩家不存在或未找到。"
+player-not-island = "<red>该玩家没有空岛。"
+invalid-amount = "<red>金额无效。"
+invalid-amount-positive = "<red>金额无效。必须为正数。"
+invalid-amount-negative = "<red>金额不能为负数。"
+island-balance = "<green>%player_name% 的空岛余额：<yellow>%amount%。"
+island-error-balance = "<red>无法获取 %player_name% 的空岛余额。"
+deposit-success = "<green>已存入 %amount% 到 %player_name% 的空岛银行。"
+deposit-error = "<red>存入 %player_name% 的空岛银行时发生错误。"
+success-withdraw = "<green>已从 %player_name% 的空岛银行取出 %amount%。"
+error-withdraw = "<red>从 %player_name% 的空岛银行取款时发生错误。"
+set-balance-success = "<green>已将 %player_name% 的空岛银行余额设为 %amount%。"
+set-balance-error = "<red>设置 %player_name% 的空岛余额时发生错误。"
+
+[addons.ore.display]
+title = "<gold>=== 空岛矿石 ===</gold>"
+generator = "<yellow>矿石：</yellow><white>%ore%</white>"
+
+[addons.challenge.admin]
+no-permission = "<red>你没有权限使用此命令。"
+unknown-command = "<red>未知命令。用法 /skylliadmin challenge reload"
+reload-success = "<green>挑战已重载。"
+
+[addons.challenge.player]
+player-only = "<red>此命令只能由玩家使用。"
+no-island = "<red>你还没有空岛。"
+complete = "<green>你已完成挑战：%challenge_name%！</green>"
+notify-complete = "<green>恭喜！%player_name% 已为他的空岛完成挑战：%challenge_name%！</green>"
+
+[addons.challenge.display]
+title = "<gold>=== 空岛挑战 ===</gold>"
+progression = "<gray>进度：<white>%progression%/%max_times%</white>"
+requirements = "<gray>要求：</gray>"
+can-validate = "<green>点击验证</green>"
+cannot-validate = "<red>你不满足验证此挑战的要求。</red>"
+previous = "<!italic><gray>上一页</gray>"
+next = "<!italic><gray>下一页</gray>"
+cooldown = "<!italic>⏳ 剩余冷却：%time_left%。"
+
+[addons.challenge.display.requirement]
+count = "<!italic><gray>进度 %collected%/%required% %met%</gray>"
+
+[addons.challenge.requirement.potion]
+display = "<!italic><gray>- 拥有效果 %potion_name%（变体 %potion_data%）x %amount%。</gray>"
+
+[addons.challenge.requirement.player_consume]
+display = "<!italic><gray>- 消耗 %amount% 个 %material%。</gray>"
+
+[addons.challenge.requirement.kill_entity]
+display = "<!italic><gray>- 击杀 %amount% 个 %entity_type%。</gray>"
+
+[addons.challenge.requirement.fishing]
+display = "<!italic><gray>- 钓到 %amount% 个 %entity_type%。</gray>"
+
+[addons.challenge.requirement.enchant]
+display = "<!italic><gray>- 用 %enchantment_name%（等级 %enchantment_level%）附魔 %amount% 件物品。</gray>"
+
+[addons.challenge.requirement.block_break]
+display = "<!italic><gray>- 破坏 %amount% 个 %material%。</gray>"
+
+[addons.challenge.requirement.nearby_entity]
+display = "<!italic><gray>- 附近有 %amount% 个 %entity_type%（%radius% 米内）。</gray>"
+
+[addons.challenge.requirement.entity]
+display = "<!italic><gray>- 你的空岛上有 %amount% 个 %entity_type%。</gray>"
+display_radius = "<!italic><gray>- %radius% 米内有 %amount% 个 %entity_type%。</gray>"
+
+[addons.challenge.requirement.item]
+display = "<!italic><gray>- 拥有 %amount% 个 %item_name%。</gray>"
+
+[addons.challenge.requirement.vault]
+display = "<!italic><gray>- 账户中有 %amount%。</gray>"
+
+[addons.challenge.requirement.bank]
+display = "<!italic><gray>- 空岛账户中有 %amount%。</gray>"
+
+[addons.challenge.requirement.craft]
+display = "<!italic><gray>- 合成 %amount% 个 %item_name%。</gray>"
+
+[addons.challenge.level]
+complete = "<green>你已完成挑战等级：%level_name%！</green>"
+notify-complete = "<green>恭喜！%player_name% 的空岛已完成挑战等级：%level_name%！</green>"
+
+[addons.challenge.level.display]
+title = "<gold>=== 挑战等级 ===</gold>"
+progression = "<gray>挑战：<white>%done%/%required%</white>（共 %total%）"
+max-skip = "<!italic><gray>你最多可跳过 %max_skip% 个挑战。</gray>"
+completed = "<green>✔ 已完成</green>"
+unlocked = "<yellow>已解锁 — 进行中</yellow>"
+locked = "<red>🔒 已锁定</red>"
+
+[addons.challenge.reward.bank]
+success = "<green>完成挑战 %challenge_name% 后，你获得 %amount% 到空岛账户作为奖励。</green>"
+failed = "<red>将 %amount% 作为挑战 %challenge_name% 的奖励添加到空岛账户时发生错误。</red>"
+
+[addons.island-chest]
+no-permission = "<red>你没有权限打开空岛箱子。</red>"
+inventory-title = "<gold>%island_name% 的空岛箱子</gold>"
+open = "<green>你已打开空岛箱子。</green>"
+
+[addons.island-value]
+no-permissions = "<red>你没有权限使用此命令。"
+player-only-command = "<red>此命令只能由玩家使用。"
+not-on-island = "<red>你还没有空岛。"
+already-scanning = "<yellow>你的空岛已有扫描正在进行中。"
+scan-started = "<green>正在扫描你的空岛..."
+scan-completed = "<green>扫描完成！分数：<white>%score%</white> | 等级：<white>%level%</white>"
+scan-start-failed = "<red>启动扫描失败。"
+level-command-usage = "<yellow>用法：/is islevel <scan|top|rank>"
+invalid-page = "<red>%input% 不是有效的页码。"
+top-header = "<gold>=== 空岛排行榜 — 第 %page%/%max_page% 页（共 %total% 座空岛）===</gold>"
+top-empty = "<red>暂无空岛上榜。"
+top-line = "<yellow>#%rank%</yellow> <white>%owner%</white> <gray>-</gray> 等级 <aqua>%level%</aqua> <dark_gray>(%score% 分)</dark_gray>"
+rank-self = "<yellow>#%rank%</yellow> <white>%owner%（你）</white> <gray>-</gray> 等级 <aqua>%level%</aqua> <dark_gray>(%score% 分)</dark_gray>"
+rank-self-unranked = "<white>%owner%（你）</white> <gray>尚未上榜。</gray>"
+
+[addons.island-value.notifier]
+title = "<gold>⛏ 扫描中... <white>%done%<gray>/<white>%total% <yellow>(%percent%%)</yellow>"
+sub-title = "<gray>请稍候...</gray>"
+
+[addons.acid-island]
+water-contact = "<red>⚠ 酸水灼烧着你！</red>"
+rain-contact = "<dark_aqua>☔ 酸雨正在侵蚀你的皮肤！</dark_aqua>"
+
+[addons.chat]
+no-permission = "<red>你没有权限使用空岛聊天。</red>"
+enabled = "<green>已启用空岛聊天。</green>"
+disabled = "<gray>已禁用空岛聊天。</gray>"
+
+[addons.bank.permission.deposit]
+name = "银行：存款"
+description = "允许向空岛银行存款。"
+
+[addons.bank.permission.withdraw]
+name = "银行：取款"
+description = "允许从空岛银行取款。"
+
+[addons.chest.permission.open]
+name = "空岛箱子"
+description = "允许打开空岛共享箱子。"
+
+[island.permission.access]
+name = "访问：开放/关闭"
+description = "允许更改空岛访问状态（公开/私密）。"
+
+[island.permission.ban]
+name = "封禁玩家"
+description = "允许将玩家封禁出空岛。"
+
+[island.permission.delwarp]
+name = "删除传送点"
+description = "允许从空岛删除传送点。"
+
+[island.permission.demote]
+name = "降级成员"
+description = "允许降级空岛成员。"
+
+[island.permission.expel]
+name = "驱逐玩家"
+description = "允许驱逐当前在空岛上的玩家。"
+
+[island.permission.flag]
+name = "管理标记"
+description = "允许修改空岛标记。"
+
+[island.permission.invite]
+name = "邀请玩家"
+description = "允许发送和取消邀请。"
+
+[island.permission.kick]
+name = "踢出成员"
+description = "允许从空岛移除成员。"
+
+[island.permission.manage]
+name = "管理权限"
+description = "允许修改空岛角色权限。"
+
+[island.permission.promote]
+name = "升级成员"
+description = "允许提升成员等级。"
+
+[island.permission.set_biome]
+name = "更改生物群系"
+description = "允许修改空岛或区块生物群系。"
+
+[island.permission.set_home]
+name = "设置家园"
+description = "允许移动空岛主出生点。"
+
+[island.permission.command.set_visit]
+name = "设置访问点"
+description = "允许设置空岛访客到达点。"
+
+[island.permission.set_warp]
+name = "创建传送点"
+description = "允许在空岛上创建或编辑传送点。"
+
+[island.permission.manage_trust]
+name = "管理信任"
+description = "允许添加或移除信任玩家。"
+
+[island.permission.unban]
+name = "解封玩家"
+description = "允许解除玩家在空岛的封禁。"
+
+[island.permission.visit_bypass]
+name = "访问（绕过）"
+description = "允许访问私密空岛或无视封禁访问。"
+
+[island.permission.block_break]
+name = "破坏方块"
+description = "允许在空岛破坏方块。"
+
+[island.permission.block_interact]
+name = "与方块交互"
+description = "允许使用拉杆、按钮、门等。"
+
+[island.permission.block_physical]
+name = "物理交互"
+description = "允许如压力板等物理交互。"
+
+[island.permission.block_place]
+name = "放置方块"
+description = "允许在空岛放置方块。"
+
+[island.permission.block_use_bucket]
+name = "使用桶"
+description = "允许在空岛装满或倒空桶。"
+
+[island.permission.decor_hanging_break]
+name = "移除装饰"
+description = "允许移除物品展示框和画。"
+
+[island.permission.decor_hanging_place]
+name = "放置装饰"
+description = "允许放置物品展示框和画。"
+
+[island.permission.entity_breed]
+name = "繁殖动物"
+description = "允许在空岛繁殖动物。"
+
+[island.permission.entity_damage]
+name = "攻击实体"
+description = "允许对空岛上的实体造成伤害。"
+
+[island.permission.entity_interact]
+name = "与实体交互"
+description = "允许与实体交互（村民、动物等）。"
+
+[island.permission.inventory_modify]
+name = "修改物品栏"
+description = "允许在容器内移动物品。"
+
+[island.permission.inventory_open]
+name = "打开容器"
+description = "允许打开箱子和其他容器。"
+
+[island.permission.item_drop]
+name = "丢弃物品"
+description = "允许在空岛地上丢弃物品。"
+
+[island.permission.item_pickup]
+name = "拾取物品"
+description = "允许在空岛地上拾取物品。"
+
+[island.permission.player_teleport]
+name = "传送到空岛"
+description = "允许传送到私密空岛。"
+
+[island.permission.convert_obsidian_to_lava]
+name = "将黑曜石转为岩浆"
+description = "允许用空桶右键黑曜石将其转为岩浆。"
+
+# ── 标记：环境 ───────────────────────────────────────────────────
+
+[island.flag.allow_explosions]
+name = "爆炸"
+description = "控制爆炸对方块和实体造成的伤害。"
+
+[island.flag.allow_fire]
+name = "火焰"
+description = "控制火焰点燃和方块燃烧。"
+
+[island.flag.allow_fluids]
+name = "流体流动"
+description = "控制水和岩浆的流动。"
+
+[island.flag.allow_pistons]
+name = "活塞"
+description = "控制活塞的伸缩。"
+
+# ── 标记：生物破坏 ─────────────────────────────────────────────────────
+
+[island.flag.allow_mob_grief]
+name = "生物破坏（全部）"
+description = "控制所有生物造成的方块修改。"
+
+[island.flag.allow_creeper_grief]
+name = "苦力怕爆炸"
+description = "控制苦力怕爆炸造成的方块破坏。"
+
+[island.flag.allow_enderman_grief]
+name = "末影人破坏"
+description = "控制末影人拾取方块。"
+
+[island.flag.allow_ghast_grief]
+name = "恶魂火球"
+description = "控制恶魂火球爆炸造成的方块破坏。"
+
+[island.flag.allow_tnt_grief]
+name = "TNT 爆炸"
+description = "控制 TNT 和矿车 TNT 造成的方块破坏。"
+
+[island.flag.allow_wither_grief]
+name = "凋零破坏"
+description = "控制凋零 Boss 造成的方块破坏。"
+
+[island.flag.allow_wither_skull_grief]
+name = "凋零之首爆炸"
+description = "控制凋零之首爆炸造成的方块破坏。"
+
+# ── 标记：Boss 生成 ─────────────────────────────────────────────────
+
+[island.flag.spawn_boss_all]
+name = "Boss（全部）"
+description = "控制所有 Boss 的生成。"
+
+[island.flag.spawn_boss_wither]
+name = "凋零"
+description = "控制凋零生成。"
+
+[island.flag.spawn_boss_ender_dragon]
+name = "末影龙"
+description = "控制末影龙生成。"
+
+# ── 标记：邻近敌对生物生成 ─────────────────────────────────────────────
+
+[island.flag.spawn_hostile_adjacent_all]
+name = "邻近敌对生物（全部）"
+description = "控制所有邻近敌对生物的生成。"
+
+[island.flag.spawn_hostile_adjacent_skeleton_horse]
+name = "骷髅马"
+description = "控制骷髅马生成。"
+
+# ── 标记：敌对生物生成 ───────────────────────────────────────────────
+
+[island.flag.spawn_hostile_all]
+name = "敌对生物（全部）"
+description = "控制所有敌对生物的生成。"
+
+[island.flag.spawn_hostile_blaze]
+name = "烈焰人"
+description = "控制烈焰人生成。"
+
+[island.flag.spawn_hostile_bogged]
+name = "沼骸"
+description = "控制沼骸生成。"
+
+[island.flag.spawn_hostile_breeze]
+name = "旋风"
+description = "控制旋风生成。"
+
+[island.flag.spawn_hostile_creaker]
+name = "嘎枝"
+description = "控制嘎枝生成。"
+
+[island.flag.spawn_hostile_creeper]
+name = "苦力怕"
+description = "控制苦力怕生成。"
+
+[island.flag.spawn_hostile_elder_guardian]
+name = "远古守卫者"
+description = "控制远古守卫者生成。"
+
+[island.flag.spawn_hostile_endermite]
+name = "末影螨"
+description = "控制末影螨生成。"
+
+[island.flag.spawn_hostile_evoker]
+name = "唤魔者"
+description = "控制唤魔者生成。"
+
+[island.flag.spawn_hostile_ghast]
+name = "恶魂"
+description = "控制恶魂生成。"
+
+[island.flag.spawn_hostile_guardian]
+name = "守卫者"
+description = "控制守卫者生成。"
+
+[island.flag.spawn_hostile_hoglin]
+name = "疣猪兽"
+description = "控制疣猪兽生成。"
+
+[island.flag.spawn_hostile_husk]
+name = "尸壳"
+description = "控制尸壳生成。"
+
+[island.flag.spawn_hostile_magma_cube]
+name = "岩浆怪"
+description = "控制岩浆怪生成。"
+
+[island.flag.spawn_hostile_parched]
+name = "焦干"
+description = "控制焦干生成。"
+
+[island.flag.spawn_hostile_phantom]
+name = "幻翼"
+description = "控制幻翼生成。"
+
+[island.flag.spawn_hostile_piglin_brute]
+name = "猪灵蛮兵"
+description = "控制猪灵蛮兵生成。"
+
+[island.flag.spawn_hostile_pillager]
+name = "掠夺者"
+description = "控制掠夺者生成。"
+
+[island.flag.spawn_hostile_ravager]
+name = "劫掠兽"
+description = "控制劫掠兽生成。"
+
+[island.flag.spawn_hostile_shulker]
+name = "潜影贝"
+description = "控制潜影贝生成。"
+
+[island.flag.spawn_hostile_silverfish]
+name = "蠹虫"
+description = "控制蠹虫生成。"
+
+[island.flag.spawn_hostile_skeleton]
+name = "骷髅"
+description = "控制骷髅生成。"
+
+[island.flag.spawn_hostile_slime]
+name = "史莱姆"
+description = "控制史莱姆生成。"
+
+[island.flag.spawn_hostile_stray]
+name = "流髑"
+description = "控制流髑生成。"
+
+[island.flag.spawn_hostile_vex]
+name = "恼鬼"
+description = "控制恼鬼生成。"
+
+[island.flag.spawn_hostile_vindicator]
+name = "卫道士"
+description = "控制卫道士生成。"
+
+[island.flag.spawn_hostile_warden]
+name = "监守者"
+description = "控制监守者生成。"
+
+[island.flag.spawn_hostile_witch]
+name = "女巫"
+description = "控制女巫生成。"
+
+[island.flag.spawn_hostile_wither_skeleton]
+name = "凋零骷髅"
+description = "控制凋零骷髅生成。"
+
+[island.flag.spawn_hostile_zoglin]
+name = "僵尸疣猪兽"
+description = "控制僵尸疣猪兽生成。"
+
+[island.flag.spawn_hostile_zombie]
+name = "僵尸"
+description = "控制僵尸生成。"
+
+[island.flag.spawn_hostile_zombie_villager]
+name = "僵尸村民"
+description = "控制僵尸村民生成。"
+
+# ── 标记：中立生物生成 ───────────────────────────────────────────────
+
+[island.flag.spawn_neutral_all]
+name = "中立生物（全部）"
+description = "控制所有中立生物的生成。"
+
+[island.flag.spawn_neutral_bee]
+name = "蜜蜂"
+description = "控制蜜蜂生成。"
+
+[island.flag.spawn_neutral_cave_spider]
+name = "洞穴蜘蛛"
+description = "控制洞穴蜘蛛生成。"
+
+[island.flag.spawn_neutral_dolphin]
+name = "海豚"
+description = "控制海豚生成。"
+
+[island.flag.spawn_neutral_drowned]
+name = "溺尸"
+description = "控制溺尸生成。"
+
+[island.flag.spawn_neutral_enderman]
+name = "末影人"
+description = "控制末影人生成。"
+
+[island.flag.spawn_neutral_fox]
+name = "狐狸"
+description = "控制狐狸生成。"
+
+[island.flag.spawn_neutral_goat]
+name = "山羊"
+description = "控制山羊生成。"
+
+[island.flag.spawn_neutral_iron_golem]
+name = "铁傀儡"
+description = "控制铁傀儡生成。"
+
+[island.flag.spawn_neutral_llama]
+name = "羊驼"
+description = "控制羊驼生成。"
+
+[island.flag.spawn_neutral_panda]
+name = "熊猫"
+description = "控制熊猫生成。"
+
+[island.flag.spawn_neutral_piglin]
+name = "猪灵"
+description = "控制猪灵生成。"
+
+[island.flag.spawn_neutral_polar_bear]
+name = "北极熊"
+description = "控制北极熊生成。"
+
+[island.flag.spawn_neutral_pufferfish]
+name = "河豚"
+description = "控制河豚生成。"
+
+[island.flag.spawn_neutral_spider]
+name = "蜘蛛"
+description = "控制蜘蛛生成。"
+
+[island.flag.spawn_neutral_trader_llama]
+name = "行商羊驼"
+description = "控制行商羊驼生成。"
+
+[island.flag.spawn_neutral_wolf]
+name = "狼"
+description = "控制狼生成。"
+
+[island.flag.spawn_neutral_zombified_piglin]
+name = "僵尸猪灵"
+description = "控制僵尸猪灵生成。"
+
+# ── 标记：被动生物生成 ───────────────────────────────────────────────
+
+[island.flag.spawn_passive_all]
+name = "被动生物（全部）"
+description = "控制所有被动生物的生成。"
+
+[island.flag.spawn_passive_allay]
+name = "悦灵"
+description = "控制悦灵生成。"
+
+[island.flag.spawn_passive_armadillo]
+name = "犰狳"
+description = "控制犰狳生成。"
+
+[island.flag.spawn_passive_axolotl]
+name = "美西螈"
+description = "控制美西螈生成。"
+
+[island.flag.spawn_passive_bat]
+name = "蝙蝠"
+description = "控制蝙蝠生成。"
+
+[island.flag.spawn_passive_camel]
+name = "骆驼"
+description = "控制骆驼生成。"
+
+[island.flag.spawn_passive_cat]
+name = "猫"
+description = "控制猫生成。"
+
+[island.flag.spawn_passive_chicken]
+name = "鸡"
+description = "控制鸡生成。"
+
+[island.flag.spawn_passive_cod]
+name = "鳕鱼"
+description = "控制鳕鱼生成。"
+
+[island.flag.spawn_passive_cow]
+name = "牛"
+description = "控制牛生成。"
+
+[island.flag.spawn_passive_donkey]
+name = "驴"
+description = "控制驴生成。"
+
+[island.flag.spawn_passive_frog]
+name = "青蛙"
+description = "控制青蛙生成。"
+
+[island.flag.spawn_passive_glow_squid]
+name = "发光鱿鱼"
+description = "控制发光鱿鱼生成。"
+
+[island.flag.spawn_passive_horse]
+name = "马"
+description = "控制马生成。"
+
+[island.flag.spawn_passive_mooshroom]
+name = "哞菇"
+description = "控制哞菇生成。"
+
+[island.flag.spawn_passive_mule]
+name = "骡"
+description = "控制骡生成。"
+
+[island.flag.spawn_passive_ocelot]
+name = "豹猫"
+description = "控制豹猫生成。"
+
+[island.flag.spawn_passive_parrot]
+name = "鹦鹉"
+description = "控制鹦鹉生成。"
+
+[island.flag.spawn_passive_pig]
+name = "猪"
+description = "控制猪生成。"
+
+[island.flag.spawn_passive_rabbit]
+name = "兔子"
+description = "控制兔子生成。"
+
+[island.flag.spawn_passive_salmon]
+name = "鲑鱼"
+description = "控制鲑鱼生成。"
+
+[island.flag.spawn_passive_sheep]
+name = "羊"
+description = "控制羊生成。"
+
+[island.flag.spawn_passive_sniffer]
+name = "嗅探兽"
+description = "控制嗅探兽生成。"
+
+[island.flag.spawn_passive_snow_golem]
+name = "雪傀儡"
+description = "控制雪傀儡生成。"
+
+[island.flag.spawn_passive_squid]
+name = "鱿鱼"
+description = "控制鱿鱼生成。"
+
+[island.flag.spawn_passive_strider]
+name = "炽足兽"
+description = "控制炽足兽生成。"
+
+[island.flag.spawn_passive_tadpole]
+name = "蝌蚪"
+description = "控制蝌蚪生成。"
+
+[island.flag.spawn_passive_tropical_fish]
+name = "热带鱼"
+description = "控制热带鱼生成。"
+
+[island.flag.spawn_passive_turtle]
+name = "海龟"
+description = "控制海龟生成。"
+
+[island.flag.spawn_passive_villager]
+name = "村民"
+description = "控制村民生成。"
+
+[island.flag.spawn_passive_wandering_villager]
+name = "流浪商人"
+description = "控制流浪商人生成。"
+
+# ── 标记：其他实体 ─────────────────────────────────────────────────
+
+[island.flag.spawn_other_all]
+name = "其他实体（全部）"
+description = "控制所有未分类实体的生成。"
+
+[island.flag.spawn_other_armor_stand]
+name = "盔甲架"
+description = "控制盔甲架生成。"
+
+[island.flag.spawn_other_giant]
+name = "巨人僵尸"
+description = "控制巨人生成。"
+
+[island.flag.spawn_other_illusioner]
+name = "幻术师"
+description = "控制幻术师生成。"
+
+[debug]
+permission-has = "%player% 拥有 %permission% 权限"
+permission-missing = "%player% 没有 %permission% 权限"
+
+[addons.backup.player]
+player-only = "<red>此命令只能由玩家使用。"
+disabled = "<red>本服已禁用玩家备份。"
+cooldown = "<red>请等待 <yellow>%minutes% 分 %seconds% 秒</yellow> 后再请求下一次备份。"
+started = "<green>正在备份你的空岛，请稍候..."
+success = "<green>备份已创建：<white>%file%"
+uploading = "<gray>正在将备份上传到远程服务器..."
+failed = "<red>备份失败。请联系管理员。"
+no-permission = "<red>你没有权限备份你的空岛。"
+
+[addons.backup.admin]
+usage = "<yellow>用法：/isadmin backup <player|all>"
+started = "<green>正在为 <white>%player%</white> 的空岛开始备份..."
+success = "<green>已为 <white>%player%</white> 创建备份：<white>%file%"
+failed = "<red>备份 <white>%player%</white> 的空岛失败。"
+all-started = "<green>正在备份所有空岛，可能需要一些时间..."
+all-done = "<green>完成：已备份 <white>%count%</white> 座空岛。"
+
+[addons.skylliaextra.player.setdescription]
+player-only = "<red>此命令只能由玩家执行。"
+no-island = "<red>你还没有空岛！"
+no-permission = "<red>你没有权限使用此命令。"
+permission-denied = "<red>你的空岛角色不允许更改描述。"
+usage = "<yellow>用法：<white>/is setdescription <描述> <yellow>| 用 <white>reset <yellow>清除。"
+reset = "<green>空岛描述已重置。"
+success = "<green>空岛描述已设为：<white>%description%"
+failed = "<red>保存空岛描述失败。请重试。"
+
+[addons.skylliaextra.player.setname]
+player-only = "<red>此命令只能由玩家执行。"
+no-island = "<red>你还没有空岛！"
+no-permission = "<red>你没有权限使用此命令。"
+permission-denied = "<red>你的空岛角色不允许更改名称。"
+usage = "<yellow>用法：<white>/is setname <名称> <yellow>| 用 <white>reset <yellow>清除。"
+reset = "<green>空岛名称已重置。"
+success = "<green>空岛名称已设为：<white>%name%"
+failed = "<red>保存空岛名称失败。请重试。"
+
+[addons.skylliaextra.admin.setname]
+no-permission = "<red>你没有权限使用此命令。"
+usage = "<yellow>用法：<white>/isadmin setname <player> <名称> <yellow>| 用 <white>reset <yellow>清除。"
+player-not-found = "<red>未找到玩家 <white>%player%</white>。"
+no-island = "<red>该玩家没有空岛。"
+reset = "<green><white>%player%</white> 的空岛名称已重置。"
+success = "<green><white>%player%</white> 的空岛名称已设为：<white>%name%"
+failed = "<red>保存空岛名称失败。"
+
+[addons.skylliaextra.admin.setdescription]
+no-permission = "<red>你没有权限使用此命令。"
+usage = "<yellow>用法：<white>/isadmin setdescription <player> <描述> <yellow>| 用 <white>reset <yellow>清除。"
+player-not-found = "<red>未找到玩家 <white>%player%</white>。"
+no-island = "<red>该玩家没有空岛。"
+reset = "<green><white>%player%</white> 的空岛描述已重置。"
+success = "<green><white>%player%</white> 的空岛描述已设为：<white>%description%"
+failed = "<red>保存空岛描述失败。"
+
+[addons.skylliaextra.display]
+title = "<gray>--- 空岛扩展信息 ---</gray>"
+name = "<aqua>名称：</aqua> <white>%name%</white>"
+description = "<aqua>描述：</aqua> <white>%description%</white>"
+
+[update-checker]
+update-available-one = "<gold>Skyllia 已 <red>落后 1 个版本</red>！最新版：<green>%version%</green>。在此下载：<aqua><click:open_url:'%url%'>%url%</click></aqua>"
+update-available-many = "<gold>Skyllia 已 <red>落后 %behind% 个版本</red>！最新版：<green>%version%</green>。在此下载：<aqua><click:open_url:'%url%'>%url%</click></aqua>"
+
+[hook.quickshop.create]
+owner-only = "<red>只有空岛岛主可以在此创建商店。"
+permission-denied = "<red>你的空岛角色不允许在此创建商店。"
+
+[hook.quickshop.purchase]
+island-disabled = "<red>此空岛当前已禁用。"
+
+[island.permission.quickshop.shop.create]
+name = "创建 QuickShop"
+description = "允许在空岛上创建 QuickShop。"
+[island.spawn]
+block-protected = "你不能破坏空岛出生点方块。"
+
+[island.spawn.set]
+success = "已设置你的空岛出生点。"
+
+[island.permission.command.set_spawn]
+name = "设置出生点"
+description = "允许移动空岛出生点。"

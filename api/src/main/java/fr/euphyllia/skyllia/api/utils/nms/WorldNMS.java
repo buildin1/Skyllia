@@ -10,6 +10,7 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.WorldCreator;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Player;
 import org.bukkit.util.BoundingBox;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -105,5 +106,25 @@ public abstract class WorldNMS {
         return List.of();
     }
 
-    ;
+    /**
+     * 反射修改 MinecraftServer.levels，将原版维度映射到空岛世界。
+     * 调用后 NetherPortalBlock 的维度解析会使用空岛世界。
+     *
+     * @param overworld 空岛主世界
+     * @param nether    空岛地狱（可 null）
+     * @param end       空岛末地（可 null）
+     */
+    public void remapPortalDimensions(@Nullable World overworld, @Nullable World nether, @Nullable World end) {
+    }
+
+    /**
+     * 玩家进入末地门时调用，修改 {@code ServerLevel.END_SPAWN_POINT}
+     * 为玩家当前坐标，使后续异步末地门路径使用 1:1 坐标传送。
+     * <p>
+     * 默认实现为空，由各 NMS 版本覆盖。
+     *
+     * @param player 进入末地门的玩家
+     */
+    public void adjustEndPortalSpawnPoint(@NotNull Player player) {
+    }
 }

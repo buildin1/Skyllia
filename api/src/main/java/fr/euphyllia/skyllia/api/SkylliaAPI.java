@@ -19,6 +19,7 @@ import fr.euphyllia.skyllia.api.skyblock.model.Position;
 import fr.euphyllia.skyllia.api.skyblock.model.RoleType;
 import fr.euphyllia.skyllia.api.utils.nms.BiomesImpl;
 import fr.euphyllia.skyllia.api.utils.nms.MobsSpawnImpl;
+import fr.euphyllia.skyllia.api.utils.nms.PlayerNMS;
 import fr.euphyllia.skyllia.api.utils.nms.WorldNMS;
 import io.papermc.paper.ServerBuildInfo;
 import net.kyori.adventure.key.Key;
@@ -273,6 +274,14 @@ public final class SkylliaAPI {
     @ApiStatus.Internal
     public static WorldNMS getWorldNMS() {
         return implementation.getWorldNMS();
+    }
+
+    /**
+     * Do not use. Reserved for Skyllia internal NMS bridges.
+     */
+    @ApiStatus.Internal
+    public static PlayerNMS getPlayerNMS() {
+        return implementation.getPlayerNMS();
     }
 
     @ApiStatus.Internal

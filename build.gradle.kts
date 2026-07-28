@@ -131,6 +131,15 @@ tasks {
     runServer {
         minecraftVersion("1.21.8")
     }
+
+    // 让 shadowJar 直接输出 Skyllia-<version>.jar（不带 -all 后缀），
+    // 并禁用根项目空 jar，避免产生 0.3 KB 的占位 jar
+    shadowJar {
+        archiveClassifier.set("")
+    }
+    jar {
+        enabled = false
+    }
 }
 
 modrinth {

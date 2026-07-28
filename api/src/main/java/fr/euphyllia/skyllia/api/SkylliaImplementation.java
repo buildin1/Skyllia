@@ -19,6 +19,7 @@ import fr.euphyllia.skyllia.api.skyblock.model.Position;
 import fr.euphyllia.skyllia.api.skyblock.model.RoleType;
 import fr.euphyllia.skyllia.api.utils.nms.BiomesImpl;
 import fr.euphyllia.skyllia.api.utils.nms.MobsSpawnImpl;
+import fr.euphyllia.skyllia.api.utils.nms.PlayerNMS;
 import fr.euphyllia.skyllia.api.utils.nms.WorldNMS;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
@@ -199,6 +200,12 @@ public interface SkylliaImplementation {
      */
     @ApiStatus.Internal
     WorldNMS getWorldNMS();
+
+    /**
+     * Do not use. Reserved for Skyllia internal NMS bridges.
+     */
+    @ApiStatus.Internal
+    PlayerNMS getPlayerNMS();
 
     /**
      * Do not use. Reserved for Skyllia internal NMS bridges.

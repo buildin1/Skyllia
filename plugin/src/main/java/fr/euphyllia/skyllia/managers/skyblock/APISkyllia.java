@@ -20,6 +20,7 @@ import fr.euphyllia.skyllia.api.skyblock.Players;
 import fr.euphyllia.skyllia.api.skyblock.model.IslandSettings;
 import fr.euphyllia.skyllia.api.utils.nms.BiomesImpl;
 import fr.euphyllia.skyllia.api.utils.nms.MobsSpawnImpl;
+import fr.euphyllia.skyllia.api.utils.nms.PlayerNMS;
 import fr.euphyllia.skyllia.api.utils.nms.WorldNMS;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
 import fr.euphyllia.skyllia.utils.WorldUtils;
@@ -199,6 +200,11 @@ public final class APISkyllia implements SkylliaImplementation {
     @Override
     public WorldNMS getWorldNMS() {
         return this.interneAPI.getWorldNMS();
+    }
+
+    @Override
+    public PlayerNMS getPlayerNMS() {
+        return this.interneAPI.getPlayerNMS();
     }
 
     @Override

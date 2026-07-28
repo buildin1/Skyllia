@@ -8,6 +8,7 @@ import fr.euphyllia.skyllia.api.skyblock.Island;
 import fr.euphyllia.skyllia.api.skyblock.Players;
 import fr.euphyllia.skyllia.api.skyblock.enums.RemovalCause;
 import fr.euphyllia.skyllia.api.skyblock.model.RoleType;
+import fr.euphyllia.skyllia.api.skyblock.model.WarpIsland;
 import fr.euphyllia.skyllia.api.coordinate.RegionCoordinate;
 import fr.euphyllia.skyllia.api.utils.helper.RegionHelper;
 import fr.euphyllia.skyllia.cache.commands.CacheCommands;
@@ -28,7 +29,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerTeleportEvent;
 
 import java.util.UUID;
 
@@ -55,7 +55,6 @@ public class JoinEvent implements Listener {
         final Player player = event.getPlayer();
         final UUID playerId = player.getUniqueId();
         final String worldName = player.getWorld().getName();
-        // 在事件线程中捕获坐标，避免跨线程读取 location
         final int joinChunkX = player.getLocation().getBlockX() >> 4;
         final int joinChunkZ = player.getLocation().getBlockZ() >> 4;
 
@@ -78,22 +77,30 @@ public class JoinEvent implements Listener {
                     }
                 }
 
-                // ── 登录安全检查：如果玩家当前位于不应访问的空岛上，强制传送 ──
+                // 登录安全检查：如果玩家当前位于不应访问的空岛上，强制传送
                 if (WorldUtils.isWorldSkyblock(worldName)) {
                     Island currentIsland = SkylliaAPI.getIslandByChunk(joinChunkX, joinChunkZ);
                     if (currentIsland != null && !isPlayerAllowedOnIsland(player, currentIsland)) {
                         teleportToSafeLocation(player, island);
-                        return;  // 跳过后续的 shouldTeleportSpawn
+                        return;
                     }
                 }
 
-                boolean shouldTeleportSpawn = island == null ||
-                        (ConfigLoader.playerManager.isTeleportOwnIslandOnJoin() && !WorldUtils.isWorldSkyblock(worldName));
-
-                if (shouldTeleportSpawn) {
-                    if (ConfigLoader.playerManager.isTeleportSpawnIfNoIsland()) {
-                        PlayerUtils.teleportPlayerSpawn(player);
+                // 核心改动：只要玩家不在空岛世界，且有岛屿或无岛屿都强制传送到正确位置
+                if (!WorldUtils.isWorldSkyblock(worldName)) {
+                    System.out.println("[Skyllia-加入] 玩家 " + player.getName() + " 在非空岛世界 " + worldName + "，强制传送");
+                    if (island != null) {
+                        teleportToIslandHome(player, island);
+                    } else {
+                        teleportToSkyWorldSpawn(player);
                     }
+                    return;
+                }
+
+                // 在空岛世界但没有岛屿 -> 传送到出生点
+                if (island == null) {
+                    teleportToSkyWorldSpawn(player);
+                    return;
                 }
 
                 checkAndClearPlayerStuffOnJoin(player);
@@ -149,28 +156,54 @@ public class JoinEvent implements Listener {
         return true;
     }
 
+    private void teleportToIslandHome(Player player, Island island) {
+        WarpIsland homeWarp = island.getWarpByName("home");
+        World islandWorld = WorldUtils.getWorldConfigs().getFirst().getWorld();
+
+        Location loc;
+        if (island.hasCustomSpawn()) {
+            loc = island.getSpawnLocation(islandWorld);
+        } else if (homeWarp != null && homeWarp.location() != null) {
+            loc = homeWarp.location().clone();
+        } else {
+            loc = island.getSpawnLocation(islandWorld);
+        }
+        loc.add(0.5, 0.1, 0.5);
+
+        System.out.println("[Skyllia-加入] 传送玩家 " + player.getName() + " 到岛屿: " + loc);
+        // NMS 层面传送（绕过 Bukkit 事件）
+        SkylliaAPI.getPlayerNMS().teleport(player, loc);
+    }
+
+    private void teleportToSkyWorldSpawn(Player player) {
+        World islandWorld = WorldUtils.getWorldConfigs().getFirst().getWorld();
+        if (islandWorld == null) return;
+        Location spawn = new Location(islandWorld, 256.5, 64, 256.5);
+        System.out.println("[Skyllia-加入] 传送新玩家 " + player.getName() + " 到空岛出生点: " + spawn);
+        // NMS 层面传送（绕过 Bukkit 事件）
+        SkylliaAPI.getPlayerNMS().teleport(player, spawn);
+    }
+
     /**
-     * 将玩家传送到安全位置：若有空岛则传回自己空岛，否则传送到主世界 (256.5, 64, 256.5)。
+     * 将玩家传送到安全位置：若有空岛则传回自己空岛，否则传送到空岛主世界。
      */
     private void teleportToSafeLocation(Player player, Island ownIsland) {
         if (ownIsland != null) {
-            // 传送到玩家自己的空岛中心
             player.getScheduler().run(api.getPlugin(), _ -> {
                 if (!player.isOnline()) return;
                 World world = player.getWorld();
                 RegionCoordinate region = ownIsland.getRegionCoordinate();
                 Location center = RegionHelper.getCenterRegion(world, region.x(), region.z());
                 center.setY(64);
-                player.teleportAsync(center, PlayerTeleportEvent.TeleportCause.PLUGIN);
+                SkylliaAPI.getPlayerNMS().teleport(player, center);
             }, null);
         } else {
-            // 没有空岛 → 传送到主世界固定坐标
             player.getScheduler().run(api.getPlugin(), _ -> {
                 if (!player.isOnline()) return;
-                World world = Bukkit.getWorld("world");
+                World world = WorldUtils.getWorldConfigs().getFirst().getWorld();
                 if (world != null) {
                     Location spawn = new Location(world, 256.5, 64, 256.5);
-                    player.teleportAsync(spawn, PlayerTeleportEvent.TeleportCause.PLUGIN);
+                    SkylliaAPI.getPlayerNMS().teleport(player, spawn);
                 }
             }, null);
         }

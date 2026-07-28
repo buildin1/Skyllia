@@ -1,0 +1,19 @@
+name: SkylliaUpgrade
+main: fr.euphyllia.skylliaupgrade.SkylliaUpgrade
+version: ${version}
+api-version: 1.20.6
+folia-supported: true
+description: "Island upgrade system: island score + material turn-in + territory tokens expand your island's border and member cap."
+authors:
+  - Euphyllia
+
+dependencies:
+  server:
+    Skyllia:
+      load: BEFORE
+      required: true
+      join-classpath: true
+    SkylliaIslandLevel:
+      load: BEFORE
+      required: true
+      join-classpath: true

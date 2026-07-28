@@ -346,6 +346,7 @@ public final class ChallengeYamlLoader {
                     String displayName = null;
                     List<String> lore = new ArrayList<>();
                     Map<Enchantment, Integer> enchantments = new LinkedHashMap<>();
+                    int customModelData = -1;
 
                     // 合并剩余 token（方便按关键字切分）
                     StringBuilder rest = new StringBuilder();
@@ -371,14 +372,19 @@ public final class ChallengeYamlLoader {
                         if (remainder.startsWith("NAME:")) {
                             int end = remainder.indexOf(" LORE:");
                             int end2 = remainder.indexOf(" ENCHANT:");
+                            int end3 = remainder.indexOf(" MODEL:");
                             int nameEnd = remainder.length();
                             if (end != -1) nameEnd = end;
                             if (end2 != -1 && end2 < nameEnd) nameEnd = end2;
+                            if (end3 != -1 && end3 < nameEnd) nameEnd = end3;
                             displayName = remainder.substring("NAME:".length(), nameEnd).trim();
                             remainder = remainder.substring(nameEnd).trim();
                         } else if (remainder.startsWith("LORE:")) {
                             int end = remainder.indexOf(" ENCHANT:");
-                            int loreEnd = (end != -1) ? end : remainder.length();
+                            int end3 = remainder.indexOf(" MODEL:");
+                            int loreEnd = remainder.length();
+                            if (end != -1) loreEnd = end;
+                            if (end3 != -1 && end3 < loreEnd) loreEnd = end3;
                             String loreRaw = remainder.substring("LORE:".length(), loreEnd).trim();
                             // 分号分割各行
                             String[] loreLines = loreRaw.split(";");
@@ -386,6 +392,15 @@ public final class ChallengeYamlLoader {
                                 if (!l.isEmpty()) lore.add(l.trim());
                             }
                             remainder = remainder.substring(loreEnd).trim();
+                        } else if (remainder.startsWith("MODEL:")) {
+                            int end = remainder.indexOf(" ENCHANT:");
+                            int modelEnd = (end != -1) ? end : remainder.length();
+                            String modelRaw = remainder.substring("MODEL:".length(), modelEnd).trim();
+                            try {
+                                customModelData = Integer.parseInt(modelRaw);
+                            } catch (NumberFormatException ignored) {
+                            }
+                            remainder = remainder.substring(modelEnd).trim();
                         } else if (remainder.startsWith("ENCHANT:")) {
                             String enchRaw = remainder.substring("ENCHANT:".length()).trim();
                             // 分号分割成数组，每两个一组
@@ -404,7 +419,7 @@ public final class ChallengeYamlLoader {
                         }
                     }
 
-                    list.add(new ItemReward(material, count, displayName, lore, enchantments));
+                    list.add(new ItemReward(material, count, displayName, lore, enchantments, customModelData));
                 } else if (head.startsWith("CMD:")) {
                     String cmd = line.substring("CMD:".length()).trim();
                     list.add(new CommandReward(cmd));

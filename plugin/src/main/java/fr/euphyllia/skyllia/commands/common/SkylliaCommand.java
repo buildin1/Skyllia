@@ -8,6 +8,7 @@ import fr.euphyllia.skyllia.api.commands.SubCommandRegistry;
 import fr.euphyllia.skyllia.api.skyblock.Island;
 import fr.euphyllia.skyllia.commands.common.subcommands.*;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
+import fr.euphyllia.skyllia.gui.GuiSubCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -66,6 +67,8 @@ public class SkylliaCommand implements SkylliaCommandInterface {
         // extra
         registry.registerSubCommand(new SetNameCommand(plugin), "set_name", "setname");
         registry.registerSubCommand(new SetDescriptionCommand(plugin), "set_description", "setdescription");
+        // GUI 菜单
+        registry.registerSubCommand(new GuiSubCommand(), "gui", "menu");
     }
 
     @Override

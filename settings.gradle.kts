@@ -24,6 +24,7 @@ include("addons:SkylliaChest")
 include("addons:SkylliaAcidRain")
 include("addons:SkylliaIslandValue")
 include("addons:SkylliaBackup")
+include("addons:SkylliaUpgrade")
 //include("addons:SkylliaExtra")
 // Hook
 include("hook:worldedit")

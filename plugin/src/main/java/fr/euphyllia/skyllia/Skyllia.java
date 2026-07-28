@@ -15,18 +15,23 @@ import fr.euphyllia.skyllia.listeners.ListenersRegistrar;
 import fr.euphyllia.skyllia.papi.SkylliaExpansion;
 import fr.euphyllia.skyllia.sgbd.exceptions.DatabaseException;
 import fr.euphyllia.skyllia.utils.UpdateCheckerTask;
+import fr.euphyllia.skyllia.utils.WorldUtils;
 import net.md_5.bungee.api.ChatColor;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.command.ConsoleCommandSender;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @SuppressWarnings("UnstableApiUsage")
 public class Skyllia extends JavaPlugin {
@@ -100,6 +105,48 @@ public class Skyllia extends JavaPlugin {
         HookBootstrap.registerAll();
 
         bStatsMetrics = new BStatsMetrics(this, 20874);
+
+        // 维度映射：延迟到世界加载完成后执行（sky world 此时可能还没加载完）
+        Bukkit.getGlobalRegionScheduler().runDelayed(this, task -> {
+            World overworld = null, netherWorld = null, endWorld = null;
+            for (var cfg : ConfigLoader.worldManager.getWorldConfigs().values()) {
+                World w = cfg.getWorld();
+                if (w == null) continue;
+                switch (cfg.getEnvironment()) {
+                    case NORMAL -> overworld = w;
+                    case NETHER -> netherWorld = w;
+                    case THE_END -> endWorld = w;
+                }
+            }
+            interneAPI.getWorldNMS().remapPortalDimensions(overworld, netherWorld, endWorld);
+            logger.info("[Skyllia-维度映射] 延迟映射完成 overworld={} nether={} end={}",
+                    overworld != null ? overworld.getName() : "null",
+                    netherWorld != null ? netherWorld.getName() : "null",
+                    endWorld != null ? endWorld.getName() : "null");
+        }, 60L); // 3秒后执行（60 ticks）
+
+        // 定期检查：如果玩家在主世界，强制传送回空岛
+        Bukkit.getGlobalRegionScheduler().runAtFixedRate(this, task -> {
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                World world = player.getWorld();
+                if (world != null && !WorldUtils.isWorldSkyblock(world.getName())) {
+                    // 调试：记录玩家世界详情
+                    String dimKey = interneAPI.getPlayerNMS().getDimensionKey(player);
+                    logger.warn("[Skyllia-主世界防护] 玩家 {} 在非空岛世界 name={} dimKey={} env={}，准备强制传送",
+                            player.getName(), world.getName(), dimKey, world.getEnvironment());
+
+                    // 通过 NMS 传送到空岛世界，绕过 Bukkit 事件
+                    World skyWorld = WorldUtils.getWorldConfigs().getFirst().getWorld();
+                    if (skyWorld != null) {
+                        Location target = new Location(skyWorld, player.getX(), player.getY(), player.getZ());
+                        SkylliaAPI.getPlayerNMS().teleport(player, target);
+                        logger.warn("[Skyllia-主世界防护] 已传送 {} -> {} @ {},{},{}",
+                                player.getName(), skyWorld.getName(),
+                                target.getBlockX(), target.getBlockY(), target.getBlockZ());
+                    }
+                }
+            }
+        }, 100L, 100L); // 每5秒检查一次
 
         ConfigLoader.permissionsV2.compileNow();
         ConfigLoader.islandFlags.compileNow();

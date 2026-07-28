@@ -15,6 +15,7 @@ import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.protocol.game.ClientboundLevelChunkWithLightPacket;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.WorldLoader;
 import net.minecraft.server.dedicated.DedicatedServer;
 import net.minecraft.server.dedicated.DedicatedServerProperties;
@@ -27,6 +28,7 @@ import net.minecraft.world.entity.npc.CatSpawner;
 import net.minecraft.world.entity.npc.wanderingtrader.WanderingTraderSpawner;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.CustomSpawner;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.BiomeManager;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -436,5 +438,155 @@ public class WorldNMS extends fr.euphyllia.skyllia.api.utils.nms.WorldNMS {
         }
 
         return bukkitEntityList;
+    }
+
+    @Override
+    public void remapPortalDimensions(@Nullable World overworld, @Nullable World nether, @Nullable World end) {
+        try {
+            MinecraftServer server = getServer();
+
+            java.lang.reflect.Field levelsField = MinecraftServer.class.getDeclaredField("levels");
+            levelsField.setAccessible(true);
+            @SuppressWarnings("unchecked")
+            java.util.Map<ResourceKey<Level>, ServerLevel> oldLevels =
+                    (java.util.Map<ResourceKey<Level>, ServerLevel>) levelsField.get(server);
+
+            log.info("[Skyllia-维度映射] levels map class={}, size={}", oldLevels.getClass().getName(), oldLevels.size());
+
+            // 创建可变副本（避免 UnmodifiableMap）
+            java.util.Map<ResourceKey<Level>, ServerLevel> newLevels = new java.util.HashMap<>(oldLevels);
+
+            if (overworld != null) {
+                ServerLevel sl = ((CraftWorld) overworld).getHandle();
+                newLevels.put(Level.OVERWORLD, sl);
+                log.info("[Skyllia-维度映射] OVERWORLD -> {}", overworld.getName());
+            }
+            if (nether != null) {
+                ServerLevel sl = ((CraftWorld) nether).getHandle();
+                newLevels.put(Level.NETHER, sl);
+                log.info("[Skyllia-维度映射] NETHER -> {}", nether.getName());
+
+                // 创建新 DimensionType（coordinateScale=1.0）注入现存的 Holder.Reference.value，
+                // 同时更新 Registry 的 toId / byValue 映射，确保 ClientboundLoginPacket 编码能找到 ID
+                try {
+                    net.minecraft.world.level.dimension.DimensionType original = sl.dimensionType();
+                    net.minecraft.world.level.dimension.DimensionType modified = new net.minecraft.world.level.dimension.DimensionType(
+                            original.hasFixedTime(),
+                            original.hasSkyLight(),
+                            original.hasCeiling(),
+                            original.hasEnderDragonFight(),
+                            1.0,  // coordinateScale = 1.0 → 1:1
+                            original.minY(),
+                            original.height(),
+                            original.logicalHeight(),
+                            original.infiniburn(),
+                            original.ambientLight(),
+                            original.monsterSettings(),
+                            original.skybox(),
+                            original.cardinalLightType(),
+                            original.attributes(),
+                            original.timelines(),
+                            original.defaultClock()
+                    );
+
+                    // 1. 改 Holder.Reference.value
+                    net.minecraft.core.Holder<net.minecraft.world.level.dimension.DimensionType> holder = sl.dimensionTypeRegistration();
+                    java.lang.reflect.Field valueField = holder.getClass().getDeclaredField("value");
+                    valueField.setAccessible(true);
+                    valueField.set(holder, modified);
+
+                    // 2. 同步更新 Registry.toId / byValue（否则 packet 编码查不到 modified 的 ID）
+                    net.minecraft.core.Registry<net.minecraft.world.level.dimension.DimensionType> registry =
+                            (net.minecraft.core.Registry<net.minecraft.world.level.dimension.DimensionType>)
+                            server.registryAccess().lookup(net.minecraft.core.registries.Registries.DIMENSION_TYPE)
+                                    .orElseThrow(() -> new RuntimeException("Missing dimension type registry"));
+                    int id = registry.getId(original); // 在原 map 里查 original 的 ID
+
+                    java.lang.reflect.Field toIdField = net.minecraft.core.MappedRegistry.class.getDeclaredField("toId");
+                    java.lang.reflect.Field byValueField = net.minecraft.core.MappedRegistry.class.getDeclaredField("byValue");
+                    toIdField.setAccessible(true);
+                    byValueField.setAccessible(true);
+                    @SuppressWarnings("unchecked")
+                    it.unimi.dsi.fastutil.objects.Reference2IntMap<net.minecraft.world.level.dimension.DimensionType> toId =
+                            (it.unimi.dsi.fastutil.objects.Reference2IntMap<net.minecraft.world.level.dimension.DimensionType>) toIdField.get(registry);
+                    @SuppressWarnings("unchecked")
+                    java.util.Map<net.minecraft.world.level.dimension.DimensionType, net.minecraft.core.Holder.Reference<net.minecraft.world.level.dimension.DimensionType>> byValue =
+                            (java.util.Map<net.minecraft.world.level.dimension.DimensionType, net.minecraft.core.Holder.Reference<net.minecraft.world.level.dimension.DimensionType>>) byValueField.get(registry);
+
+                    toId.put(modified, id);
+                    byValue.remove(original);
+                    byValue.put(modified, (net.minecraft.core.Holder.Reference<net.minecraft.world.level.dimension.DimensionType>) holder);
+
+                    log.info("[Skyllia-维度映射] {} coordinateScale 8.0 -> 1.0 (1:1)", nether.getName());
+                } catch (Exception e2) {
+                    log.error("[Skyllia-维度映射] 注入 coordinateScale=1.0 失败", e2);
+                }
+            }
+            if (end != null) {
+                ServerLevel sl = ((CraftWorld) end).getHandle();
+                newLevels.put(Level.END, sl);
+                log.info("[Skyllia-维度映射] END -> {} (coordinateScale={})", end.getName(),
+                        sl.dimensionType().coordinateScale());
+            }
+
+            // 替换整个 field（因为原 map 可能是 UnmodifiableMap）
+            levelsField.set(server, java.util.Collections.unmodifiableMap(newLevels));
+
+            // 验证
+            ServerLevel viaGetOverworld = server.getLevel(Level.OVERWORLD);
+            ServerLevel viaGetNether = server.getLevel(Level.NETHER);
+            ServerLevel viaGetEnd = server.getLevel(Level.END);
+            log.info("[Skyllia-维度映射] 验证 server.getLevel OVERWORLD={} NETHER={} END={}",
+                    viaGetOverworld != null ? viaGetOverworld.getWorld().getName() : "null",
+                    viaGetNether != null ? viaGetNether.getWorld().getName() : "null",
+                    viaGetEnd != null ? viaGetEnd.getWorld().getName() : "null");
+
+        } catch (Exception e) {
+            log.error("[Skyllia-维度映射] 失败", e);
+        }
+    }
+
+    @Override
+    public void adjustEndPortalSpawnPoint(@org.jetbrains.annotations.NotNull org.bukkit.entity.Player player) {
+        try {
+            net.minecraft.world.entity.Entity nmsEntity = ((org.bukkit.craftbukkit.entity.CraftPlayer) player).getHandle();
+            net.minecraft.server.level.ServerLevel currentLevel = (net.minecraft.server.level.ServerLevel) nmsEntity.level();
+
+            // 只在从非末地世界进入末地门时处理
+            if (currentLevel.dimension() == net.minecraft.world.level.Level.END) return;
+
+            org.bukkit.Location loc = player.getLocation();
+            int targetX = loc.getBlockX();
+            int targetZ = loc.getBlockZ();
+            // Shiroha 26.2 用 atBottomCenterOf(END_SPAWN_POINT.below()) 算落点，
+            // 即 finalY = END_SPAWN_POINT.y - 1。要玩家落 Y = targetY + 1，
+            // 需 END_SPAWN_POINT.y = targetY + 2
+            int targetY = loc.getBlockY();
+            int endSpawnY = targetY + 2;
+
+            // 用 Unsafe 做 final 写 + storeFence，跨线程可见
+            java.lang.reflect.Field unsafeField = sun.misc.Unsafe.class.getDeclaredField("theUnsafe");
+            unsafeField.setAccessible(true);
+            sun.misc.Unsafe unsafe = (sun.misc.Unsafe) unsafeField.get(null);
+
+            java.lang.reflect.Field xField = net.minecraft.core.Vec3i.class.getDeclaredField("x");
+            java.lang.reflect.Field yField = net.minecraft.core.Vec3i.class.getDeclaredField("y");
+            java.lang.reflect.Field zField = net.minecraft.core.Vec3i.class.getDeclaredField("z");
+            long xOffset = unsafe.objectFieldOffset(xField);
+            long yOffset = unsafe.objectFieldOffset(yField);
+            long zOffset = unsafe.objectFieldOffset(zField);
+
+            // Full memory barrier：写入 buffer → 主存，异步线程读主存拿到新值
+            unsafe.storeFence();
+            unsafe.putInt(net.minecraft.server.level.ServerLevel.END_SPAWN_POINT, xOffset, targetX);
+            unsafe.putInt(net.minecraft.server.level.ServerLevel.END_SPAWN_POINT, yOffset, endSpawnY);
+            unsafe.putInt(net.minecraft.server.level.ServerLevel.END_SPAWN_POINT, zOffset, targetZ);
+            unsafe.storeFence();
+
+            log.info("[Skyllia-末地门] 设 END_SPAWN_POINT -> ({}, {}, {}) 玩家={} (主世界 Y={}, 期望落点 Y={})",
+                    targetX, endSpawnY, targetZ, player.getName(), targetY, targetY + 1);
+        } catch (Exception e) {
+            log.error("[Skyllia-末地门] 改 END_SPAWN_POINT 失败", e);
+        }
     }
 }

@@ -43,3 +43,13 @@ bin/
 .DS_Store
 
 run
+
+### Local tooling / scratch (not part of source) ###
+.claude/
+.gradle-cache/
+.workbuddy/
+*.log
+Entity_bytecode.txt
+Entity_portal_methods.txt
+Entity_portal_methods2.txt
+PortalProcessor_bytecode.txt

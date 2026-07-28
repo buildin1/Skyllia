@@ -13,7 +13,6 @@ import fr.euphyllia.skyllia.listeners.bukkitevents.world.ChunkEvent;
 import fr.euphyllia.skyllia.listeners.extra.IslandInfoExtraListener;
 import fr.euphyllia.skyllia.listeners.bukkitevents.entity.LightningVillagerTransformListener;
 import fr.euphyllia.skyllia.listeners.bukkitevents.player.*;
-import fr.euphyllia.skyllia.listeners.bukkitevents.portal.PortalOverrideListener;
 import fr.euphyllia.skyllia.listeners.permissions.block.*;
 import fr.euphyllia.skyllia.listeners.permissions.decor.DecorHangingBreakPermissions;
 import fr.euphyllia.skyllia.listeners.permissions.decor.DecorHangingPlacePermissions;
@@ -76,19 +75,21 @@ public class ListenersRegistrar {
         registerEvent(pluginManager, new MoveEvent());
         registerEvent(pluginManager, new QuitEvent());
         registerEvent(pluginManager, new RespawnEvent(interneAPI));
+        registerEvent(pluginManager, new EndPortalTeleportListener());
         registerEvent(pluginManager, new ChunkEvent());
+
+        // GUI 监听
+        registerEvent(pluginManager, new fr.euphyllia.skyllia.gui.GuiListener());
+        registerEvent(pluginManager, new fr.euphyllia.skyllia.gui.GuiTextInputListener());
 
 
         // Folia/Paper specifics
-        PortalOverrideListener portalListener = new PortalOverrideListener();
-        registerEvent(pluginManager, portalListener);
         registerEvent(pluginManager, new ObsidianFormHologramListener(plugin));
         registerEvent(pluginManager, new LightningVillagerTransformListener());
         registerEvent(pluginManager, new PlayerRegionChangeListener());
         registerEvent(pluginManager, new FrostWalkerListener());
         registerEvent(pluginManager, new ProjectileBlockBreakListener());
         registerEvent(pluginManager, new OreDropPreventionListener());
-        portalListener.startCleanupTask(); // 启动全局清理
 
         // Skyblock Events
         registerEvent(pluginManager, new SkyblockEvent(interneAPI));
