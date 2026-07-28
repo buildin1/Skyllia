@@ -3,12 +3,16 @@ package fr.euphyllia.skylliachallenge;
 import dev.triumphteam.gui.TriumphGui;
 import fr.euphyllia.skyllia.api.SkylliaAPI;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
+import fr.euphyllia.skyllia.gui.GuiExtensionEntry;
+import fr.euphyllia.skyllia.gui.GuiExtensionRegistry;
+import fr.euphyllia.skyllia.utils.PlayerUtils;
 import fr.euphyllia.skylliachallenge.api.database.ProgressBackend;
 import fr.euphyllia.skylliachallenge.commands.ChallengeAdminCommand;
 import fr.euphyllia.skylliachallenge.commands.ChallengeCommand;
 import fr.euphyllia.skylliachallenge.database.mariadb.MariaDBChallengeInit;
 import fr.euphyllia.skylliachallenge.database.postgre.PostgresChallengeInit;
 import fr.euphyllia.skylliachallenge.database.sqlite.SQLiteChallengeInit;
+import fr.euphyllia.skylliachallenge.gui.ChallengeAdminGui;
 import fr.euphyllia.skylliachallenge.gui.GuiSettings;
 import fr.euphyllia.skylliachallenge.hook.HookManager;
 import fr.euphyllia.skylliachallenge.listener.BlockRequirementListener;
@@ -35,6 +39,7 @@ import java.util.concurrent.TimeUnit;
 public class SkylliaChallenge extends JavaPlugin {
 
     private static final Logger log = LoggerFactory.getLogger(SkylliaChallenge.class);
+    private static final String EXTENSION_ID = "skylliachallenge:admin";
     private static SkylliaChallenge instance;
     private ChallengeManagers challengeManager;
     private ChallengeLevelManagers challengeLevelManager;
@@ -166,12 +171,23 @@ public class SkylliaChallenge extends JavaPlugin {
         pm.registerEvents(new PlayerEnchantRequirementListener(), this);
         pm.registerEvents(new PlayerConsumeRequirementListener(), this);
         pm.registerEvents(new PlayerFishRequirementListener(), this);
+
+        GuiExtensionRegistry.register(new GuiExtensionEntry(
+                EXTENSION_ID,
+                org.bukkit.Material.WRITABLE_BOOK,
+                "<light_purple>📜 挑战管理",
+                List.of("<gray>创建/编辑/删除挑战与挑战等级", "<gray>无需手动编辑 YAML"),
+                0,
+                player -> PlayerUtils.hasPermission(player, ChallengeAdminCommand.PERMISSION),
+                ChallengeAdminGui::openMain
+        ));
     }
 
     @Override
     public void onDisable() {
         Bukkit.getAsyncScheduler().cancelTasks(this);
         Bukkit.getGlobalRegionScheduler().cancelTasks(this);
+        GuiExtensionRegistry.unregister(EXTENSION_ID);
         ProgressStoragePartial.shutdown();
         ProgressStorage.shutdown();
     }

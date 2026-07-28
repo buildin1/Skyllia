@@ -93,7 +93,7 @@ public final class ChallengeYamlLoader {
         return challenge;
     }
 
-    static ItemStack resolveGuiItem(String raw, int amount, String challengeId) {
+    public static ItemStack resolveGuiItem(String raw, int amount, String challengeId) {
         if (raw != null && HookManager.isCustomItemRef(raw)) {
             ItemStack custom = HookManager.itemStackFromRef(raw);
             if (custom != null) {
@@ -112,7 +112,11 @@ public final class ChallengeYamlLoader {
         return HookManager.parse(rawAfterPrefix);
     }
 
-    private static List<ChallengeRequirement> parseRequirements(SkylliaChallenge plugin, NamespacedKey challengeKey, List<String> lines) {
+    /**
+     * 将一批 DSL 行解析为需求实例。同时被 YAML 加载流程与管理员 GUI（校验单行输入）复用，
+     * 传入单元素 List 即可校验一行输入是否合法（返回空 List 表示解析失败/未匹配任何前缀）。
+     */
+    public static List<ChallengeRequirement> parseRequirements(SkylliaChallenge plugin, NamespacedKey challengeKey, List<String> lines) {
         if (lines == null) return List.of();
         List<ChallengeRequirement> result = new ArrayList<>();
         for (int idx = 0; idx < lines.size(); idx++) {
