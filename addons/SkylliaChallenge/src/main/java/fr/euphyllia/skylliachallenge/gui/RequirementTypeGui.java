@@ -136,6 +136,11 @@ final class RequirementTypeGui {
                     lore("玩家的 Vault 经济余额需达到指定数值。"),
                     "ECO:", "5000", "<gray>金额"));
         }
+        if (Bukkit.getPluginManager().getPlugin("SkylliaAcidRain") != null) {
+            list.add(new TypeDef(Material.LIME_DYE, "熬过酸雨季节 (ACIDSEASON)",
+                    lore("玩家需累计熬过指定数量的酸雨季节。", "需在整个季节全程在场且未死亡才计数。"),
+                    "ACIDSEASON:", "3", "<gray>季节数量"));
+        }
         return list;
     }
 }

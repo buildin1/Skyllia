@@ -32,6 +32,7 @@ public final class ChallengeYamlLoader {
     private static final MiniMessage miniMessage = MiniMessage.miniMessage();
     private static final boolean hasSkylliaBank = Bukkit.getPluginManager().getPlugin("SkylliaBank") != null;
     private static final boolean hasVault = Bukkit.getPluginManager().getPlugin("Vault") != null;
+    private static final boolean hasSkylliaAcidRain = Bukkit.getPluginManager().getPlugin("SkylliaAcidRain") != null;
     private static final Logger log = LoggerFactory.getLogger(ChallengeYamlLoader.class);
 
     private ChallengeYamlLoader() {
@@ -325,6 +326,16 @@ public final class ChallengeYamlLoader {
                         result.add(new EcoRequirement(idx, challengeKey, amount));
                     } catch (NumberFormatException exception) {
                         log.error("Invalid amount for ECO requirement in challenge {}: {}", challengeKey, head.substring("ECO:".length()), exception);
+                    }
+                }
+            }
+            if (hasSkylliaAcidRain) {
+                if (head.startsWith("ACIDSEASON:")) {
+                    try {
+                        int count = Integer.parseInt(head.substring("ACIDSEASON:".length()));
+                        result.add(new AcidSeasonSurviveRequirement(idx, challengeKey, count));
+                    } catch (NumberFormatException exception) {
+                        log.error("Invalid amount for ACIDSEASON requirement in challenge {}: {}", challengeKey, head.substring("ACIDSEASON:".length()), exception);
                     }
                 }
             }

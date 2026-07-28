@@ -3,6 +3,7 @@ package fr.euphyllia.skylliaacidrain.configuration;
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import fr.euphyllia.skyllia.api.SkylliaAPI;
 import fr.euphyllia.skylliaacidrain.listener.AcidListener;
+import fr.euphyllia.skylliaacidrain.season.AcidSeasonManager;
 
 import java.io.File;
 
@@ -10,11 +11,11 @@ public class AcidConfigLoader {
 
     public static AcidConfigManager config;
 
-    public static void init(File dataFolder, AcidListener listener) throws Exception {
+    public static void init(File dataFolder, AcidListener listener, AcidSeasonManager seasonManager) throws Exception {
         File configDir = new File(dataFolder, "config");
         //noinspection ResultOfMethodCallIgnored
         configDir.mkdirs();
-        config = new AcidConfigManager(loadFile(new File(configDir, "config.toml")), listener);
+        config = new AcidConfigManager(loadFile(new File(configDir, "config.toml")), listener, seasonManager);
 
         config.loadConfig();
 

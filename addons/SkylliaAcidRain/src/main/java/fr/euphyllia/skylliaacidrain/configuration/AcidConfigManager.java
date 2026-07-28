@@ -6,6 +6,7 @@ import com.electronwill.nightconfig.core.io.WritingMode;
 import com.electronwill.nightconfig.toml.TomlWriter;
 import fr.euphyllia.skyllia.api.configuration.IConfigurationProvider;
 import fr.euphyllia.skylliaacidrain.listener.AcidListener;
+import fr.euphyllia.skylliaacidrain.season.AcidSeasonManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,6 +14,7 @@ public class AcidConfigManager implements IConfigurationProvider {
 
     private static final Logger log = LoggerFactory.getLogger(AcidConfigManager.class);
     private final AcidListener acidListener;
+    private final AcidSeasonManager acidSeasonManager;
     private final CommentedFileConfig config;
     private boolean changed = false;
 
@@ -34,9 +36,19 @@ public class AcidConfigManager implements IConfigurationProvider {
     private int nauseaDuration;
     private int nauseaAmplifier;
 
-    public AcidConfigManager(CommentedFileConfig config, AcidListener listener) {
+    // 酸雨季（周期性机制）
+    private boolean seasonEnabled;
+    private long seasonCheckIntervalTick;
+    private int seasonEveryNFullMoons;
+    private long seasonDurationTick;
+    private boolean seasonBroadcastEnabled;
+    private String seasonStartMessage;
+    private String seasonEndMessage;
+
+    public AcidConfigManager(CommentedFileConfig config, AcidListener listener, AcidSeasonManager seasonManager) {
         this.config = config;
         this.acidListener = listener;
+        this.acidSeasonManager = seasonManager;
     }
 
     @Override
@@ -64,7 +76,21 @@ public class AcidConfigManager implements IConfigurationProvider {
         this.nauseaDuration = getOrSetDefault("acid.effects.nausea.duration", 80, Integer.class);
         this.nauseaAmplifier = getOrSetDefault("acid.effects.nausea.amplifier", 0, Integer.class);
 
+        // 酸雨季：默认每次满月（每8个游戏日）触发一次，持续1个游戏日
+        this.seasonEnabled = getOrSetDefault("acid.season.enabled", true, Boolean.class);
+        this.seasonCheckIntervalTick = getOrSetDefault("acid.season.check-interval-tick", 200L, Long.class); // 每200 tick（约10秒）检查一次月相
+        this.seasonEveryNFullMoons = getOrSetDefault("acid.season.every-n-full-moons", 1, Integer.class); // 每N次满月触发一次酸雨季
+        this.seasonDurationTick = getOrSetDefault("acid.season.duration-tick", 24000L, Long.class); // 酸雨季持续时长（游戏刻），默认1个游戏日
+        this.seasonBroadcastEnabled = getOrSetDefault("acid.season.broadcast.enabled", true, Boolean.class);
+        this.seasonStartMessage = getOrSetDefault("acid.season.broadcast.start-message",
+                "<red><bold>⚠ 酸雨季来临！</bold></red> <gray>水源与雨水已具有腐蚀性，小心行动。</gray>", String.class);
+        this.seasonEndMessage = getOrSetDefault("acid.season.broadcast.end-message",
+                "<green>✔ 酸雨季结束，水源恢复正常。</green>", String.class);
+
         this.acidListener.restartAllTasks();
+        if (this.acidSeasonManager != null) {
+            this.acidSeasonManager.restart();
+        }
 
         if (changed) {
             TomlWriter tomlWriter = new TomlWriter();
@@ -162,6 +188,34 @@ public class AcidConfigManager implements IConfigurationProvider {
 
     public int getNauseaAmplifier() {
         return nauseaAmplifier;
+    }
+
+    public boolean isSeasonEnabled() {
+        return seasonEnabled;
+    }
+
+    public long getSeasonCheckIntervalTick() {
+        return seasonCheckIntervalTick;
+    }
+
+    public int getSeasonEveryNFullMoons() {
+        return seasonEveryNFullMoons;
+    }
+
+    public long getSeasonDurationTick() {
+        return seasonDurationTick;
+    }
+
+    public boolean isSeasonBroadcastEnabled() {
+        return seasonBroadcastEnabled;
+    }
+
+    public String getSeasonStartMessage() {
+        return seasonStartMessage;
+    }
+
+    public String getSeasonEndMessage() {
+        return seasonEndMessage;
     }
 
 }

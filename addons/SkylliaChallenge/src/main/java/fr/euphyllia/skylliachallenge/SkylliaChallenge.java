@@ -15,6 +15,7 @@ import fr.euphyllia.skylliachallenge.database.sqlite.SQLiteChallengeInit;
 import fr.euphyllia.skylliachallenge.gui.ChallengeAdminGui;
 import fr.euphyllia.skylliachallenge.gui.GuiSettings;
 import fr.euphyllia.skylliachallenge.hook.HookManager;
+import fr.euphyllia.skylliachallenge.listener.AcidSeasonRequirementListener;
 import fr.euphyllia.skylliachallenge.listener.BlockRequirementListener;
 import fr.euphyllia.skylliachallenge.listener.CraftRequirementListener;
 import fr.euphyllia.skylliachallenge.listener.KillRequirementListener;
@@ -171,6 +172,10 @@ public class SkylliaChallenge extends JavaPlugin {
         pm.registerEvents(new PlayerEnchantRequirementListener(), this);
         pm.registerEvents(new PlayerConsumeRequirementListener(), this);
         pm.registerEvents(new PlayerFishRequirementListener(), this);
+        // SkylliaAcidRain 是可选依赖，未安装时不注册该监听器
+        if (Bukkit.getPluginManager().getPlugin("SkylliaAcidRain") != null) {
+            pm.registerEvents(new AcidSeasonRequirementListener(), this);
+        }
 
         GuiExtensionRegistry.register(new GuiExtensionEntry(
                 EXTENSION_ID,

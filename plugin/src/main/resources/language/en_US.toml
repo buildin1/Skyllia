@@ -409,6 +409,9 @@ display = "<!italic><gray>- Have %amount% in your island account.</gray>"
 [addons.challenge.requirement.craft]
 display = "<!italic><gray>- Craft %amount% of %item_name%.</gray>"
 
+[addons.challenge.requirement.acid_season]
+display = "<!italic><gray>- Survive %amount% acid seasons.</gray>"
+
 [addons.challenge.level]
 complete = "<green>You have completed the challenge level: %level_name%!</green>"
 notify-complete = "<green>Congratulations! %player_name%'s island has completed the challenge level: %level_name%!</green>"

@@ -7,6 +7,7 @@ import fr.euphyllia.skyllia.api.addons.skylliaacidrain.event.EntityDamageAcidEve
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
 import fr.euphyllia.skylliaacidrain.SkylliaAcidRain;
 import fr.euphyllia.skylliaacidrain.configuration.AcidConfigLoader;
+import fr.euphyllia.skylliaacidrain.season.AcidSeasonManager;
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import net.kyori.adventure.text.Component;
 import org.bukkit.GameMode;
@@ -133,6 +134,11 @@ public class AcidListener implements Listener {
         if (entity instanceof Player player) {
             if (player.getGameMode() == GameMode.CREATIVE
                     || player.getGameMode() == GameMode.SPECTATOR) return;
+        }
+
+        // 只有酸雨季激活时水/雨才会造成伤害；关闭该开关可恢复旧版“一直生效”的行为
+        if (AcidConfigLoader.config.isSeasonEnabled() && !AcidSeasonManager.isSeasonActive(entity.getWorld())) {
+            return;
         }
 
         boolean inWater = entity.isInWater();

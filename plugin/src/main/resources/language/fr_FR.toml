@@ -415,6 +415,9 @@ display = "<!italic><gray>- Avoir %amount% dans le compte de l'île.</gray>"
 [addons.challenge.requirement.craft]
 display = "<!italic><gray>- Avoir crafté %amount% de %item_name%</gray>"
 
+[addons.challenge.requirement.acid_season]
+display = "<!italic><gray>- Avoir survécu à %amount% saisons d'acide.</gray>"
+
 [addons.challenge.level]
 complete = "<green>Vous avez complété le palier de défis : %level_name% !</green>"
 notify-complete = "<green>Félicitations ! L'île de %player_name% a complété le palier de défis : %level_name% !</green>"
