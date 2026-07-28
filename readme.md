@@ -18,6 +18,24 @@
 
 ---
 
+## 🍴 关于本 Fork
+
+本仓库（[`buildin1/Skyllia`](https://github.com/buildin1/Skyllia)）是 [Euphillya/Skyllia](https://github.com/Euphillya/Skyllia) 的一个 fork，基于 [WindsorMacmillan/Skyllia](https://github.com/WindsorMacmillan/Skyllia) 的 `ver/3.x` 分支继续开发维护，主要用于本人所运营的空岛服务器。
+
+特别感谢 **[WindsorMacmillan](https://github.com/WindsorMacmillan)** 在上游基础上完成的大量底层修复与适配工作，本 fork 的后续改动都构建在这些修复之上。
+
+本 fork 相较上游新增/调整的内容包括（持续更新）：
+
+- 新增 `SkylliaUpgrade`：岛屿升级系统（岛屿评分 + 材料上交 + 领地拓展令三重门槛，逐级扩大边境半径与成员上限）
+- 新增核心 GUI 扩展接口（`GuiExtensionRegistry`），方便后续 addon 挂载菜单入口
+- 新增 GUI 内聊天栏数值/文本输入组件（`GuiTextInput`）
+- `SkylliaChallenge` 支持通过 `customModelData` 配置任务奖励物品外观
+- 新增简体中文语言文件与部分界面文案汉化
+
+本 fork 主要用于自建服务器的定制维护，欢迎 Star / Issue 交流，但建议优先关注上游 [Euphillya/Skyllia](https://github.com/Euphillya/Skyllia) 获取官方支持与版本更新。
+
+---
+
 ## 📖 About
 
 **Skyllia** is a modern, high-performance Skyblock plugin, designed from the ground up to fully leverage the
