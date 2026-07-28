@@ -139,7 +139,13 @@ public class SkylliaChallenge extends JavaPlugin {
         this.challengeManager = new ChallengeManagers(this);
 
         File levelsFile = new File(getDataFolder(), "levels.yml");
-        if (!levelsFile.exists()) saveResource("levels.yml", false);
+        if (!levelsFile.exists()) {
+            try {
+                saveResource("levels.yml", false);
+            } catch (IllegalArgumentException e) {
+                getLogger().warning("Bundled default 'levels.yml' not found, using built-in level names/descriptions: " + e.getMessage());
+            }
+        }
         this.challengeManager.loadLevelsConfig(levelsFile);
 
         this.challengeManager.loadChallenges(getDataFolder().toPath().resolve("challenges").toFile());

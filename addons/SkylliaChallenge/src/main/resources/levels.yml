@@ -1,0 +1,22 @@
+levels:
+  1:
+    name: "入门"
+    description: "刚开始接触空岛生活的新手任务"
+  2:
+    name: "前期"
+    description: "已经站稳脚跟，开始拓展岛屿"
+  3:
+    name: "中期"
+    description: "岛屿初具规模，迎接更大的挑战"
+  4:
+    name: "后期"
+    description: "资源与实力兼备，追求更高目标"
+  5:
+    name: "终极"
+    description: "登峰造极的空岛玩家专属挑战"
+
+# 达到某个等级时发放的解锁奖励，格式与 challenges/*.yml 里的 rewards 一致
+# level-unlock-rewards:
+#   2:
+#     rewards:
+#       - "CMD:give %player% diamond 1"
