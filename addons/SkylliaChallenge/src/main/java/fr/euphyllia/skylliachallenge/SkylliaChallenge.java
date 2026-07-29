@@ -1,6 +1,5 @@
 package fr.euphyllia.skylliachallenge;
 
-import dev.triumphteam.gui.TriumphGui;
 import fr.euphyllia.skyllia.api.SkylliaAPI;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
 import fr.euphyllia.skyllia.gui.GuiExtensionEntry;
@@ -40,7 +39,7 @@ import java.util.concurrent.TimeUnit;
 public class SkylliaChallenge extends JavaPlugin {
 
     private static final Logger log = LoggerFactory.getLogger(SkylliaChallenge.class);
-    private static final String EXTENSION_ID = "skylliachallenge:admin";
+    private static final String EXTENSION_ID = "skylliachallenge:menu";
     private static SkylliaChallenge instance;
     private ChallengeManagers challengeManager;
     private ChallengeLevelManagers challengeLevelManager;
@@ -71,7 +70,6 @@ public class SkylliaChallenge extends JavaPlugin {
     @Override
     public void onEnable() {
         saveDefaultConfig();
-        TriumphGui.init(this);
 
         instance = this;
 
@@ -183,14 +181,16 @@ public class SkylliaChallenge extends JavaPlugin {
             pm.registerEvents(new AcidSeasonRequirementListener(), this);
         }
 
+        // 管理员挑战配置 GUI 只走 /is challenge admin gui 命令，不出现在 /is gui 的「扩展功能」里
+        // （那个列表面向所有玩家，不适合放管理工具）。
         GuiExtensionRegistry.register(new GuiExtensionEntry(
                 EXTENSION_ID,
-                org.bukkit.Material.WRITABLE_BOOK,
-                "<light_purple>📜 挑战管理",
-                List.of("<gray>创建/编辑/删除挑战与挑战等级", "<gray>无需手动编辑 YAML"),
+                org.bukkit.Material.WRITTEN_BOOK,
+                "<light_purple>📜 挑战",
+                List.of("<gray>完成岛屿挑战，解锁更高级别", "<gray>并获取丰厚奖励</gray>"),
                 0,
-                player -> PlayerUtils.hasPermission(player, ChallengeAdminCommand.PERMISSION),
-                ChallengeAdminGui::openMain
+                player -> SkylliaAPI.getIslandByPlayerId(player.getUniqueId()) != null,
+                challengeManager::openGui
         ));
     }
 

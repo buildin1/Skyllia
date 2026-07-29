@@ -1,10 +1,9 @@
 package fr.euphyllia.skylliachallenge.gui;
 
-import dev.triumphteam.gui.builder.item.ItemBuilder;
-import dev.triumphteam.gui.guis.Gui;
 import fr.euphyllia.skyllia.api.SkylliaAPI;
 import fr.euphyllia.skyllia.api.skyblock.Island;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
+import fr.euphyllia.skyllia.gui.SkylliaGuiHolder;
 import fr.euphyllia.skylliachallenge.SkylliaChallenge;
 import fr.euphyllia.skylliachallenge.challenge.Challenge;
 import fr.euphyllia.skylliachallenge.challenge.ChallengeLevel;
@@ -13,7 +12,9 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,39 +50,47 @@ public class ChallengeLevelGui {
 
         GuiSettings gs = plugin.getGuiSettings();
 
-        Gui gui = Gui.gui()
-                .title(ConfigLoader.language.translate(player.locale(), "addons.challenge.level.display.title", Map.of(), false))
-                .rows(gs.rows)
-                .disableAllInteractions()
-                .create();
+        SkylliaGuiHolder holder = new SkylliaGuiHolder(SkylliaGuiHolder.GuiType.EXTENSION);
+        Inventory gui = Bukkit.createInventory(holder, gs.rows * 9,
+                ConfigLoader.language.translate(player.locale(), "addons.challenge.level.display.title", Map.of(), false));
 
-        gui.setItem(gs.previous.row(), gs.previous.column(),
-                ItemBuilder.from(gs.previous.toItemStack())
-                        .name(ConfigLoader.language.translate(player.locale(), "addons.challenge.display.previous", Map.of(), false))
-                        .asGuiItem(e -> {
-                            final int previousPage = currentPage - 1;
-                            Bukkit.getAsyncScheduler().runNow(plugin, task -> {
-                                if (previousPage > 0) {
-                                    open(player, previousPage);
-                                } else {
-                                    open(player, gs.maxPageSize);
-                                }
-                            });
-                        }));
+        int prevSlot = slot(gs.previous.row(), gs.previous.column());
+        ItemStack prevItem = gs.previous.toItemStack();
+        ItemMeta prevMeta = prevItem.getItemMeta();
+        if (prevMeta != null) {
+            prevMeta.displayName(ConfigLoader.language.translate(player.locale(), "addons.challenge.display.previous", Map.of(), false));
+            prevItem.setItemMeta(prevMeta);
+        }
+        gui.setItem(prevSlot, prevItem);
+        holder.bind(prevSlot, e -> {
+            final int previousPage = currentPage - 1;
+            Bukkit.getAsyncScheduler().runNow(plugin, task -> {
+                if (previousPage > 0) {
+                    open(player, previousPage);
+                } else {
+                    open(player, gs.maxPageSize);
+                }
+            });
+        });
 
-        gui.setItem(gs.next.row(), gs.next.column(),
-                ItemBuilder.from(gs.next.toItemStack())
-                        .name(ConfigLoader.language.translate(player.locale(), "addons.challenge.display.next", Map.of(), false))
-                        .asGuiItem(e -> {
-                            final int nextPage = currentPage + 1;
-                            Bukkit.getAsyncScheduler().runNow(plugin, task -> {
-                                if (nextPage <= gs.maxPageSize) {
-                                    open(player, nextPage);
-                                } else {
-                                    open(player, 1);
-                                }
-                            });
-                        }));
+        int nextSlot = slot(gs.next.row(), gs.next.column());
+        ItemStack nextItem = gs.next.toItemStack();
+        ItemMeta nextMeta = nextItem.getItemMeta();
+        if (nextMeta != null) {
+            nextMeta.displayName(ConfigLoader.language.translate(player.locale(), "addons.challenge.display.next", Map.of(), false));
+            nextItem.setItemMeta(nextMeta);
+        }
+        gui.setItem(nextSlot, nextItem);
+        holder.bind(nextSlot, e -> {
+            final int nextPage = currentPage + 1;
+            Bukkit.getAsyncScheduler().runNow(plugin, task -> {
+                if (nextPage <= gs.maxPageSize) {
+                    open(player, nextPage);
+                } else {
+                    open(player, 1);
+                }
+            });
+        });
 
         for (ChallengeLevel level : manager.getLevels()) {
             if (!level.isShowInGUI()) continue;
@@ -125,12 +134,21 @@ public class ChallengeLevelGui {
 
             if (level.getGuiLore() != null) lore.addAll(level.getGuiLore());
 
-            gui.setItem(pos.row(), pos.column(),
-                    ItemBuilder.from(base).lore(lore).name(miniMessage.deserialize(level.getName()))
-                            .asGuiItem(e -> {
-                            }));
+            ItemStack item = base.clone();
+            ItemMeta meta = item.getItemMeta();
+            if (meta != null) {
+                meta.displayName(miniMessage.deserialize(level.getName()));
+                meta.lore(lore);
+                item.setItemMeta(meta);
+            }
+            gui.setItem(slot(pos.row(), pos.column()), item);
+            // 展示型图标，无交互（与原实现一致）
         }
 
-        player.getScheduler().run(plugin, task -> gui.open(player), null);
+        player.getScheduler().run(plugin, task -> player.openInventory(gui), null);
+    }
+
+    private static int slot(int row, int col) {
+        return (row - 1) * 9 + (col - 1);
     }
 }
