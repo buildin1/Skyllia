@@ -405,7 +405,13 @@ public class WorldNMS extends fr.euphyllia.skyllia.api.utils.nms.WorldNMS {
      */
     @Override
     public double @Nullable [] getAverageTickTimes(Location location) {
-        return fr.euphyllia.skyllia.utils.nms.v1_21_R7.WorldNMS.getAverageTickTimesHelper(location);
+        try {
+            return fr.euphyllia.skyllia.utils.nms.v1_21_R7.WorldNMS.getAverageTickTimesHelper(location);
+        } catch (Throwable t) {
+            // Shiroha 26.2 的 TickRegionScheduler$RegionScheduleHandle 与上游 Folia 签名不一致（NoSuchMethodError），
+            // v26_2 无法直接编译访问该内部 API（paperDevBundle 不含此类），故退化返回 null 而非崩溃 /is tps
+            return null;
+        }
     }
 
     /**
@@ -416,7 +422,12 @@ public class WorldNMS extends fr.euphyllia.skyllia.api.utils.nms.WorldNMS {
      */
     @Override
     public double @Nullable [] getAverageTickTimes(Chunk chunk) {
-        return fr.euphyllia.skyllia.utils.nms.v1_21_R7.WorldNMS.getAverageTickTimesHelper(chunk);
+        try {
+            return fr.euphyllia.skyllia.utils.nms.v1_21_R7.WorldNMS.getAverageTickTimesHelper(chunk);
+        } catch (Throwable t) {
+            // 见上方 getAverageTickTimes(Location) 的说明
+            return null;
+        }
     }
 
     @Override
