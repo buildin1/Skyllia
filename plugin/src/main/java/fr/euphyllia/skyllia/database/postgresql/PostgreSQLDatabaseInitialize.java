@@ -128,6 +128,23 @@ public class PostgreSQLDatabaseInitialize extends DatabaseInitializeQuery {
             );
             """;
 
+    private static final String CREATE_ACTIVITY_ZONES_TABLE = """
+            CREATE TABLE IF NOT EXISTS %s.activity_zones (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(64) NOT NULL UNIQUE,
+                center_x INTEGER NOT NULL,
+                center_z INTEGER NOT NULL,
+                content_radius DOUBLE PRECISION NOT NULL,
+                buffer_radius DOUBLE PRECISION NOT NULL,
+                allow_break BOOLEAN NOT NULL DEFAULT FALSE,
+                allow_place BOOLEAN NOT NULL DEFAULT FALSE,
+                allow_pvp BOOLEAN NOT NULL DEFAULT FALSE,
+                allow_mob_attack BOOLEAN NOT NULL DEFAULT FALSE,
+                created_by UUID,
+                created_at TIMESTAMP
+            );
+            """;
+
     private static final String CREATE_ISLANDS_INDEX = """
             CREATE INDEX IF NOT EXISTS region_xz_disabled
             ON %s.islands (region_x, region_z, disable);
@@ -248,6 +265,7 @@ public class PostgreSQLDatabaseInitialize extends DatabaseInitializeQuery {
         exec(CREATE_ISLANDS_PERMISSIONS_TABLE.formatted(s, s));
         exec(CREATE_ISLANDS_FLAGS_TABLE.formatted(s, s));
         exec(CREATE_PLAYER_CLEAR_TABLE.formatted(s));
+        exec(CREATE_ACTIVITY_ZONES_TABLE.formatted(s));
         exec(CREATE_ISLANDS_GAMERULE_TABLE.formatted(s, s));
 
         exec(CREATE_PERMISSION_REGISTRY_SEQ.formatted(s));

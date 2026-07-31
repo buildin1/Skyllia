@@ -65,7 +65,6 @@ public class PlayerUtils {
      */
     public static void applyIslandBorder(Player player, @Nullable Island island) {
         if (island == null) return;
-        if (hasPermission(player, "skyllia.island.worldborder.bypass")) return;
 
         World islandWorld = fr.euphyllia.skyllia.utils.WorldUtils.getWorldConfigs().getFirst().getWorld();
         if (islandWorld == null) return;
@@ -73,10 +72,23 @@ public class PlayerUtils {
         RegionCoordinate region = island.getRegionCoordinate();
         Location center = RegionHelper.getCenterRegion(islandWorld, region.x(), region.z());
 
+        applyBorder(player, center, island.getSize());
+    }
+
+    /**
+     * 通用版本：给玩家下发一个以任意中心点+半径定义的独立边境（WorldBorder），
+     * 不要求跟岛屿绑定——活动区之类"中心点+半径"的其它区域概念可以直接复用。
+     * <p>
+     * 调用方必须保证当前线程已经拥有目标 region 的归属权，本方法内部不做任何线程调度。
+     * </p>
+     */
+    public static void applyBorder(Player player, Location center, double size) {
+        if (hasPermission(player, "skyllia.island.worldborder.bypass")) return;
+
         WorldBorder border = player.getWorldBorder();
         if (border == null) border = Bukkit.createWorldBorder();
         border.setCenter(center);
-        border.setSize(island.getSize());
+        border.setSize(size);
         player.setWorldBorder(border);
     }
 

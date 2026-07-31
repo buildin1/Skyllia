@@ -107,6 +107,23 @@ public class SQLiteDatabaseInitialize extends DatabaseInitializeQuery {
             );
             """;
 
+    private static final String CREATE_ACTIVITY_ZONES_TABLE = """
+            CREATE TABLE IF NOT EXISTS activity_zones (
+                id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL UNIQUE,
+                center_x INTEGER NOT NULL,
+                center_z INTEGER NOT NULL,
+                content_radius REAL NOT NULL,
+                buffer_radius REAL NOT NULL,
+                allow_break INTEGER NOT NULL DEFAULT 0,
+                allow_place INTEGER NOT NULL DEFAULT 0,
+                allow_pvp INTEGER NOT NULL DEFAULT 0,
+                allow_mob_attack INTEGER NOT NULL DEFAULT 0,
+                created_by TEXT,
+                created_at TEXT
+            );
+            """;
+
     private static final String INSERT_SPIRAL = """
             INSERT OR IGNORE INTO spiral (id, region_x, region_z) VALUES (?, ?, ?);
             """;
@@ -206,6 +223,7 @@ public class SQLiteDatabaseInitialize extends DatabaseInitializeQuery {
         exec(CREATE_ISLANDS_PERMISSIONS_TABLE);
         exec(CREATE_ISLANDS_FLAGS_TABLE);
         exec(CREATE_PLAYER_CLEAR_TABLE);
+        exec(CREATE_ACTIVITY_ZONES_TABLE);
         exec(CREATE_ISLANDS_GAMERULE_TABLE);
         exec(CREATE_PERMISSION_REGISTRY_TABLE);
         exec(CREATE_ISLAND_CENTER_LOCATIONS_TABLE);

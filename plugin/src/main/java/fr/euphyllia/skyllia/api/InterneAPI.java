@@ -20,6 +20,7 @@ import fr.euphyllia.skyllia.hook.SkylliaSchematicHookResolver;
 import fr.euphyllia.skyllia.managers.Managers;
 import fr.euphyllia.skyllia.managers.skyblock.APISkyllia;
 import fr.euphyllia.skyllia.managers.skyblock.SkyblockManager;
+import fr.euphyllia.skyllia.managers.zone.ActivityZoneManager;
 import fr.euphyllia.skyllia.managers.world.WorldModifier;
 import fr.euphyllia.skyllia.sgbd.exceptions.DatabaseException;
 import fr.euphyllia.skyllia.sgbd.mariadb.MariaDB;
@@ -54,6 +55,7 @@ public class InterneAPI {
     private final SkyblockCache skyblockCache;
     private final TrustService trustService;
     private final SkyblockManager skyblockManager;
+    private final ActivityZoneManager activityZoneManager;
     private final SkylliaSchematicHookResolver schematicHookResolver;
 
     // World tools
@@ -83,6 +85,7 @@ public class InterneAPI {
 
         // Inject cache to avoid plugin.getInterneAPI() during boot
         this.skyblockManager = new SkyblockManager(this.plugin, this.skyblockCache);
+        this.activityZoneManager = new ActivityZoneManager(this.plugin);
 
         this.schematicHookResolver = new SkylliaSchematicHookResolver(this.plugin);
 
@@ -216,6 +219,10 @@ public class InterneAPI {
 
     public SkyblockManager getSkyblockManager() {
         return this.skyblockManager;
+    }
+
+    public ActivityZoneManager getActivityZoneManager() {
+        return this.activityZoneManager;
     }
 
     public TrustService getTrustService() {

@@ -35,6 +35,9 @@ import fr.euphyllia.skyllia.listeners.permissions.inventory.InventoryModifyDragP
 import fr.euphyllia.skyllia.listeners.permissions.inventory.InventoryOpenPermissions;
 import fr.euphyllia.skyllia.listeners.permissions.player.*;
 import fr.euphyllia.skyllia.listeners.skyblockevents.SkyblockEvent;
+import fr.euphyllia.skyllia.listeners.zone.ZoneBlockBreakPermissions;
+import fr.euphyllia.skyllia.listeners.zone.ZoneBlockPlacePermissions;
+import fr.euphyllia.skyllia.listeners.zone.ZoneCombatPermissions;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.bukkit.event.Listener;
@@ -94,6 +97,11 @@ public class ListenersRegistrar {
         // Skyblock Events
         registerEvent(pluginManager, new SkyblockEvent(interneAPI));
         registerEvent(pluginManager, new IslandInfoExtraListener());
+
+        // 活动区（Activity Zone）权限
+        registerEvent(pluginManager, new ZoneBlockBreakPermissions(interneAPI));
+        registerEvent(pluginManager, new ZoneBlockPlacePermissions(interneAPI));
+        registerEvent(pluginManager, new ZoneCombatPermissions(interneAPI));
 
         // Permissions Listeners
         var moduleManager = SkylliaAPI.getPermissionModuleManager();

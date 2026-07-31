@@ -151,6 +151,8 @@ public class Skyllia extends JavaPlugin {
         ConfigLoader.permissionsV2.compileNow();
         ConfigLoader.islandFlags.compileNow();
 
+        this.interneAPI.getActivityZoneManager().loadAll();
+
         if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
             new SkylliaExpansion(this).register();
         }

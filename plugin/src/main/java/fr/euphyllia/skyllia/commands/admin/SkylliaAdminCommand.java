@@ -15,6 +15,7 @@ import fr.euphyllia.skyllia.commands.admin.subcommands.SchematicSubCommands;
 import fr.euphyllia.skyllia.commands.admin.subcommands.SetHeightSubCommands;
 import fr.euphyllia.skyllia.commands.admin.subcommands.SetMaxMembersSubCommands;
 import fr.euphyllia.skyllia.commands.admin.subcommands.SetSizeSubCommands;
+import fr.euphyllia.skyllia.commands.admin.subcommands.ZoneAdminSubCommand;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import org.bukkit.Bukkit;
@@ -91,6 +92,7 @@ public class SkylliaAdminCommand implements SkylliaCommandInterface {
         registry.registerSubCommand(new SetHeightSubCommands(), "set_height", "setheight");
         registry.registerSubCommand(new SchematicSubCommands(), "schematic", "schem");
         registry.registerSubCommand(new ForceCreateSubCommands(), "create");
+        registry.registerSubCommand(new ZoneAdminSubCommand(), "zone");
 
         // extra
         registry.registerSubCommand(new AdminSetDescriptionCommand(), "set_name", "setname");

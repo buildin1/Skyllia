@@ -59,6 +59,11 @@ public class MariaDBIslandData extends IslandDataQuery {
                   AND s.region_z = s2.region_z
                   AND (s2.locked = 1 OR s2.disable = 0)
             WHERE s2.region_x IS NULL
+              AND NOT EXISTS (
+                  SELECT 1 FROM activity_zones z
+                  WHERE ABS((s.region_x * 512 + 256) - z.center_x) <= (z.buffer_radius + 256)
+                    AND ABS((s.region_z * 512 + 256) - z.center_z) <= (z.buffer_radius + 256)
+              )
             ORDER BY s.id
             LIMIT 1;
             """;

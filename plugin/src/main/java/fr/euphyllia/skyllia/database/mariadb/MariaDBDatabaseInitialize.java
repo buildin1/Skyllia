@@ -110,6 +110,23 @@ public class MariaDBDatabaseInitialize extends DatabaseInitializeQuery {
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
             """;
 
+    private static final String CREATE_ACTIVITY_ZONES_TABLE = """
+            CREATE TABLE IF NOT EXISTS activity_zones (
+                id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(64) NOT NULL UNIQUE,
+                center_x INT NOT NULL,
+                center_z INT NOT NULL,
+                content_radius DOUBLE NOT NULL,
+                buffer_radius DOUBLE NOT NULL,
+                allow_break TINYINT(1) NOT NULL DEFAULT 0,
+                allow_place TINYINT(1) NOT NULL DEFAULT 0,
+                allow_pvp TINYINT(1) NOT NULL DEFAULT 0,
+                allow_mob_attack TINYINT(1) NOT NULL DEFAULT 0,
+                created_by CHAR(36),
+                created_at DATETIME
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+            """;
+
     private static final String INSERT_SPIRAL = """
             INSERT IGNORE INTO spiral (id, region_x, region_z) VALUES (?, ?, ?);
             """;
@@ -245,6 +262,7 @@ public class MariaDBDatabaseInitialize extends DatabaseInitializeQuery {
         exec(CREATE_ISLANDS_PERMISSIONS_TABLE);
         exec(CREATE_ISLANDS_FLAGS_TABLE);
         exec(CREATE_PLAYER_CLEAR_TABLE);
+        exec(CREATE_ACTIVITY_ZONES_TABLE);
         exec(CREATE_ISLANDS_GAMERULE_TABLE);
         exec(CREATE_ISLANDS_INDEX);
         exec(CREATE_SPIRAL_INDEX);

@@ -1,6 +1,7 @@
 package fr.euphyllia.skyllia.database;
 
 import fr.euphyllia.skyllia.api.InterneAPI;
+import fr.euphyllia.skyllia.api.database.ActivityZoneDataQuery;
 import fr.euphyllia.skyllia.api.database.DatabaseInitializeQuery;
 import fr.euphyllia.skyllia.api.database.IslandBuildHeightQuery;
 import fr.euphyllia.skyllia.api.database.IslandCustomDataQuery;
@@ -10,6 +11,7 @@ import fr.euphyllia.skyllia.api.database.IslandPermissionQuery;
 import fr.euphyllia.skyllia.api.database.IslandUpdateQuery;
 import fr.euphyllia.skyllia.api.database.IslandWarpQuery;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
+import fr.euphyllia.skyllia.database.mariadb.MariaDBActivityZoneData;
 import fr.euphyllia.skyllia.database.mariadb.MariaDBDatabaseInitialize;
 import fr.euphyllia.skyllia.database.mariadb.MariaDBIslandBuildHeight;
 import fr.euphyllia.skyllia.database.mariadb.MariaDBIslandCustomData;
@@ -18,6 +20,7 @@ import fr.euphyllia.skyllia.database.mariadb.MariaDBIslandMember;
 import fr.euphyllia.skyllia.database.mariadb.MariaDBIslandPermission;
 import fr.euphyllia.skyllia.database.mariadb.MariaDBIslandUpdate;
 import fr.euphyllia.skyllia.database.mariadb.MariaDBIslandWarp;
+import fr.euphyllia.skyllia.database.postgresql.PostgreSQLActivityZoneData;
 import fr.euphyllia.skyllia.database.postgresql.PostgreSQLDatabaseInitialize;
 import fr.euphyllia.skyllia.database.postgresql.PostgreSQLIslandBuildHeight;
 import fr.euphyllia.skyllia.database.postgresql.PostgreSQLIslandCustomData;
@@ -26,6 +29,7 @@ import fr.euphyllia.skyllia.database.postgresql.PostgreSQLIslandMember;
 import fr.euphyllia.skyllia.database.postgresql.PostgreSQLIslandPermission;
 import fr.euphyllia.skyllia.database.postgresql.PostgreSQLIslandUpdate;
 import fr.euphyllia.skyllia.database.postgresql.PostgreSQLIslandWarp;
+import fr.euphyllia.skyllia.database.sqlite.SQLiteActivityZoneData;
 import fr.euphyllia.skyllia.database.sqlite.SQLiteDatabaseInitialize;
 import fr.euphyllia.skyllia.database.sqlite.SQLiteIslandBuildHeight;
 import fr.euphyllia.skyllia.database.sqlite.SQLiteIslandCustomData;
@@ -54,6 +58,7 @@ public class IslandQuery {
     private IslandPermissionQuery islandPermissionQuery;
     private IslandCustomDataQuery islandCustomDataQuery;
     private IslandBuildHeightQuery islandBuildHeightQuery;
+    private ActivityZoneDataQuery activityZoneDataQuery;
 
     public IslandQuery(InterneAPI api) {
         this.api = api;
@@ -79,6 +84,7 @@ public class IslandQuery {
             this.islandPermissionQuery = new MariaDBIslandPermission(loader);
             this.islandCustomDataQuery = new MariaDBIslandCustomData(loader);
             this.islandBuildHeightQuery = new MariaDBIslandBuildHeight(loader);
+            this.activityZoneDataQuery = new MariaDBActivityZoneData(loader);
 
             return;
         }
@@ -93,6 +99,7 @@ public class IslandQuery {
             this.islandPermissionQuery = new PostgreSQLIslandPermission(loader);
             this.islandCustomDataQuery = new PostgreSQLIslandCustomData(loader);
             this.islandBuildHeightQuery = new PostgreSQLIslandBuildHeight(loader);
+            this.activityZoneDataQuery = new PostgreSQLActivityZoneData(loader);
 
             return;
         }
@@ -113,6 +120,7 @@ public class IslandQuery {
             this.islandPermissionQuery = new SQLiteIslandPermission(sqliteLoader);
             this.islandCustomDataQuery = new SQLiteIslandCustomData(sqliteLoader);
             this.islandBuildHeightQuery = new SQLiteIslandBuildHeight(sqliteLoader);
+            this.activityZoneDataQuery = new SQLiteActivityZoneData(sqliteLoader);
 
             return;
         }
@@ -150,5 +158,9 @@ public class IslandQuery {
 
     public IslandBuildHeightQuery getIslandBuildHeightQuery() {
         return this.islandBuildHeightQuery;
+    }
+
+    public ActivityZoneDataQuery getActivityZoneDataQuery() {
+        return this.activityZoneDataQuery;
     }
 }
