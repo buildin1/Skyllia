@@ -1,6 +1,37 @@
 config-version = 1
 verbose = false
 
+# ─────────────────────────────────────────────────────────────────────────────
+# 全局接管层 (global override)
+# ─────────────────────────────────────────────────────────────────────────────
+# 下面的 [defaults.<角色>] 只在「创建岛屿的那一刻」被用来生成该岛自己的权限位图。
+# 岛建好之后再改 [defaults]，对已存在的岛屿没有任何影响。
+#
+# [global-override.<角色>] 不一样：它在「每一次权限判定时」实时生效，写在这里的权限会
+# 直接决定全服所有岛屿（包括老岛）上该角色的判定结果。改完立即生效，不碰数据库、不用重启。
+#
+# 这是修复「老岛权限位图全零导致成员什么都干不了」最省事的手段 —— 那些岛屿建立时把每个
+# 角色的权限都写成了 0，单改本文件的 [defaults] 只影响新岛，而接管层对新老岛一视同仁。
+#
+# 没有写在这里的权限，则完全交给岛主通过 /is permission 自行控制。
+#
+# 推荐通过命令管理，命令会自动写回本文件并立即重载：
+#   /skylliadmin perm list
+#   /skylliadmin perm set   MEMBER inventory.open true
+#   /skylliadmin perm unset MEMBER inventory.open
+#
+# 注意：岛主(OWNER)的判定在接管层之前就已短路放行（取决于 permissions.check-owner），
+# 所以接管 OWNER 通常没有意义。
+#
+# [global-override.MEMBER]
+# "skyllia:block.break" = true
+# "skyllia:block.place" = true
+# "skyllia:inventory.open" = true
+# "skyllia:inventory.modify" = true
+#
+# [global-override.VISITOR]
+# "skyllia:player.teleport" = true   # 允许访客进入他人岛屿（跨区移动的实际判定权限）
+
 [defaults.OWNER]
 "skyllia:command.island.gamerule" = true
 "skyllia:command.island.set_biome" = true

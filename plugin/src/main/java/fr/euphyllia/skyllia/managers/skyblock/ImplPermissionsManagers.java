@@ -92,6 +92,19 @@ public class ImplPermissionsManagers implements PermissionsManagers {
             role = RoleType.MEMBER;
         }
 
+        // 全局接管层：管理员在 permissions-v2.toml 的 [global-override.<角色>] 里接管的权限
+        // 直接决定结果，不再查岛屿自己的位图。这让「全服放开某项权限」立刻作用于所有岛屿
+        // （含建岛时位图被写成全零的老岛），无需迁移数据库、无需重启。
+        // 放在岛主/封禁短路之后：岛主永远不会被全局配置锁死在自己岛上。
+        Boolean override = permissionOverride(role, permission);
+        if (override != null) {
+            if (debug) {
+                log.info("Player {} has role {}, permission {}: {} (来源: 全局接管)",
+                        player.getName(), role, describePermission(permission), override);
+            }
+            return override;
+        }
+
         var compiled = island.getCompiledPermissions();
         boolean has = compiled.has(SkylliaAPI.getPermissionRegistry(), role, permission);
         if (debug) {
@@ -109,14 +122,69 @@ public class ImplPermissionsManagers implements PermissionsManagers {
     @Override
     public boolean hasFlag(Island island, FlagId flag, String worldName) {
         if (flag == null) return false;
+
+        Boolean override = flagOverride(flag, worldName);
+        if (override != null) return override;
+
         return island.getIslandFlags(worldName)
                 .has(SkylliaAPI.getFlagRegistry(), flag);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * 解析优先级：<b>单体标志的全局接管 &gt; 全体（{@code .all}）标志的全局接管 &gt; 岛屿自身设置</b>。
+     * </p>
+     * <p>
+     * 单体接管排在全体接管之前，是为了让「全服禁止某一种生物」成为可能：在此之前，
+     * {@code hostile.all = true} 会让所有单体标志彻底失效（判定是纯粹的「或」，
+     * 单体只能加、不能减），因此无法单独关掉幻翼这类生物。现在
+     * {@code /isadmin flag set island.spawn.hostile.phantom false} 会在最外层直接返回 false，
+     * 根本不进入下面的「或」逻辑。
+     * </p>
+     */
     @Override
     public boolean hasFlag(Island island, FlagId specific, FlagId fallback, String worldName) {
+        Boolean specificOverride = flagOverride(specific, worldName);
+        if (specificOverride != null) return specificOverride;
+
+        Boolean fallbackOverride = flagOverride(fallback, worldName);
+        if (fallbackOverride != null) return fallbackOverride;
+
         var flags = island.getIslandFlags(worldName);
         var registry = SkylliaAPI.getFlagRegistry();
         return flags.has(registry, specific) || flags.has(registry, fallback);
+    }
+
+    /**
+     * 读取标志的全局接管值。
+     * <p>
+     * 之所以做空值防护：这些判定会在插件启动早期就被事件触发，而
+     * {@code ConfigLoader.islandFlags} 要等 {@code ConfigLoader.init()} 之后才可用。
+     * 配置尚未就绪时返回 {@code null}，调用方自然回退到岛屿自身设置。
+     * </p>
+     */
+    private static @Nullable Boolean flagOverride(@Nullable FlagId id, String worldName) {
+        var cfg = ConfigLoader.islandFlags;
+        return cfg == null ? null : cfg.globalOverride(id, worldName);
+    }
+
+    /**
+     * 读取权限的全局接管值。空值防护理由同 {@link #flagOverride}。
+     */
+    private static @Nullable Boolean permissionOverride(@Nullable RoleType role, @Nullable PermissionId id) {
+        var cfg = ConfigLoader.permissionsV2;
+        return cfg == null ? null : cfg.globalOverride(role, id);
+    }
+
+    /**
+     * 把权限 ID 渲染成可读名称，仅用于调试日志；解析失败时退回索引号。
+     */
+    private static String describePermission(PermissionId permission) {
+        try {
+            return SkylliaAPI.getPermissionRegistry().node(permission).node().toString();
+        } catch (Exception e) {
+            return "unknown#" + permission.index();
+        }
     }
 }

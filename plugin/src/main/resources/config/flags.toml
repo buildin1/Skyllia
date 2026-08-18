@@ -37,3 +37,34 @@ verbose = false
 # Uncomment and adapt as needed.
 # [island.default.worlds.world_nether.defaults]
 # "skyllia:island.allow.fire" = true
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 全局接管层 (global override)
+# ─────────────────────────────────────────────────────────────────────────────
+# 上面的 [defaults] 只在「创建岛屿的那一刻」被用来生成该岛自己的标志位图。岛建好之后
+# 再改 [defaults]，对已经存在的岛屿没有任何影响 —— 这也是为什么改完配置发现老岛毫无变化。
+#
+# [global-override] 不一样：它在「每一次判定时」实时生效，写在这里的标志会直接决定
+# 全服所有岛屿（包括很久以前建的老岛）的取值。改完立即生效：
+#   · 不需要修改数据库
+#   · 不需要重启服务器
+#   · 不需要让每个岛主自己去菜单里点一遍
+#
+# 没有写在这里的标志，则完全交给岛主通过 /is flag 自行控制。
+#
+# 解析优先级：单体标志的接管 > 全体(.all)标志的接管 > 岛屿自己的设置
+# 因此可以用单体接管来精确关掉某一种生物，即使 .all 是开启的。
+#
+# 推荐通过命令管理，命令会自动写回本文件并立即重载：
+#   /skylliadmin flag list
+#   /skylliadmin flag set   island.spawn.passive.all true
+#   /skylliadmin flag set   island.spawn.hostile.phantom false
+#   /skylliadmin flag unset island.spawn.passive.all
+#
+# [global-override]
+# "skyllia:island.spawn.passive.all" = true       # 全服放开动物、村民、游商生成
+# "skyllia:island.spawn.hostile.phantom" = false  # 全服禁止幻翼，压过 hostile.all
+#
+# 只对某个世界生效：
+# [global-override.worlds.sky-nether]
+# "skyllia:island.allow.fire" = true

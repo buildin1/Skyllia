@@ -5,10 +5,13 @@ import fr.euphyllia.skyllia.api.commands.SkylliaCommandInterface;
 import fr.euphyllia.skyllia.api.commands.SubCommandInterface;
 import fr.euphyllia.skyllia.api.commands.SubCommandRegistry;
 import fr.euphyllia.skyllia.commands.admin.subcommands.AdminSetDescriptionCommand;
+import fr.euphyllia.skyllia.commands.admin.subcommands.AdminSetNameCommand;
 import fr.euphyllia.skyllia.commands.admin.subcommands.CurrentSubCommands;
 import fr.euphyllia.skyllia.commands.admin.subcommands.ForceCreateSubCommands;
 import fr.euphyllia.skyllia.commands.admin.subcommands.ForceDeleteSubCommands;
 import fr.euphyllia.skyllia.commands.admin.subcommands.ForceTransferSubCommands;
+import fr.euphyllia.skyllia.commands.admin.subcommands.GlobalFlagSubCommand;
+import fr.euphyllia.skyllia.commands.admin.subcommands.GlobalPermSubCommand;
 import fr.euphyllia.skyllia.commands.admin.subcommands.InfoSubCommand;
 import fr.euphyllia.skyllia.commands.admin.subcommands.ReloadSubCommands;
 import fr.euphyllia.skyllia.commands.admin.subcommands.SchematicSubCommands;
@@ -94,8 +97,14 @@ public class SkylliaAdminCommand implements SkylliaCommandInterface {
         registry.registerSubCommand(new ForceCreateSubCommands(), "create");
         registry.registerSubCommand(new ZoneAdminSubCommand(), "zone");
 
+        // 全局接管层：被接管的标志/权限立即作用于全服所有岛屿（含老岛），无需改库或重启
+        registry.registerSubCommand(new GlobalFlagSubCommand(), "flag", "flags");
+        registry.registerSubCommand(new GlobalPermSubCommand(), "perm", "permission", "permissions");
+
         // extra
-        registry.registerSubCommand(new AdminSetDescriptionCommand(), "set_name", "setname");
+        // 注意：这里原先两行都注册的是 AdminSetDescriptionCommand，导致 /skylliadmin set_name
+        // 实际执行的是"改简介"，而写好的 AdminSetNameCommand 从未被挂上去。
+        registry.registerSubCommand(new AdminSetNameCommand(), "set_name", "setname");
         registry.registerSubCommand(new AdminSetDescriptionCommand(), "set_description", "setdescription");
     }
 

@@ -42,8 +42,6 @@ public class GeneralConfigManager implements IConfigurationProvider {
         this.islandSettings = new IslandSettings(
                 getOrSetDefault("settings.island.region-distance", -1, Integer.class),
                 getOrSetDefault("settings.island.max-islands", 500_000, Integer.class),
-                getOrSetDefault("settings.island.teleport-outside-island", false, Boolean.class),
-                getOrSetDefault("settings.island.restrict-player-movement", false, Boolean.class),
                 getOrSetDefault("settings.island.enable-obsidian-to-lava-conversion", true, Boolean.class),
                 getOrSetDefault("settings.island.delete.prevent-deletion-if-has-members", true, Boolean.class),
                 getOrSetDefault("settings.island.delete.chunk-perimeter-island", false, Boolean.class),
@@ -179,8 +177,9 @@ public class GeneralConfigManager implements IConfigurationProvider {
     public record IslandSettings(
             int regionDistance,
             int maxIslands,
-            boolean teleportOutsideIsland,
-            boolean restrictPlayerMovement,
+            // 已移除 teleportOutsideIsland / restrictPlayerMovement：这两个配置项在整个仓库中
+            // 除了在这里被解析之外没有任何读取方，属于「配置界面上看起来生效、实际是死的」。
+            // 拦截跨岛移动的实际实现在 PlayerRegionChangeListener 中。
             boolean enableObsidianToLavaConversion,
             boolean preventDeletionIfHasMembers,
             boolean deleteChunkPerimeterIsland,

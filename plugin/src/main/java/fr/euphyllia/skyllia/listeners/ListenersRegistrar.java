@@ -75,7 +75,10 @@ public class ListenersRegistrar {
         registerEvent(pluginManager, new PistonEvent(interneAPI));
         registerEvent(pluginManager, new GrowEvent(interneAPI));
         registerEvent(pluginManager, new SheepEatGrassListener(interneAPI));
-        registerEvent(pluginManager, new MoveEvent());
+        // MoveEvent 已移除：它是一个没有任何 @EventHandler 的空类，注册它只会让 Bukkit
+        // 白白扫描一遍。与之配套的 settings.island.restrict-player-movement /
+        // teleport-outside-island 两个配置项同样从未被任何代码读取，一并删掉了。
+        // 真正在拦截跨岛移动的是 PlayerRegionChangeListener。
         registerEvent(pluginManager, new QuitEvent());
         registerEvent(pluginManager, new RespawnEvent(interneAPI));
         registerEvent(pluginManager, new EndPortalTeleportListener());

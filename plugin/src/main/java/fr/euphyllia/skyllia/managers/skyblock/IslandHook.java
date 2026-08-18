@@ -321,9 +321,22 @@ public class IslandHook extends Island {
                 loaded = query.loadCompiled(getId(), registry);
             }
 
-            local = (loaded != null) ? loaded : new CompiledPermissions(registry);
-            this.compiledPermissions = local;
-            return local;
+            if (loaded == null) {
+                // loadCompiled 只在 SQL 出错时返回 null——岛屿没有任何权限行时，返回的是
+                // 一份合法的空权限集而不是 null。所以走到这里就意味着"读库失败了"。
+                //
+                // 此时绝不能把这份全零权限缓存下来：岛屿对象缓存的 TTL 默认是 -1（永不过期），
+                // 一次瞬时的 SQLite 错误就会让该岛所有非岛主角色的权限全部失效，且直到
+                // 服务器重启都无法恢复。返回一份临时的空集让本次判定安全地拒绝，
+                // 下一次调用会重新尝试读库。
+                //
+                // （注意 getIslandFlags 没有做同样处理：那边的 loadIslandFlags 在"该岛没有
+                // 标志行"时同样返回 null，无法与错误区分，若不缓存会导致每次事件都查一次库。）
+                return new CompiledPermissions(registry);
+            }
+
+            this.compiledPermissions = loaded;
+            return loaded;
         }
     }
 

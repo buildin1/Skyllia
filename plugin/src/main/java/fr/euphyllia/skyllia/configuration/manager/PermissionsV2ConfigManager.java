@@ -33,9 +33,30 @@ public class PermissionsV2ConfigManager implements IConfigurationProvider {
 
     private static final Logger log = LoggerFactory.getLogger(PermissionsV2ConfigManager.class);
 
+    /**
+     * TOML 顶层区块名：全局接管层，形如 {@code [global-override.MEMBER]}。
+     * <p>
+     * 与 {@code [defaults]} 的区别见 {@link IslandFlagsConfigManager} 同名常量的说明：
+     * {@code [defaults]} 只在建岛那一刻生成岛屿位图，{@code [global-override]} 则在每次
+     * 权限判定时实时生效，改完立即作用于全服所有岛屿（含老岛），不碰数据库、不用重启。
+     * </p>
+     */
+    private static final String GLOBAL_OVERRIDE = "global-override";
+
     private final CommentedFileConfig config;
 
-    private final Map<String, EnumMap<RoleType, Map<PermissionId, Boolean>>> compiledDefaults = new HashMap<>();
+    // 注意：islandType 可能是 null（代表全局默认），不可变 Map 的 get(null) 会抛 NPE，
+    // 所以这里必须保持 HashMap。整体替换的语义见下方 loadConfig()。
+    private volatile Map<String, EnumMap<RoleType, Map<PermissionId, Boolean>>> compiledDefaults = new HashMap<>();
+
+    /**
+     * 全局接管层：角色 -> 权限 -> 强制值。
+     * <p>
+     * 与标志的接管层一样，这份快照会被所有 region 线程在判定热路径上读取，
+     * 因此采用「volatile 引用 + 不可变内容」整体替换，读取端零加锁。
+     * </p>
+     */
+    private volatile Map<RoleType, Map<PermissionId, Boolean>> globalOverrides = Map.of();
 
     private boolean changed = false;
     private int configVersion;
@@ -191,11 +212,12 @@ public class PermissionsV2ConfigManager implements IConfigurationProvider {
         }
     }
 
-    private void readDefaultsFlat(PermissionRegistry registry, @Nullable String islandType, @Nullable CommentedConfig defaultsRoot) {
+    private void readDefaultsFlat(PermissionRegistry registry, @Nullable String islandType, @Nullable CommentedConfig defaultsRoot,
+                                  Map<String, EnumMap<RoleType, Map<PermissionId, Boolean>>> target) {
         if (defaultsRoot == null) return;
 
         EnumMap<RoleType, Map<PermissionId, Boolean>> roleMap =
-                compiledDefaults.computeIfAbsent(islandType, k -> new EnumMap<>(RoleType.class));
+                target.computeIfAbsent(islandType, k -> new EnumMap<>(RoleType.class));
 
         List<String> roleKeys = new ArrayList<>(defaultsRoot.valueMap().keySet());
         roleKeys.sort(String::compareTo);
@@ -291,8 +313,9 @@ public class PermissionsV2ConfigManager implements IConfigurationProvider {
 
         ensureAllDefaultsExist(registry);
 
-        compiledDefaults.clear();
-        readDefaultsFlat(registry, null, config.get("defaults"));
+        // 先在局部 Map 里构建完整结果，最后整体替换，避免建岛流程在重载瞬间读到半成品。
+        Map<String, EnumMap<RoleType, Map<PermissionId, Boolean>>> defaults = new HashMap<>();
+        readDefaultsFlat(registry, null, config.get("defaults"), defaults);
 
         Object islandObj = config.get("island");
         if (islandObj instanceof CommentedConfig islandRoot) {
@@ -302,9 +325,12 @@ public class PermissionsV2ConfigManager implements IConfigurationProvider {
             for (String islandType : islandTypes) {
                 Object islandNodeObj = islandRoot.get(islandType);
                 if (!(islandNodeObj instanceof CommentedConfig islandNode)) continue;
-                readDefaultsFlat(registry, islandType, islandNode.get("defaults"));
+                readDefaultsFlat(registry, islandType, islandNode.get("defaults"), defaults);
             }
         }
+
+        this.compiledDefaults = defaults;
+        this.globalOverrides = readGlobalOverrides(registry);
 
         if (changed) {
             TomlWriter tomlWriter = new TomlWriter();
@@ -375,5 +401,144 @@ public class PermissionsV2ConfigManager implements IConfigurationProvider {
 
     public void compileNow() {
         loadConfig();
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  全局接管层（[global-override.<角色>]）
+    // ═══════════════════════════════════════════════════════════════
+
+    /**
+     * 查询某个角色的某条权限是否被全局接管。
+     * <p>
+     * 位于权限判定热路径上：一次 volatile 读 + 两次 Map 查找，无锁无分配。
+     * </p>
+     *
+     * @return 被接管时返回强制值，未被接管返回 {@code null}
+     * —— 调用方此时应回退到岛屿自己的编译权限集
+     */
+    public @Nullable Boolean globalOverride(@Nullable RoleType role, @Nullable PermissionId id) {
+        if (role == null || id == null) return null;
+
+        Map<RoleType, Map<PermissionId, Boolean>> snapshot = this.globalOverrides;
+        if (snapshot.isEmpty()) return null;
+
+        Map<PermissionId, Boolean> perRole = snapshot.get(role);
+        return perRole == null ? null : perRole.get(id);
+    }
+
+    /**
+     * 增加、修改或撤销一条全局权限接管，并立即落盘 + 重建内存快照。
+     * 由管理员命令调用（已在异步调度器上，文件写入不阻塞 region 线程）。
+     *
+     * @param value 强制值；传 {@code null} 表示撤销接管、交还岛主自治
+     * @return {@code true} 表示已写入；{@code false} 表示该权限未注册
+     */
+    public synchronized boolean setGlobalOverride(RoleType role, NamespacedKey key, @Nullable Boolean value) {
+        PermissionRegistry registry = SkylliaAPI.getPermissionRegistry();
+        if (registry.getIfPresent(key) == null) return false;
+
+        String flatKey = key.getNamespace() + ":" + key.getKey();
+
+        CommentedConfig roleBlock = getOrCreateBlock(getOrCreateBlock(config, GLOBAL_OVERRIDE), role.name());
+
+        if (value == null) {
+            roleBlock.remove(literalPath(flatKey));
+        } else {
+            roleBlock.set(literalPath(flatKey), value.booleanValue());
+        }
+
+        persist();
+        this.globalOverrides = readGlobalOverrides(registry);
+        return true;
+    }
+
+    /**
+     * 列出当前生效的全部全局权限接管，供 {@code /isadmin perm list} 展示。
+     */
+    public List<String> describeGlobalOverrides() {
+        PermissionRegistry registry = SkylliaAPI.getPermissionRegistry();
+        Map<RoleType, Map<PermissionId, Boolean>> snapshot = this.globalOverrides;
+
+        List<String> lines = new ArrayList<>();
+        for (RoleType role : RoleType.values()) {
+            Map<PermissionId, Boolean> entries = snapshot.get(role);
+            if (entries == null || entries.isEmpty()) continue;
+
+            List<String> rendered = new ArrayList<>();
+            for (Map.Entry<PermissionId, Boolean> e : entries.entrySet()) {
+                String name;
+                try {
+                    NamespacedKey k = registry.node(e.getKey()).node();
+                    name = k.getNamespace() + ":" + k.getKey();
+                } catch (Exception ignored) {
+                    name = "#" + e.getKey().index();
+                }
+                rendered.add("[" + role.name() + "] " + name + " = " + e.getValue());
+            }
+            Collections.sort(rendered);
+            lines.addAll(rendered);
+        }
+        return lines;
+    }
+
+    /**
+     * 从配置树解析 {@code [global-override.<角色>]}，产出一份全新的不可变快照。
+     * 未知角色或未注册的权限会被跳过并记录警告，不影响其余条目。
+     */
+    private Map<RoleType, Map<PermissionId, Boolean>> readGlobalOverrides(PermissionRegistry registry) {
+        Object rootObj = config.get(literalPath(GLOBAL_OVERRIDE));
+        if (!(rootObj instanceof CommentedConfig root)) return Map.of();
+
+        Map<RoleType, Map<PermissionId, Boolean>> out = new EnumMap<>(RoleType.class);
+
+        for (String roleKey : root.valueMap().keySet()) {
+            RoleType role;
+            try {
+                role = RoleType.valueOf(roleKey);
+            } catch (Exception ignored) {
+                log.warn("[global-override] 未知角色 '{}'，已忽略。可用角色：OWNER / CO_OWNER / MODERATOR / MEMBER / VISITOR / BAN", roleKey);
+                continue;
+            }
+
+            Object roleNodeObj = root.get(literalPath(roleKey));
+            if (!(roleNodeObj instanceof CommentedConfig roleNode)) continue;
+
+            Map<PermissionId, Boolean> perRole = new HashMap<>();
+            for (Map.Entry<String, Object> entry : roleNode.valueMap().entrySet()) {
+                if (entry.getValue() instanceof CommentedConfig) continue;
+
+                Boolean value = coerceBoolean(entry.getValue());
+                if (value == null) continue;
+
+                NamespacedKey key = parseNamespacedKey(entry.getKey());
+                if (key == null) continue;
+
+                PermissionId id = registry.getIfPresent(key);
+                if (id == null) {
+                    log.warn("[global-override] 未知权限 '{}'（角色 {}），已忽略。拼写有误，或对应附属插件尚未安装。",
+                            entry.getKey(), roleKey);
+                    continue;
+                }
+                perRole.put(id, value);
+            }
+
+            if (!perRole.isEmpty()) out.put(role, Map.copyOf(perRole));
+        }
+
+        return out.isEmpty() ? Map.of() : Collections.unmodifiableMap(out);
+    }
+
+    private CommentedConfig getOrCreateBlock(CommentedConfig parent, String key) {
+        Object obj = parent.get(literalPath(key));
+        if (obj instanceof CommentedConfig cc) return cc;
+        CommentedConfig created = config.createSubConfig();
+        parent.set(literalPath(key), created);
+        return created;
+    }
+
+    private void persist() {
+        TomlWriter tomlWriter = new TomlWriter();
+        tomlWriter.setIndent(IndentStyle.NONE);
+        tomlWriter.write(config, config.getFile(), WritingMode.REPLACE);
     }
 }
