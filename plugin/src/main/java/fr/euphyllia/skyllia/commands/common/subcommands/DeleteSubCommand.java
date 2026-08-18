@@ -24,6 +24,7 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.List;
@@ -97,7 +98,9 @@ public class DeleteSubCommand implements SubCommandInterface {
             ConfigLoader.language.sendMessage(sender, "island.player.player-only-command");
             return;
         }
-        if (args.length != 1) {
+        // 注意是 < 1 而不是 != 1：第二个参数（重建用的岛屿类型）是可选的，
+        // 用 != 1 会把 /is delete confirm <类型> 一并挡掉。
+        if (args.length < 1) {
             ConfigLoader.language.sendMessage(player, "island.delete.args-missing");
             return;
         }
@@ -135,10 +138,28 @@ public class DeleteSubCommand implements SubCommandInterface {
                 }
             }
 
+            // ── 动旧岛之前，先确认新岛一定建得出来 ──
+            //
+            // runCreateIsland() 内部会校验 skyllia.island.command.create.<类型> 权限，
+            // 并在缺失时直接放弃创建。如果等到那时才失败，旧岛已经被 setDisable(true)
+            // 禁用掉了，玩家就会落到"旧岛没了、新岛也没有"的状态——正是这次要修的问题。
+            // 所以把类型解析和权限校验全部提前到这里，任何一项不通过就原样返回，不碰旧岛。
+            String schemKey = resolveNewIslandType(requestedType);
+            if (schemKey == null) {
+                ConfigLoader.language.sendMessage(player, "island.schematic-not-exist");
+                return;
+            }
+            if (!PlayerUtils.hasPermission(player, "skyllia.island.command.create.%s".formatted(schemKey))) {
+                ConfigLoader.language.sendMessage(player, "island.player.permission-denied");
+                return;
+            }
+
             skyblockManager.setLockedIsland(island, true);
 
             boolean isDisabled = island.setDisable(true);
             if (!isDisabled) {
+                // 事件被取消或写库失败：把锁解开，别让岛屿卡在 locked 状态
+                skyblockManager.setLockedIsland(island, false);
                 ConfigLoader.language.sendMessage(player, "island.generic.unexpected-error");
                 return;
             }
@@ -159,9 +180,7 @@ public class DeleteSubCommand implements SubCommandInterface {
             //
             // 现在改成：建新岛 → 建好后按配置重置背包 → 传送由建岛流程负责 →
             // 最后才在后台异步删掉旧岛的区块。即使旧岛删除失败，玩家也已经在新岛上了。
-            String[] createArgs = (requestedType == null) ? new String[0] : new String[]{requestedType};
-
-            new CreateSubCommand().runCreateIsland(player, createArgs)
+            new CreateSubCommand().runCreateIsland(player, new String[]{schemKey})
                     .whenComplete((ignored, throwable) -> {
                         if (throwable != null) {
                             logger.log(Level.ERROR, "删除后重建岛屿失败，玩家 {}：{}",
@@ -176,6 +195,28 @@ public class DeleteSubCommand implements SubCommandInterface {
             logger.log(Level.FATAL, e.getMessage(), e);
             ConfigLoader.language.sendMessage(player, "island.generic.unexpected-error");
         }
+    }
+
+    /**
+     * 解析重建时要用的岛屿类型，与 {@code CreateSubCommand#resolveSchematicKey} 保持一致的优先级：
+     * 玩家显式指定 &gt; islands.toml 的 default-schem-key &gt; 列表中的第一个。
+     *
+     * @return 有效的岛屿类型键；一个可用类型都没有时返回 {@code null}
+     */
+    private @Nullable String resolveNewIslandType(@Nullable String requestedType) {
+        List<String> types = ConfigLoader.schematicManager.getIslandTypes();
+        if (types.isEmpty()) return null;
+
+        if (requestedType != null && types.contains(requestedType)) {
+            return requestedType;
+        }
+
+        String defaultKey = ConfigLoader.islandManager.getDefaultIslandKey();
+        if (defaultKey != null && types.contains(defaultKey)) {
+            return defaultKey;
+        }
+
+        return types.getFirst();
     }
 
     /**
