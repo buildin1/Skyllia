@@ -106,6 +106,9 @@ public class DeleteSubCommand implements SubCommandInterface {
             ConfigLoader.language.sendMessage(player, "island.admin.delete-no-confirm");
             return;
         }
+        // 可选的第二个参数：新岛屿类型。省略则使用 islands.toml 里的 default-schem-key。
+        String requestedType = args.length >= 2 ? args[1] : null;
+
         try {
             SkyblockManager skyblockManager = Skyllia.getInstance().getInterneAPI().getSkyblockManager();
             Island island = SkylliaAPI.getIslandByPlayerId(player.getUniqueId());
@@ -116,7 +119,7 @@ public class DeleteSubCommand implements SubCommandInterface {
 
             Players executorPlayer = island.getMember(player.getUniqueId());
 
-            if (!executorPlayer.getRoleType().equals(RoleType.OWNER)) {
+            if (executorPlayer == null || !executorPlayer.getRoleType().equals(RoleType.OWNER)) {
                 ConfigLoader.language.sendMessage(player, "island.delete-only-owner");
                 return;
             }
@@ -135,47 +138,108 @@ public class DeleteSubCommand implements SubCommandInterface {
             skyblockManager.setLockedIsland(island, true);
 
             boolean isDisabled = island.setDisable(true);
-            if (isDisabled) {
-                this.updatePlayer(skyblockManager, island);
-                this.kickAllPlayerOnIsland(island);
-
-                List<String> worldsToDelete = ConfigLoader.worldManager.getWorldConfigs().entrySet().stream()
-                        .filter(entry -> entry.getValue().shouldDeleteIsland())
-                        .map(Map.Entry::getKey)
-                        .toList();
-                AtomicInteger worldsLeft = new AtomicInteger(worldsToDelete.size());
-                AtomicBoolean failed = new AtomicBoolean(false);
-
-                if (worldsLeft.get() == 0) {
-                    finalizeDeletion(skyblockManager, island, false, player);
-                    return;
-                }
-
-                worldsToDelete.forEach(worldName -> {
-                    World world = Bukkit.getWorld(worldName);
-                    if (world == null) {
-                        failed.set(true);
-                        logger.log(Level.FATAL, "Failed to delete island {} in world {}: world not loaded", island.getId(), worldName);
-                        if (worldsLeft.decrementAndGet() == 0) {
-                            finalizeDeletion(skyblockManager, island, failed.get(), player);
-                        }
-                        return;
-                    }
-
-                    Skyllia.getInstance().getInterneAPI().getWorldModifier().deleteIsland(island, world, ConfigLoader.general.getIslandSettings().regionDistance(), (success) -> {
-                        if (!success) failed.set(true);
-                        if (worldsLeft.decrementAndGet() == 0) {
-                            finalizeDeletion(skyblockManager, island, failed.get(), player);
-                        }
-                    });
-                });
-            } else {
+            if (!isDisabled) {
                 ConfigLoader.language.sendMessage(player, "island.generic.unexpected-error");
+                return;
             }
+
+            // 把旧岛成员降级为访客。执行者本人不在这里清理背包 / 传送 spawn——
+            // 他马上就要拿到新岛，见下方 runCreateIsland 的回调。
+            this.demoteMembers(skyblockManager, island, player.getUniqueId());
+            this.kickAllPlayerOnIsland(island);
+
+            // ── 关键改动：先建新岛、把玩家送过去，旧岛留到后台再删 ──
+            //
+            // 此前这里是「删完就结束」：删除旧岛区块之后只发一条成功消息，玩家由
+            // checkClearPlayer() 送去 PlayerUtils.teleportPlayerSpawn()。而那个全局出生点
+            // 一旦配置指向不存在的世界（例如 world-name 写了个没有的名字），
+            // getSpawnLocation() 会返回 null 并回退到 Bukkit.getWorlds().getFirst()，
+            // 也就是主世界的出生点——如果主世界是平坦世界，玩家就落在平坦世界；
+            // 如果坐标落在未生成的区域，就直接掉进虚空。玩家删完岛就"没有然后了"。
+            //
+            // 现在改成：建新岛 → 建好后按配置重置背包 → 传送由建岛流程负责 →
+            // 最后才在后台异步删掉旧岛的区块。即使旧岛删除失败，玩家也已经在新岛上了。
+            String[] createArgs = (requestedType == null) ? new String[0] : new String[]{requestedType};
+
+            new CreateSubCommand().runCreateIsland(player, createArgs)
+                    .whenComplete((ignored, throwable) -> {
+                        if (throwable != null) {
+                            logger.log(Level.ERROR, "删除后重建岛屿失败，玩家 {}：{}",
+                                    player.getName(), throwable.getMessage(), throwable);
+                        }
+                        // 无论新岛是否成功，都要按配置重置数据并把旧岛区块清掉，
+                        // 否则旧岛会永远占着那块 region。
+                        this.resetPlayerAfterDelete(player);
+                        this.deleteOldIslandChunks(skyblockManager, island, player);
+                    });
         } catch (Exception e) {
             logger.log(Level.FATAL, e.getMessage(), e);
             ConfigLoader.language.sendMessage(player, "island.generic.unexpected-error");
         }
+    }
+
+    /**
+     * 旧岛区块的后台清理。玩家此时已经在新岛上了，这一步的成败不再影响他的体验。
+     */
+    private void deleteOldIslandChunks(SkyblockManager skyblockManager, Island island, Player player) {
+        List<String> worldsToDelete = ConfigLoader.worldManager.getWorldConfigs().entrySet().stream()
+                .filter(entry -> entry.getValue().shouldDeleteIsland())
+                .map(Map.Entry::getKey)
+                .toList();
+
+        AtomicInteger worldsLeft = new AtomicInteger(worldsToDelete.size());
+        AtomicBoolean failed = new AtomicBoolean(false);
+
+        if (worldsLeft.get() == 0) {
+            finalizeDeletion(skyblockManager, island, false, player);
+            return;
+        }
+
+        worldsToDelete.forEach(worldName -> {
+            World world = Bukkit.getWorld(worldName);
+            if (world == null) {
+                failed.set(true);
+                logger.log(Level.FATAL, "Failed to delete island {} in world {}: world not loaded", island.getId(), worldName);
+                if (worldsLeft.decrementAndGet() == 0) {
+                    finalizeDeletion(skyblockManager, island, failed.get(), player);
+                }
+                return;
+            }
+
+            Skyllia.getInstance().getInterneAPI().getWorldModifier().deleteIsland(island, world, ConfigLoader.general.getIslandSettings().regionDistance(), (success) -> {
+                if (!success) failed.set(true);
+                if (worldsLeft.decrementAndGet() == 0) {
+                    finalizeDeletion(skyblockManager, island, failed.get(), player);
+                }
+            });
+        });
+    }
+
+    /**
+     * 按 players.toml 的 {@code when-delete} 配置重置执行者的背包 / 末影箱 / 经验。
+     * <p>
+     * 放在新岛建好之后执行，而不是删岛之前：万一建岛失败，玩家至少不会既没了岛、
+     * 又被清空了背包。
+     * </p>
+     */
+    private void resetPlayerAfterDelete(Player player) {
+        if (!player.isOnline()) return;
+
+        player.getScheduler().execute(Skyllia.getInstance(), () -> {
+            if (ConfigLoader.playerManager.isClearInventoryWhenDelete()) {
+                player.getInventory().clear();
+            }
+            if (ConfigLoader.playerManager.isClearEnderChestWhenDelete()) {
+                player.getEnderChest().clear();
+            }
+            if (ConfigLoader.playerManager.isResetExperienceWhenDelete()) {
+                player.setTotalExperience(0);
+                player.setExp(0);
+                player.setLevel(0);
+                player.sendExperienceChange(0, 0);
+            }
+            player.setGameMode(GameMode.SURVIVAL);
+        }, null, 1L);
     }
 
     @Override
@@ -185,15 +249,46 @@ public class DeleteSubCommand implements SubCommandInterface {
             if ("confirm".startsWith(partial)) {
                 return Collections.singletonList("confirm");
             }
+            return Collections.emptyList();
         }
+
+        // 第二个参数：重建时使用的岛屿类型，省略则用默认模板
+        if (args.length == 2 && args[0].equalsIgnoreCase("confirm")) {
+            String partial = args[1].trim().toLowerCase();
+            List<String> types = ConfigLoader.schematicManager.getIslandTypes();
+            List<String> out = new java.util.ArrayList<>();
+            for (String type : types) {
+                if (type.toLowerCase().startsWith(partial)
+                        && PlayerUtils.hasPermission(sender, "skyllia.island.command.create.%s".formatted(type))) {
+                    out.add(type);
+                }
+            }
+            return out;
+        }
+
         return Collections.emptyList();
     }
 
-    private void updatePlayer(SkyblockManager skyblockManager, Island island) {
+    /**
+     * 把旧岛的全部成员降级为访客。
+     * <p>
+     * 降级本身还有一个必要的副作用：{@code getIslandByPlayerId} 的查询同时排除了
+     * {@code disable = 1} 的岛屿和 {@code VISITOR} 角色，并且 {@code updateMember}
+     * 会清掉玩家→岛屿的缓存链接。只有先走完这一步，紧接着的建岛流程才不会因为
+     * 「你已经有岛了」而被挡回去（{@code CreateSubCommand} 检测到已有岛屿时会转去 /is home）。
+     * </p>
+     *
+     * @param executorId 执行删除的岛主；他不在这里被清理和传送，而是随后被送去新岛
+     */
+    private void demoteMembers(SkyblockManager skyblockManager, Island island, java.util.UUID executorId) {
         for (Players players : island.getMembers()) {
             players.setRoleType(RoleType.VISITOR);
             island.updateMember(players);
-            checkClearPlayer(skyblockManager, players, RemovalCause.ISLAND_DELETED);
+
+            // 其他成员没有新岛可去，维持原本的行为：清理数据并送去全局出生点
+            if (!players.getMojangId().equals(executorId)) {
+                checkClearPlayer(skyblockManager, players, RemovalCause.ISLAND_DELETED);
+            }
         }
     }
 

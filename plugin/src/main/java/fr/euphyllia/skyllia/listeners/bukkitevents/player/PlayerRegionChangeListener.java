@@ -9,6 +9,7 @@ import fr.euphyllia.skyllia.api.skyblock.model.Position;
 import fr.euphyllia.skyllia.api.skyblock.model.RoleType;
 import fr.euphyllia.skyllia.api.utils.helper.RegionHelper;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
+import fr.euphyllia.skyllia.listeners.permissions.player.IslandEnterPermissions;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -73,12 +74,27 @@ public class PlayerRegionChangeListener implements Listener {
                         return;
                     }
 
-                    // 非私有岛屿，检查 player.teleport 内部权限
+                    // 非私有岛屿，检查通行权限。
+                    //
+                    // 优先使用语义明确的 skyllia:island.enter（由 IslandEnterPermissions 注册）。
+                    // 未授予时回退到旧的 skyllia:player.teleport —— 在引入 island.enter 之前，
+                    // 这条"传送玩家"权限一直被当作岛屿通行开关使用，回退是为了让升级前
+                    // 已经靠它放行访客的岛屿不会突然把人挡在门外。
                     if (!bypass) {
-                        PermissionId teleportPid = registry.getIfPresent(new NamespacedKey("skyllia", "player.teleport"));
-                        boolean hasTeleport = teleportPid != null && SkylliaAPI.getPermissionsManager().hasPermission(
-                                player, targetIsland, teleportPid, null, ConfigLoader.general.getDebugSettings().permission());
-                        if (!hasTeleport) {
+                        boolean debugPerm = ConfigLoader.general.getDebugSettings().permission();
+
+                        PermissionId enterPid = registry.getIfPresent(
+                                new NamespacedKey("skyllia", IslandEnterPermissions.KEY));
+                        boolean canEnter = enterPid != null && SkylliaAPI.getPermissionsManager().hasPermission(
+                                player, targetIsland, enterPid, null, debugPerm);
+
+                        if (!canEnter) {
+                            PermissionId teleportPid = registry.getIfPresent(new NamespacedKey("skyllia", "player.teleport"));
+                            canEnter = teleportPid != null && SkylliaAPI.getPermissionsManager().hasPermission(
+                                    player, targetIsland, teleportPid, null, debugPerm);
+                        }
+
+                        if (!canEnter) {
                             cancelAndNotify(player, event, owner, "&f[&7空岛&f] &c你不能进入 &e%s &c的空岛，你没有权限访问空岛。");
                             return;
                         }

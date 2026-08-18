@@ -127,6 +127,8 @@ public class ListenersRegistrar {
         moduleManager.addModule(plugin, new ItemDropPermissions());
         moduleManager.addModule(plugin, new TeleportPermissions());
         moduleManager.addModule(plugin, new DamagePermissions());
+        // 只注册 skyllia:island.enter 节点，拦截在 PlayerRegionChangeListener 中进行
+        moduleManager.addModule(plugin, new IslandEnterPermissions());
 
         // Permissions flags island
         var flagModuleManager = SkylliaAPI.getFlagModuleManager();

@@ -245,7 +245,7 @@ public class RespawnEvent implements Listener {
                 // 岛屿 spawn 点脚下的方块可能已被挖空（例如玩家自己挖了地基），
                 // 原样落地会立刻开始下坠、摔进虚空、再次死亡——无限循环。
                 // 现在已经落地到目标 region，读取附近方块是安全的。
-                Location safeSpot = findNearbySafeLocation(finalTarget);
+                Location safeSpot = WorldUtils.findNearbySafeLocation(finalTarget, SAFE_SPOT_SEARCH_RADIUS);
                 if (safeSpot != null) {
                     player.teleportAsync(safeSpot, PlayerTeleportEvent.TeleportCause.PLUGIN);
                 } else {
@@ -307,36 +307,4 @@ public class RespawnEvent implements Listener {
         return loc.add(0.5, 0.1, 0.5);
     }
 
-    /**
-     * 在给定位置附近按环形扩散搜索一个安全的落脚点（脚下有方块、头顶和脚下都不是危险方块）。
-     * 用每列的最高非空气方块作为候选 Y，避免逐格扫描 Y 轴的开销。
-     * 调用方（{@link #correctIfNeeded}）保证只在玩家已经落地到目标世界之后才会执行，
-     * 当前线程必然拥有该区域的 Folia 分区所有权，读取附近方块是安全的。
-     *
-     * @return 找到的安全位置，或 {@code null}（半径内确实找不到任何安全地面）
-     */
-    private @Nullable Location findNearbySafeLocation(Location origin) {
-        World world = origin.getWorld();
-        if (world == null) return null;
-
-        int centerX = origin.getBlockX();
-        int centerZ = origin.getBlockZ();
-
-        for (int radius = 1; radius <= SAFE_SPOT_SEARCH_RADIUS; radius++) {
-            for (int dx = -radius; dx <= radius; dx++) {
-                for (int dz = -radius; dz <= radius; dz++) {
-                    if (Math.max(Math.abs(dx), Math.abs(dz)) != radius) continue; // 只扫环形边界，避免重复检查内圈
-
-                    int x = centerX + dx;
-                    int z = centerZ + dz;
-                    int y = world.getHighestBlockYAt(x, z) + 1;
-                    Location candidate = new Location(world, x + 0.5, y, z + 0.5, origin.getYaw(), origin.getPitch());
-                    if (WorldUtils.isSafeLocation(candidate)) {
-                        return candidate;
-                    }
-                }
-            }
-        }
-        return null;
-    }
 }
