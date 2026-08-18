@@ -24,6 +24,9 @@ import java.util.Map;
 
 public class PlayerUtils {
 
+    private static final org.apache.logging.log4j.Logger logger =
+            org.apache.logging.log4j.LogManager.getLogger(PlayerUtils.class);
+
     public static void teleportPlayerSpawn(Player player) {
         if (!ConfigLoader.general.getSpawnSettings().enabled()) return;
         player.getScheduler().execute(SkylliaAPI.getPlugin(), () -> {
@@ -44,8 +47,26 @@ public class PlayerUtils {
             }
 
             Location location = ConfigLoader.general.getSpawnLocation();
-            if (location == null || location.getWorld() == null)
+            if (location == null || location.getWorld() == null) {
+                // 配置的出生点世界不存在（最常见的原因是 settings.spawn.world-name 写错了，
+                // 比如写成 "overworld" 而服务器里那个世界其实叫 "world"）。
+                //
+                // 这里只能回退到第一个已加载世界的出生点，而那通常就是原版主世界 ——
+                // 如果它是平坦世界，玩家就会被丢进平坦世界；如果落点在未生成区域，
+                // 就直接掉进虚空。这正是"删完岛之后玩家莫名其妙出现在平坦世界/虚空"的成因。
+                //
+                // 代码层面无法猜出管理员真正想要的出生点，所以这里把问题大声喊出来，
+                // 而不是继续静默回退。
+                String configuredWorld = ConfigLoader.general.getSpawnSettings().worldName();
+                logger.error("[Skyllia-出生点] 配置的出生点世界 '{}' 不存在或未加载！" +
+                                " 请检查 config/config.toml 的 settings.spawn.world-name。" +
+                                " 现在只能回退到 '{}' 的出生点，玩家可能落在平坦世界或虚空里。",
+                        configuredWorld,
+                        Bukkit.getWorlds().isEmpty() ? "<无已加载世界>" : Bukkit.getWorlds().getFirst().getName());
+
+                if (Bukkit.getWorlds().isEmpty()) return;
                 location = Bukkit.getWorlds().getFirst().getSpawnLocation();
+            }
             PlayerTeleportSpawnEvent playerTeleportSpawnEvent = new PlayerTeleportSpawnEvent(player, location);
             Bukkit.getPluginManager().callEvent(playerTeleportSpawnEvent);
             if (playerTeleportSpawnEvent.isCancelled()) {
