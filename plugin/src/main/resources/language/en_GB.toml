@@ -128,6 +128,8 @@ promote-args-missing = "The command is incomplete: /skyllia promote <member>"
 
 [island.invite]
 already-on-island = "You are already on an island!"
+join-confirm-delete = "<red>Warning:</red><gray> Joining <white>%player_invite%</white>'s island will <red>delete your current island</red>. Your <green>inventory and ender chest will be kept</green>. Type <yellow>/is invite accept %player_invite% confirm</yellow> to proceed.</gray>"
+join-confirm-leave = "<gray>Joining <white>%player_invite%</white>'s island will <yellow>remove you from your current island</yellow>. Type <yellow>/is invite accept %player_invite% confirm</yellow> to proceed.</gray>"
 args-missing = "The command is incomplete: /skyllia invite <add/accept/decline> <player/island_owner>"
 accept-args-missing = "You must specify which island you want to join: /skyllia invite accept <island_owner>"
 remove-args-missing = "The command is incomplete: /skyllia invite remove <island_owner>"

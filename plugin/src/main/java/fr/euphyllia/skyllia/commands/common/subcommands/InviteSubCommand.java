@@ -7,6 +7,7 @@ import fr.euphyllia.skyllia.api.permissions.PermissionId;
 import fr.euphyllia.skyllia.api.permissions.PermissionNode;
 import fr.euphyllia.skyllia.api.skyblock.Island;
 import fr.euphyllia.skyllia.api.skyblock.Players;
+import fr.euphyllia.skyllia.managers.skyblock.SkyblockManager;
 import fr.euphyllia.skyllia.api.skyblock.model.RoleType;
 import fr.euphyllia.skyllia.api.skyblock.model.WarpIsland;
 import fr.euphyllia.skyllia.cache.commands.InviteCacheExecution;
@@ -63,7 +64,8 @@ public class InviteSubCommand implements SubCommandInterface {
                 return;
             }
             String playerOrOwner = args[1];
-            acceptPlayer(player, playerOrOwner);
+            boolean confirmed = args.length >= 3 && args[2].equalsIgnoreCase("confirm");
+            acceptPlayer(player, playerOrOwner, confirmed);
         } else if (type.equalsIgnoreCase("decline")) {
             if (args.length < 2) {
                 ConfigLoader.language.sendMessage(player, "island.invite.decline-args-missing");
@@ -94,6 +96,12 @@ public class InviteSubCommand implements SubCommandInterface {
                             .stream()
                             .map(Player::getName)
             ).filter(cmd -> cmd.toLowerCase().startsWith(partial)).collect(Collectors.toList());
+        } else if (args.length == 3 && args[0].equalsIgnoreCase("accept")) {
+            // 已有岛屿的玩家需要二次确认，把 confirm 补出来，避免玩家不知道有这个参数
+            if ("confirm".startsWith(args[2].trim().toLowerCase())) {
+                return List.of("confirm");
+            }
+            return List.of();
         } else if (args.length == 2) {
             String partial = args[1].trim().toLowerCase();
 
@@ -169,12 +177,38 @@ public class InviteSubCommand implements SubCommandInterface {
         }
     }
 
-    private void acceptPlayer(Player playerWantJoin, String ownerIslandName) {
+    private void acceptPlayer(Player playerWantJoin, String ownerIslandName, boolean confirmed) {
         try {
+            // 玩家已有岛屿时不再直接拒绝。
+            //
+            // 删岛流程改成「删完立刻重建新岛」之后，玩家永远处于「有岛」状态，
+            // 原先那句 already-on-island 的判定就永远成立，导致全服没有人能加入任何岛屿。
+            //
+            // 现在按身份区分：岛主需要二次确认并解散自己的岛；只是别人岛上的成员则直接退出旧岛即可，
+            // 绝不能把别人的岛删掉。
             Island islandPlayer = SkylliaAPI.getIslandByPlayerId(playerWantJoin.getUniqueId());
+            boolean isOwnerOfOldIsland = false;
             if (islandPlayer != null) {
-                ConfigLoader.language.sendMessage(playerWantJoin, "island.invite.already-on-island");
-                return;
+                Players self = islandPlayer.getMember(playerWantJoin.getUniqueId());
+                isOwnerOfOldIsland = self != null && self.getRoleType().equals(RoleType.OWNER);
+
+                if (isOwnerOfOldIsland
+                        && ConfigLoader.general.getIslandSettings().preventDeletionIfHasMembers()) {
+                    long others = islandPlayer.getMembers().stream()
+                            .filter(m -> !m.getMojangId().equals(playerWantJoin.getUniqueId()))
+                            .count();
+                    if (others > 0) {
+                        ConfigLoader.language.sendMessage(playerWantJoin, "island.player.delete-has-members");
+                        return;
+                    }
+                }
+
+                if (!confirmed) {
+                    ConfigLoader.language.sendMessage(playerWantJoin,
+                            isOwnerOfOldIsland ? "island.invite.join-confirm-delete" : "island.invite.join-confirm-leave",
+                            Map.of("%player_invite%", ownerIslandName));
+                    return;
+                }
             }
 
             UUID ownerId = Bukkit.getPlayerUniqueId(ownerIslandName);
@@ -198,6 +232,26 @@ public class InviteSubCommand implements SubCommandInterface {
             int currentMembers = islandOwner.getMembers().size();
 
             if (currentMembers < maxMembers) {
+                // 先处理旧岛，再加入新岛：解散会把岛上的玩家清到出生点，
+                // 顺序反了会把刚传送过去的人又踢回出生点。
+                SkyblockManager skyblockManager = Skyllia.getInstance().getInterneAPI().getSkyblockManager();
+                Island oldIsland = islandPlayer;
+                if (oldIsland != null) {
+                    if (isOwnerOfOldIsland) {
+                        if (!DeleteSubCommand.freeIslandForOwner(playerWantJoin, oldIsland, skyblockManager)) {
+                            ConfigLoader.language.sendMessage(playerWantJoin, "island.generic.unexpected-error");
+                            return;
+                        }
+                    } else {
+                        // 只是成员：退出旧岛即可，不动别人的岛屿。
+                        Players self = oldIsland.getMember(playerWantJoin.getUniqueId());
+                        if (self != null) {
+                            self.setRoleType(RoleType.VISITOR);
+                            oldIsland.updateMember(self);
+                        }
+                    }
+                }
+
                 InviteCacheExecution.removeInviteCache(islandOwner.getId(), playerWantJoin.getUniqueId());
 
                 Players newPlayer = new Players(
@@ -219,6 +273,13 @@ public class InviteSubCommand implements SubCommandInterface {
                 if (ownerOnline != null && ownerOnline.isOnline()) {
                     ConfigLoader.language.sendMessage(ownerOnline, "island.invite.accept-notify-owner",
                             Map.of("%player_accept%", playerWantJoin.getName()));
+                }
+
+                // 旧岛区块留到后台慢慢删。必须放在传送之前：下面若因为目标岛屿没有 home
+                // 而提前 return，旧岛就再也没人清理，会永远占着那块 region。
+                // notifyOnSuccess=false：玩家刚收到「加入成功」，再补一条「空岛删除成功」只会让人以为出了问题。
+                if (oldIsland != null && isOwnerOfOldIsland) {
+                    DeleteSubCommand.deleteOldIslandChunks(skyblockManager, oldIsland, playerWantJoin, false);
                 }
 
                 if (ConfigLoader.general.getIslandSettings().teleportWhenAcceptingInvitation()) {

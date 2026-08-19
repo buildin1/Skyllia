@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class DeleteSubCommand implements SubCommandInterface {
 
-    private final Logger logger = LogManager.getLogger(DeleteSubCommand.class);
+    private static final Logger logger = LogManager.getLogger(DeleteSubCommand.class);
 
     public static void checkClearPlayer(SkyblockManager skyblockManager, Players players, RemovalCause cause) {
         Player bPlayer = Bukkit.getPlayer(players.getMojangId());
@@ -154,20 +154,12 @@ public class DeleteSubCommand implements SubCommandInterface {
                 return;
             }
 
-            skyblockManager.setLockedIsland(island, true);
-
-            boolean isDisabled = island.setDisable(true);
-            if (!isDisabled) {
-                // 事件被取消或写库失败：把锁解开，别让岛屿卡在 locked 状态
-                skyblockManager.setLockedIsland(island, false);
+            // 解散旧岛。执行者本人不会在这里被清背包 / 传送 spawn——
+            // 他马上就要拿到新岛，见下方 runCreateIsland 的回调。
+            if (!freeIslandForOwner(player, island, skyblockManager)) {
                 ConfigLoader.language.sendMessage(player, "island.generic.unexpected-error");
                 return;
             }
-
-            // 把旧岛成员降级为访客。执行者本人不在这里清理背包 / 传送 spawn——
-            // 他马上就要拿到新岛，见下方 runCreateIsland 的回调。
-            this.demoteMembers(skyblockManager, island, player.getUniqueId());
-            this.kickAllPlayerOnIsland(island);
 
             // ── 关键改动：先建新岛、把玩家送过去，旧岛留到后台再删 ──
             //
@@ -189,7 +181,7 @@ public class DeleteSubCommand implements SubCommandInterface {
                         // 无论新岛是否成功，都要按配置重置数据并把旧岛区块清掉，
                         // 否则旧岛会永远占着那块 region。
                         this.resetPlayerAfterDelete(player);
-                        this.deleteOldIslandChunks(skyblockManager, island, player);
+                        deleteOldIslandChunks(skyblockManager, island, player);
                     });
         } catch (Exception e) {
             logger.log(Level.FATAL, e.getMessage(), e);
@@ -222,7 +214,43 @@ public class DeleteSubCommand implements SubCommandInterface {
     /**
      * 旧岛区块的后台清理。玩家此时已经在新岛上了，这一步的成败不再影响他的体验。
      */
-    private void deleteOldIslandChunks(SkyblockManager skyblockManager, Island island, Player player) {
+    /**
+     * 解散岛主自己的岛屿：上锁 → 禁用 → 把成员降级为访客 → 把岛上的人清出去。
+     * <p>
+     * 调用返回后玩家即处于「无岛」状态，可以安全地建新岛或加入别人的岛屿。
+     * 旧岛的区块删除是后续独立的一步，由调用方决定何时执行
+     * （见 {@link #deleteOldIslandChunks}）—— 拆开是为了让玩家先落到安全的地方，
+     * 区块清理再慢慢在后台做。
+     * </p>
+     *
+     * @return 成功返回 {@code true}；禁用失败时会自动解锁并返回 {@code false}
+     */
+    public static boolean freeIslandForOwner(@NotNull Player owner,
+                                             @NotNull Island island,
+                                             @NotNull SkyblockManager skyblockManager) {
+        skyblockManager.setLockedIsland(island, true);
+
+        if (!island.setDisable(true)) {
+            // 事件被取消或写库失败：把锁解开，别让岛屿卡在 locked 状态
+            skyblockManager.setLockedIsland(island, false);
+            return false;
+        }
+
+        demoteMembers(skyblockManager, island, owner.getUniqueId());
+        kickAllPlayerOnIsland(island);
+        return true;
+    }
+
+    static void deleteOldIslandChunks(SkyblockManager skyblockManager, Island island, Player player) {
+        deleteOldIslandChunks(skyblockManager, island, player, true);
+    }
+
+    /**
+     * @param notifyOnSuccess 成功时是否发送「删除成功」提示。加入他人岛屿的流程要传
+     *                        {@code false} —— 玩家那时已经收到「加入成功」，再补一条
+     *                        「空岛删除成功」只会让人以为出了什么问题。
+     */
+    static void deleteOldIslandChunks(SkyblockManager skyblockManager, Island island, Player player, boolean notifyOnSuccess) {
         List<String> worldsToDelete = ConfigLoader.worldManager.getWorldConfigs().entrySet().stream()
                 .filter(entry -> entry.getValue().shouldDeleteIsland())
                 .map(Map.Entry::getKey)
@@ -232,7 +260,7 @@ public class DeleteSubCommand implements SubCommandInterface {
         AtomicBoolean failed = new AtomicBoolean(false);
 
         if (worldsLeft.get() == 0) {
-            finalizeDeletion(skyblockManager, island, false, player);
+            finalizeDeletion(skyblockManager, island, false, player, notifyOnSuccess);
             return;
         }
 
@@ -242,7 +270,7 @@ public class DeleteSubCommand implements SubCommandInterface {
                 failed.set(true);
                 logger.log(Level.FATAL, "Failed to delete island {} in world {}: world not loaded", island.getId(), worldName);
                 if (worldsLeft.decrementAndGet() == 0) {
-                    finalizeDeletion(skyblockManager, island, failed.get(), player);
+                    finalizeDeletion(skyblockManager, island, failed.get(), player, notifyOnSuccess);
                 }
                 return;
             }
@@ -250,7 +278,7 @@ public class DeleteSubCommand implements SubCommandInterface {
             Skyllia.getInstance().getInterneAPI().getWorldModifier().deleteIsland(island, world, ConfigLoader.general.getIslandSettings().regionDistance(), (success) -> {
                 if (!success) failed.set(true);
                 if (worldsLeft.decrementAndGet() == 0) {
-                    finalizeDeletion(skyblockManager, island, failed.get(), player);
+                    finalizeDeletion(skyblockManager, island, failed.get(), player, notifyOnSuccess);
                 }
             });
         });
@@ -321,7 +349,7 @@ public class DeleteSubCommand implements SubCommandInterface {
      *
      * @param executorId 执行删除的岛主；他不在这里被清理和传送，而是随后被送去新岛
      */
-    private void demoteMembers(SkyblockManager skyblockManager, Island island, java.util.UUID executorId) {
+    static void demoteMembers(SkyblockManager skyblockManager, Island island, java.util.UUID executorId) {
         for (Players players : island.getMembers()) {
             players.setRoleType(RoleType.VISITOR);
             island.updateMember(players);
@@ -333,7 +361,7 @@ public class DeleteSubCommand implements SubCommandInterface {
         }
     }
 
-    private void finalizeDeletion(SkyblockManager skyblockManager, Island island, boolean failed, Player player) {
+    private static void finalizeDeletion(SkyblockManager skyblockManager, Island island, boolean failed, Player player, boolean notifyOnSuccess) {
         boolean lockResult = skyblockManager.setLockedIsland(island, failed);
         if (!lockResult) {
             logger.log(Level.FATAL, "Failed to update lock state for island {} after deletion", island.getId());
@@ -349,12 +377,12 @@ public class DeleteSubCommand implements SubCommandInterface {
 
         if (failed) {
             ConfigLoader.language.sendMessage(player, "island.generic.unexpected-error");
-        } else {
+        } else if (notifyOnSuccess) {
             ConfigLoader.language.sendMessage(player, "island.delete-success");
         }
     }
 
-    private void kickAllPlayerOnIsland(final Island island) {
+    static void kickAllPlayerOnIsland(final Island island) {
         for (WorldConfig worldConfig : WorldUtils.getWorldConfigs()) {
             RegionUtils.getEntitiesInRegion(Skyllia.getInstance(), ConfigLoader.general.getIslandSettings().regionDistance(), EntityType.PLAYER, worldConfig.getWorld(), island.getRegionCoordinate(), island.getSize(), entity -> {
                 Player playerInIsland = (Player) entity;
