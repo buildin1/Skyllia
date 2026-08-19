@@ -10,6 +10,8 @@ import fr.euphyllia.skylliaislandlevel.configuration.IslandLevelConfigLoader;
 import fr.euphyllia.skylliaislandlevel.scanner.IslandScanner;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
+import java.util.Map;
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.persistence.PersistentDataType;
@@ -26,6 +28,23 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class LevelManager {
+
+    /**
+     * 各岛最近一次扫描的逐材料数量，供计分表 GUI 展示「你的岛屿有多少个 / 贡献多少分」。
+     * <p>
+     * 只保留最近一次结果，下次扫描会自然覆盖；岛屿删除后残留的条目占用极小，
+     * 不值得为此挂一个删除事件监听。
+     * </p>
+     */
+    private final Map<UUID, Map<Material, Integer>> lastCounts = new ConcurrentHashMap<>();
+
+    /**
+     * 取某个岛屿最近一次扫描的逐材料数量；尚未扫描过时返回空表。
+     */
+    public Map<Material, Integer> getLastCounts(UUID islandId) {
+        return lastCounts.getOrDefault(islandId, Map.of());
+    }
+
 
     private static final Logger log = LoggerFactory.getLogger(LevelManager.class);
     private static final String KEY_SCORE = "score";
@@ -93,12 +112,16 @@ public class LevelManager {
             return false;
         }
 
-        scanner.scanIsland(island, world).whenComplete((score, err) -> {
+        scanner.scanIsland(island, world).whenComplete((result, err) -> {
             try {
                 if (err != null) {
                     log.error("Scan error for island {}", island.getId(), err);
                     return;
                 }
+                double score = result.score();
+                // 保留逐材料统计供计分表 GUI 展示。只留最近一次结果，
+                // 下次扫描（默认 300 秒）自然覆盖，不需要额外的过期清理。
+                lastCounts.put(island.getId(), result.counts());
                 long currentLevel = getStoredLevel(island);
                 long newLevel = evaluator.evaluate(
                         score, currentLevel, IslandLevelConfigLoader.config.getMinLevel(), island

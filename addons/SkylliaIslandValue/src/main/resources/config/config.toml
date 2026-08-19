@@ -20,6 +20,22 @@ DIRT = 1
 GRASS_BLOCK = 2
 STONE = 3
 
+[block-caps]
+# 每种方块参与计分的数量上限：超过上限的部分不再计分。
+#
+# 为什么需要：不加上限的话，任何一种可无限量产的材料（圆石、木板）只要堆得够多
+# 就能顶满等级，多样化建筑毫无优势 —— 等级会变成搬砖比赛而不是装修奖励。
+# 加了上限之后，想上高等级必须用满多种不同材料。
+#
+# default = -1 表示不限制（与旧版行为一致）。改成正整数即可对所有方块生效，
+# 也可以像下面那样对单种方块单独指定。
+default = -1
+# 示例（默认注释掉）：
+# COBBLESTONE = 10000
+# OAK_PLANKS = 10000
+# SAND = 500
+# DIAMOND_BLOCK = 100
+
 [scan-notification]
 # Type: BOSS_BAR, TITLE, ACTION_BAR, NONE
 type = "BOSS_BAR"
