@@ -25,7 +25,11 @@ public class MobSpawnNMS implements MobsSpawnImpl {
                 CreatureSpawnEvent.SpawnReason.SPAWNER_EGG,
                 CreatureSpawnEvent.SpawnReason.CUSTOM,
                 CreatureSpawnEvent.SpawnReason.COMMAND,
-                CreatureSpawnEvent.SpawnReason.TRIAL_SPAWNER
+                CreatureSpawnEvent.SpawnReason.TRIAL_SPAWNER,
+                CreatureSpawnEvent.SpawnReason.CURED,
+                CreatureSpawnEvent.SpawnReason.BREEDING,
+                CreatureSpawnEvent.SpawnReason.EGG,
+                CreatureSpawnEvent.SpawnReason.BUILD_SNOWMAN
         ));
 
         BOSS_MOBS = Map.of(
