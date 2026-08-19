@@ -34,7 +34,8 @@ public class ChestCommand implements SubCommandInterface {
                 new PermissionNode(
                         new NamespacedKey(plugin, "open_private_island_chest"),
                         "addons.chest.permission.open.name",
-                        "addons.chest.permission.open.description"
+                        "addons.chest.permission.open.description",
+                        true
                 )
         );
     }

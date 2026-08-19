@@ -46,7 +46,8 @@ public class BankCommand implements SubCommandInterface {
         this.BANK_DEPOSIT_PERMISSION = SkylliaAPI.getPermissionRegistry().idOrRegister(new PermissionNode(
                 new NamespacedKey(plugin, "command.bank.deposit"),
                 "addons.bank.permission.deposit.name",
-                "addons.bank.permission.deposit.description"
+                "addons.bank.permission.deposit.description",
+                true
         ));
         this.BANK_WITHDRAW_PERMISSION = SkylliaAPI.getPermissionRegistry().idOrRegister(new PermissionNode(
                 new NamespacedKey(plugin, "command.bank.withdraw"),

@@ -117,9 +117,24 @@ public class PermissionsV2ConfigManager implements IConfigurationProvider {
         cfg.set(literalPath(literalKey), value);
     }
 
+    /**
+     * 生成缺失权限条目时使用的默认值：只对 MEMBER 及以上角色采纳权限注册时声明的
+     * {@link fr.euphyllia.skyllia.api.permissions.PermissionNode#defaultValue()}，
+     * VISITOR / BAN 永远补 {@code false}。
+     * <p>
+     * 之前这里无条件返回 {@code false}：核心 skyllia: 权限已在打包的 permissions-v2.toml
+     * 里逐角色显式写好，不受影响；但插件（银行、箱子、改名等）注册的权限没有对应的显式条目，
+     * 一律被这里补成 false —— 新建的岛，岛主自己都用不了这些附属功能，得管理员手动改配置。
+     * </p>
+     */
     private boolean defaultValueFor(RoleType role, NamespacedKey key) {
-        // Safe default everywhere.
-        return false;
+        if (role == RoleType.VISITOR || role == RoleType.BAN) return false;
+
+        PermissionRegistry registry = SkylliaAPI.getPermissionRegistry();
+        PermissionId id = registry.getIfPresent(key);
+        if (id == null) return false;
+
+        return registry.node(id).defaultValue();
     }
 
     private CommentedConfig getOrCreateSub(CommentedConfig parent, String key) {

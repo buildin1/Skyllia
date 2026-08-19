@@ -65,6 +65,12 @@ verbose = false
 "skyllia:entity.breed" = true
 "skyllia:block.break" = true
 "skyllia:entity.interact" = true
+"skyllia:quickshop.shop.create" = true
+"skylliachest:open_private_island_chest" = true
+"skylliaextra:command.island.set_name" = true
+"skylliaextra:command.island.set_description" = true
+"skylliabank:command.bank.deposit" = true
+"skylliabank:command.bank.withdraw" = true
 
 [defaults.CO_OWNER]
 "skyllia:command.island.gamerule" = true
@@ -99,6 +105,12 @@ verbose = false
 "skyllia:entity.breed" = true
 "skyllia:block.break" = true
 "skyllia:entity.interact" = true
+"skyllia:quickshop.shop.create" = true
+"skylliachest:open_private_island_chest" = true
+"skylliaextra:command.island.set_name" = true
+"skylliaextra:command.island.set_description" = true
+"skylliabank:command.bank.deposit" = true
+"skylliabank:command.bank.withdraw" = true
 
 [defaults.MODERATOR]
 "skyllia:command.island.gamerule" = false
@@ -133,6 +145,12 @@ verbose = false
 "skyllia:entity.breed" = true
 "skyllia:block.break" = true
 "skyllia:entity.interact" = true
+"skyllia:quickshop.shop.create" = true
+"skylliachest:open_private_island_chest" = true
+"skylliaextra:command.island.set_name" = false
+"skylliaextra:command.island.set_description" = false
+"skylliabank:command.bank.deposit" = true
+"skylliabank:command.bank.withdraw" = false
 
 [defaults.MEMBER]
 "skyllia:command.island.gamerule" = false
@@ -167,6 +185,12 @@ verbose = false
 "skyllia:entity.breed" = true
 "skyllia:block.break" = true
 "skyllia:entity.interact" = true
+"skyllia:quickshop.shop.create" = false
+"skylliachest:open_private_island_chest" = true
+"skylliaextra:command.island.set_name" = false
+"skylliaextra:command.island.set_description" = false
+"skylliabank:command.bank.deposit" = true
+"skylliabank:command.bank.withdraw" = false
 
 [defaults.VISITOR]
 "skyllia:command.island.gamerule" = false
@@ -201,6 +225,12 @@ verbose = false
 "skyllia:entity.breed" = false
 "skyllia:block.break" = false
 "skyllia:entity.interact" = false
+"skyllia:quickshop.shop.create" = false
+"skylliachest:open_private_island_chest" = false
+"skylliaextra:command.island.set_name" = false
+"skylliaextra:command.island.set_description" = false
+"skylliabank:command.bank.deposit" = false
+"skylliabank:command.bank.withdraw" = false
 
 [defaults.BAN]
 "skyllia:command.island.gamerule" = false
@@ -235,3 +265,9 @@ verbose = false
 "skyllia:entity.breed" = false
 "skyllia:block.break" = false
 "skyllia:entity.interact" = false
+"skyllia:quickshop.shop.create" = false
+"skylliachest:open_private_island_chest" = false
+"skylliaextra:command.island.set_name" = false
+"skylliaextra:command.island.set_description" = false
+"skylliabank:command.bank.deposit" = false
+"skylliabank:command.bank.withdraw" = false
