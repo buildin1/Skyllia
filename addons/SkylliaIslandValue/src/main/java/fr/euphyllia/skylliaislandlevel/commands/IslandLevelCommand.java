@@ -6,6 +6,7 @@ import fr.euphyllia.skyllia.api.skyblock.Island;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
 import fr.euphyllia.skylliaislandlevel.SkylliaIslandLevel;
 import fr.euphyllia.skylliaislandlevel.api.IslandLevelRecord;
+import fr.euphyllia.skylliaislandlevel.gui.ScoreDetailGui;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
@@ -41,6 +42,7 @@ public class IslandLevelCommand implements SubCommandInterface {
             case "scan" -> handleScan(player);
             case "top" -> handleTop(player, args);
             case "rank" -> handleRank(player);
+            case "detail" -> ScoreDetailGui.open(player);
             default -> ConfigLoader.language.sendMessage(player, "addons.island-value.level-command-usage");
         }
     }
@@ -162,7 +164,7 @@ public class IslandLevelCommand implements SubCommandInterface {
     public @NotNull List<String> onTabComplete(@NotNull Plugin plugin, @NotNull CommandSender sender, @NonNull @NotNull String[] args) {
         if (args.length == 1) {
             String partial = args[0].toLowerCase();
-            return Stream.of("scan", "top", "rank")
+            return Stream.of("scan", "top", "rank", "detail")
                     .filter(s -> s.startsWith(partial))
                     .collect(Collectors.toList());
         }

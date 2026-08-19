@@ -7,6 +7,7 @@ import fr.euphyllia.skyllia.gui.SkylliaGuiHolder;
 import fr.euphyllia.skylliaupgrade.SkylliaUpgrade;
 import fr.euphyllia.skylliaupgrade.configuration.MaterialCost;
 import fr.euphyllia.skylliaupgrade.configuration.UpgradeLevelDefinition;
+import fr.euphyllia.skylliaislandlevel.gui.ScoreDetailGui;
 import fr.euphyllia.skylliaupgrade.manager.UpgradeManager;
 import fr.euphyllia.skylliaupgrade.token.UpgradeTokenItem;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -76,6 +77,11 @@ public final class UpgradeGui {
                 });
             }
         }
+
+        inv.setItem(13, GuiItem.of(Material.KNOWLEDGE_BOOK,
+                "<!italic><aqua>📊 计分表",
+                List.of("<dark_gray>─────────", "<gray>查看逐材料计分明细</gray>")));
+        holder.bind(13, e -> ScoreDetailGui.open(player));
 
         inv.setItem(22, GuiItem.close());
         holder.bind(22, e -> player.closeInventory());
