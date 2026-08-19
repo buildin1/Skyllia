@@ -54,3 +54,7 @@ Entity_portal_methods.txt
 Entity_portal_methods2.txt
 PortalProcessor_bytecode.txt
 server-backups/
+### 维护笔记（留在工作目录方便查阅，但不属于插件源码，不入库） ###
+MATERIALS.md
+HANDOFF.md
+log/
