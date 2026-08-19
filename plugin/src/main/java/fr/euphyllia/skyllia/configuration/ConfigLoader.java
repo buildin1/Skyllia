@@ -8,6 +8,8 @@ import fr.euphyllia.skyllia.configuration.manager.GeneralConfigManager;
 import fr.euphyllia.skyllia.configuration.manager.IslandConfigManager;
 import fr.euphyllia.skyllia.configuration.manager.IslandFlagsConfigManager;
 import fr.euphyllia.skyllia.configuration.manager.IslandTypeGuiConfigManager;
+import fr.euphyllia.skyllia.gui.layout.GuiLayoutConfigManager;
+import fr.euphyllia.skyllia.gui.layout.GuiLayoutDefaults;
 import fr.euphyllia.skyllia.configuration.manager.LanguageConfigManager;
 import fr.euphyllia.skyllia.configuration.manager.PermissionsV2ConfigManager;
 import fr.euphyllia.skyllia.configuration.manager.PlayerConfigManager;
@@ -36,6 +38,8 @@ public class ConfigLoader implements IConfigRegistry {
     public static PermissionsV2ConfigManager permissionsV2;
     public static IslandFlagsConfigManager islandFlags;
     public static IslandTypeGuiConfigManager islandTypeGui;
+    /** 主菜单外观（gui/main.toml）。 */
+    public static GuiLayoutConfigManager mainGuiLayout;
 
     private static CommentedFileConfig generalConfig;
     private static CommentedFileConfig databaseConfig;
@@ -46,6 +50,7 @@ public class ConfigLoader implements IConfigRegistry {
     private static CommentedFileConfig permissionsV2Config;
     private static CommentedFileConfig flagsConfig;
     private static CommentedFileConfig islandTypeGuiConfig;
+    private static CommentedFileConfig mainGuiLayoutConfig;
 
     public static void init(File allConfig) {
 
@@ -70,7 +75,15 @@ public class ConfigLoader implements IConfigRegistry {
         language = new LanguageConfigManager();
         permissionsV2 = new PermissionsV2ConfigManager(permissionsV2Config);
         islandFlags = new IslandFlagsConfigManager(flagsConfig);
+        // GUI 外观配置放在独立的 gui/ 目录，与功能性配置分开 —— 服主改外观时
+        // 不必在一堆功能配置里翻找，也降低误改数据库/世界配置的风险。
+        File guiDir = new File(allConfig, "gui");
+        //noinspection ResultOfMethodCallIgnored
+        guiDir.mkdirs();
+        mainGuiLayoutConfig = loadFile(new File(guiDir, "main.toml"));
+
         islandTypeGui = new IslandTypeGuiConfigManager(islandTypeGuiConfig);
+        mainGuiLayout = new GuiLayoutConfigManager(mainGuiLayoutConfig, GuiLayoutDefaults.main());
         // 首次启动时按现有岛屿类型补全建岛菜单条目，服主无需手写。
         islandTypeGui.seedFrom(schematicManager.getIslandTypes());
 
@@ -84,6 +97,7 @@ public class ConfigLoader implements IConfigRegistry {
         configManagers.add(permissionsV2);
         configManagers.add(islandFlags);
         configManagers.add(islandTypeGui);
+        configManagers.add(mainGuiLayout);
 
         //reloadConfigs();
 

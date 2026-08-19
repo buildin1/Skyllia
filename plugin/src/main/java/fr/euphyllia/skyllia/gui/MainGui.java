@@ -6,6 +6,7 @@ import fr.euphyllia.skyllia.api.skyblock.Island;
 import fr.euphyllia.skyllia.api.skyblock.Players;
 import fr.euphyllia.skyllia.api.skyblock.model.RoleType;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
+import fr.euphyllia.skyllia.gui.layout.GuiLayout;
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -36,32 +37,7 @@ public final class MainGui {
 
     private MainGui() {}
 
-    // ── 槽位常量 ──────────────────────────────────────────────
-    // 行 1
-    private static final int SLOT_INFO = 4;
-    private static final int SLOT_HOME = 7;
-    // 行 2：位置设置
-    private static final int SLOT_SET_HOME = 11;
-    private static final int SLOT_SET_SPAWN = 13;
-    private static final int SLOT_SET_VISIT = 15;
-    // 行 3：空岛设置
-    private static final int SLOT_ACCESS = 20;
-    private static final int SLOT_NAME_RESET = 22;
-    private static final int SLOT_DESC_RESET = 24;
-    // 行 4：TPS + 权限 + 标记
-    private static final int SLOT_TPS = 29;
-    private static final int SLOT_PERMISSION = 31;
-    private static final int SLOT_FLAG = 33;
-    // 行 5：访问 + 成员 + 访客
-    private static final int SLOT_VISIT = 38;
-    private static final int SLOT_MEMBER = 40;
-    private static final int SLOT_VISITOR = 42;
-    // 行 6
-    private static final int SLOT_DANGER = 47;
-    private static final int SLOT_CLOSE = 49;
-    private static final int SLOT_EXTENSION = 51;
-
-    /** 边框/装饰槽位 */
+    /** 子菜单沿用的边框槽位。主菜单的边框改由 gui/main.toml 配置。 */
     private static final int[] FILLER_SLOTS = {
             0, 1, 2, 3, 5, 6, 8,
             9, 17,
@@ -77,167 +53,85 @@ public final class MainGui {
         boolean isOwner = hasIsland && island.getOwner() != null
                 && island.getOwner().getMojangId().equals(player.getUniqueId());
 
+        // 外观全部来自 gui/main.toml；这里只负责「哪个按钮在什么状态下点了做什么」。
+        GuiLayout layout = ConfigLoader.mainGuiLayout.getLayout();
+        String ownerOnly = notOwnerHint(hasIsland, isOwner);
+
         SkylliaGuiHolder holder = new SkylliaGuiHolder(SkylliaGuiHolder.GuiType.MAIN);
-        Inventory inv = Bukkit.createInventory(holder, 54,
-                net.kyori.adventure.text.minimessage.MiniMessage.miniMessage()
-                        .deserialize("<light_purple>空岛管理"));
+        Inventory inv = Bukkit.createInventory(holder, layout.size(), layout.titleComponent());
+        layout.paintFiller(inv);
 
-        // 边框填充
-        for (int slot : FILLER_SLOTS) {
-            inv.setItem(slot, GuiItem.filler());
-        }
+        layout.place(inv, holder, "info", hasIsland, null,
+                e -> { if (checkIsland(player, hasIsland)) dispatch(player, "is info"); });
 
-        // ── 行 1：信息 + 回家 ────────────────────────────────
-        inv.setItem(SLOT_INFO, GuiItem.of(Material.ENDER_CHEST,
-                "<!italic><light_purple>📋 空岛信息",
-                lore("查看空岛详细信息", hasIsland ? "点击查看" : "需先创建空岛", hasIsland)));
-        holder.bind(SLOT_INFO, e -> {
-            if (checkIsland(player, hasIsland)) dispatch(player, "is info");
-        });
-
-        inv.setItem(SLOT_HOME, GuiItem.of(Material.RED_BED,
-                "<!italic><light_purple>🏠 回到空岛",
-                lore("传送回你的空岛", "点击传送", hasIsland)));
-        holder.bind(SLOT_HOME, e -> {
+        // 有岛屿 → 回家；没有 → 打开建岛类型选择菜单
+        layout.place(inv, holder, "home", true, null, e -> {
             if (hasIsland) {
                 dispatch(player, "is home");
             } else {
-                // 无岛屿时打开类型选择菜单，而不是盲发无参的 is create ——
-                // 后者会让玩家永远只能拿到配置里的第一个岛屿类型。
                 CreateIslandGui.open(player);
             }
         });
 
-        // ── 行 2：位置设置 ────────────────────────────────────
-        inv.setItem(SLOT_SET_HOME, GuiItem.of(Material.GRASS_BLOCK,
-                "<!italic><light_purple>📍 设置家园点",
-                lore("将当前位置设为空岛家园", "点击设置（需在空岛上）", hasIsland)));
-        holder.bind(SLOT_SET_HOME, e -> {
-            if (checkIsland(player, hasIsland)) dispatch(player, "is sethome");
-        });
+        layout.place(inv, holder, "set-home", hasIsland, null,
+                e -> { if (checkIsland(player, hasIsland)) dispatch(player, "is sethome"); });
 
-        inv.setItem(SLOT_SET_SPAWN, GuiItem.of(Material.RESPAWN_ANCHOR,
-                "<!italic><light_purple>⚛ 设置出生点",
-                lore("将当前位置设为空岛出生点", "点击设置（需在空岛上）", hasIsland && isOwner, notOwnerHint(hasIsland, isOwner))));
-        holder.bind(SLOT_SET_SPAWN, e -> {
+        layout.place(inv, holder, "set-spawn", hasIsland && isOwner, ownerOnly, e -> {
             if (!checkIsland(player, hasIsland)) return;
-            if (!isOwner) { player.sendMessage(net.kyori.adventure.text.Component.text("§c只有岛主可以设置出生点。")); return; }
+            if (!isOwner) {
+                player.sendMessage(net.kyori.adventure.text.Component.text("§c只有岛主可以设置出生点。"));
+                return;
+            }
             dispatch(player, "is setspawn");
         });
 
-        inv.setItem(SLOT_SET_VISIT, GuiItem.of(Material.COMPASS,
-                "<!italic><light_purple>🧭 设置访问点",
-                lore("访客访问空岛时的到达点", "点击设置（需在空岛上）", hasIsland)));
-        holder.bind(SLOT_SET_VISIT, e -> {
-            if (checkIsland(player, hasIsland)) dispatch(player, "is setvisit");
-        });
+        layout.place(inv, holder, "set-visit", hasIsland, null,
+                e -> { if (checkIsland(player, hasIsland)) dispatch(player, "is setvisit"); });
 
-        // ── 行 3：空岛设置 ────────────────────────────────────
-        inv.setItem(SLOT_ACCESS, GuiItem.of(Material.IRON_DOOR,
-                "<!italic><light_purple>🔓 开放/私密切换",
-                lore("切换空岛是否允许访客进入", "点击切换", hasIsland)));
-        holder.bind(SLOT_ACCESS, e -> {
-            if (checkIsland(player, hasIsland)) dispatch(player, "is access");
-        });
+        layout.place(inv, holder, "access", hasIsland, null,
+                e -> { if (checkIsland(player, hasIsland)) dispatch(player, "is access"); });
 
-        inv.setItem(SLOT_NAME_RESET, GuiItem.of(Material.NAME_TAG,
-                "<!italic><light_purple>📛 重置空岛名称",
-                lore("清除自定义名称，恢复默认", "点击重置", hasIsland && isOwner, notOwnerHint(hasIsland, isOwner))));
-        holder.bind(SLOT_NAME_RESET, e -> {
+        layout.place(inv, holder, "name-reset", hasIsland && isOwner, ownerOnly, e -> {
             if (!checkIsland(player, hasIsland)) return;
-            if (!isOwner) { player.sendMessage(net.kyori.adventure.text.Component.text("§c只有岛主可以重置名称。")); return; }
+            if (!isOwner) {
+                player.sendMessage(net.kyori.adventure.text.Component.text("§c只有岛主可以重置名称。"));
+                return;
+            }
             dispatch(player, "is setname reset");
         });
 
-        inv.setItem(SLOT_DESC_RESET, GuiItem.of(Material.WRITABLE_BOOK,
-                "<!italic><light_purple>📝 重置空岛描述",
-                lore("清除自定义描述", "点击重置", hasIsland && isOwner, notOwnerHint(hasIsland, isOwner))));
-        holder.bind(SLOT_DESC_RESET, e -> {
+        layout.place(inv, holder, "desc-reset", hasIsland && isOwner, ownerOnly, e -> {
             if (!checkIsland(player, hasIsland)) return;
-            if (!isOwner) { player.sendMessage(net.kyori.adventure.text.Component.text("§c只有岛主可以重置描述。")); return; }
+            if (!isOwner) {
+                player.sendMessage(net.kyori.adventure.text.Component.text("§c只有岛主可以重置描述。"));
+                return;
+            }
             dispatch(player, "is setdescription reset");
         });
 
-        // ── 行 4：TPS + 权限管理 + 标记管理 ──────────────────
-        inv.setItem(SLOT_TPS, GuiItem.of(Material.CLOCK,
-                "<!italic><light_purple>📊 服务器 TPS",
-                List.of("<dark_gray>─────────",
-                        "<gray>查看服务器性能指标</gray>",
-                        "<dark_gray>─────────",
-                        "<yellow>点击查看</yellow>")));
-        holder.bind(SLOT_TPS, e -> dispatch(player, "is tps"));
+        layout.place(inv, holder, "tps", e -> dispatch(player, "is tps"));
 
-        inv.setItem(SLOT_PERMISSION, GuiItem.of(Material.GOLD_NUGGET,
-                "<!italic><light_purple>⚙ 权限管理",
-                List.of("<dark_gray>─────────",
-                        "<gray>按角色配置每条权限的开关</gray>",
-                        "<gray>左键开启 / 右键关闭</gray>",
-                        "<dark_gray>─────────",
-                        "<yellow>点击打开</yellow>")));
-        holder.bind(SLOT_PERMISSION, e -> {
-            if (checkIsland(player, hasIsland)) PermissionGui.openRoleSelect(player, island);
-        });
+        layout.place(inv, holder, "permission", hasIsland, null,
+                e -> { if (checkIsland(player, hasIsland)) PermissionGui.openRoleSelect(player, island); });
 
-        inv.setItem(SLOT_FLAG, GuiItem.of(Material.REDSTONE_TORCH,
-                "<!italic><light_purple>🚩 空岛标记",
-                List.of("<dark_gray>─────────",
-                        "<gray>开关爆炸/火焰/生物破坏等</gray>",
-                        "<gray>左键开启 / 右键关闭</gray>",
-                        "<dark_gray>─────────",
-                        "<yellow>点击打开</yellow>")));
-        holder.bind(SLOT_FLAG, e -> {
-            if (checkIsland(player, hasIsland)) FlagGui.open(player, island);
-        });
+        layout.place(inv, holder, "flag", hasIsland, null,
+                e -> { if (checkIsland(player, hasIsland)) FlagGui.open(player, island); });
 
-        // ── 行 5：访问 + 成员 + 访客 ──────────────────────────
-        inv.setItem(SLOT_VISIT, GuiItem.of(Material.OAK_DOOR,
-                "<!italic><light_purple>🌐 访问其他空岛",
-                lore("选择在线玩家前往其空岛", "点击打开列表", hasIsland)));
-        holder.bind(SLOT_VISIT, e -> {
-            if (checkIsland(player, hasIsland)) openVisitMenu(player);
-        });
+        layout.place(inv, holder, "visit", hasIsland, null,
+                e -> { if (checkIsland(player, hasIsland)) openVisitMenu(player); });
 
-        inv.setItem(SLOT_MEMBER, GuiItem.of(Material.GOLDEN_APPLE,
-                "<!italic><light_purple>🔑 成员管理",
-                lore("晋升/降级/踢出/转让", "点击打开成员列表", hasIsland)));
-        holder.bind(SLOT_MEMBER, e -> {
-            if (checkIsland(player, hasIsland)) openMemberMenu(player, island);
-        });
+        layout.place(inv, holder, "member", hasIsland, null,
+                e -> { if (checkIsland(player, hasIsland)) openMemberMenu(player, island); });
 
-        inv.setItem(SLOT_VISITOR, GuiItem.of(Material.IRON_DOOR,
-                "<!italic><light_purple>🚷 访客管理",
-                lore("封禁/驱逐/解封访客", "点击打开管理列表", hasIsland)));
-        holder.bind(SLOT_VISITOR, e -> {
-            if (checkIsland(player, hasIsland)) openVisitorMenu(player, island);
-        });
+        layout.place(inv, holder, "visitor", hasIsland, null,
+                e -> { if (checkIsland(player, hasIsland)) openVisitorMenu(player, island); });
 
-        // ── 行 6：危险操作 + 关闭 ────────────────────────────
-        List<String> dangerLore = new ArrayList<>();
-        dangerLore.add("<dark_gray>─────────");
-        dangerLore.add("<gray>包含以下操作：</gray>");
-        dangerLore.add("<red>• 离开空岛</red>");
-        dangerLore.add("<red>• 删除空岛</red>");
-        dangerLore.add("<dark_gray>─────────");
-        dangerLore.add("<yellow>⚠ 需要二次确认</yellow>");
-        inv.setItem(SLOT_DANGER, GuiItem.danger(Material.TNT, "危险操作", dangerLore));
-        holder.bind(SLOT_DANGER, e -> {
-            if (checkIsland(player, hasIsland)) openDangerMenu(player, island);
-        });
+        layout.place(inv, holder, "danger", hasIsland, null,
+                e -> { if (checkIsland(player, hasIsland)) openDangerMenu(player, island); });
 
-        inv.setItem(SLOT_CLOSE, GuiItem.close());
-        holder.bind(SLOT_CLOSE, e -> player.closeInventory());
+        layout.place(inv, holder, "close", e -> player.closeInventory());
 
-        // ── 扩展功能（由已安装的 addon 通过 GuiExtensionRegistry 注册） ──
-        int extensionCount = GuiExtensionRegistry.entries().size();
-        List<String> extensionLore = new ArrayList<>();
-        extensionLore.add("<dark_gray>─────────");
-        extensionLore.add("<gray>由已安装的插件扩展提供的功能</gray>");
-        extensionLore.add("<gray>已注册：" + extensionCount + " 项</gray>");
-        extensionLore.add("<dark_gray>─────────");
-        extensionLore.add("<yellow>点击打开</yellow>");
-        inv.setItem(SLOT_EXTENSION, GuiItem.of(Material.NETHER_STAR,
-                "<!italic><light_purple>🧩 扩展功能", extensionLore));
-        holder.bind(SLOT_EXTENSION, e -> ExtensionGui.open(player, 0));
+        layout.place(inv, holder, "extension", e -> ExtensionGui.open(player, 0));
 
         player.openInventory(inv);
     }
