@@ -504,6 +504,10 @@ description = "Autorise à expulser un joueur présent sur l'île."
 name = "Gérer les flags"
 description = "Autorise à modifier les flags de l'île."
 
+[island.permission.island_enter]
+name = "Entrer sur l'île"
+description = "Autorise l'entrée sur le territoire de l'île. À défaut, la permission de téléportation est utilisée."
+
 [island.permission.command.invite]
 name = "Inviter un joueur"
 description = "Autorise à envoyer et annuler des invitations."

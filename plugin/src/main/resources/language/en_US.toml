@@ -498,6 +498,10 @@ description = "Allows expelling a player currently on the island."
 name = "Manage Flags"
 description = "Allows modifying the island's flags."
 
+[island.permission.island_enter]
+name = "Enter Island"
+description = "Allows entering this island's territory. Falls back to the teleport permission when not granted separately."
+
 [island.permission.invite]
 name = "Invite a Player"
 description = "Allows sending and cancelling invitations."

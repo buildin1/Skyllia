@@ -43,10 +43,12 @@ public class AcidSeasonManager implements Listener {
     private static final Map<UUID, SeasonState> seasonStates = new ConcurrentHashMap<>();
 
     private final SkylliaAcidRain plugin;
+    private final SeasonStateStore store;
     private ScheduledTask checkTask;
 
     public AcidSeasonManager(SkylliaAcidRain plugin) {
         this.plugin = plugin;
+        this.store = new SeasonStateStore(plugin.getDataFolder());
     }
 
     /**
@@ -86,7 +88,7 @@ public class AcidSeasonManager implements Listener {
     }
 
     private void evaluateWorld(World world) {
-        SeasonState state = seasonStates.computeIfAbsent(world.getUID(), key -> new SeasonState());
+        SeasonState state = stateFor(world);
 
         synchronized (state) {
             long fullTime = world.getFullTime();
@@ -116,7 +118,7 @@ public class AcidSeasonManager implements Listener {
      * Intended for admin testing.
      */
     public void forceStartSeason(World world) {
-        SeasonState state = seasonStates.computeIfAbsent(world.getUID(), key -> new SeasonState());
+        SeasonState state = stateFor(world);
         synchronized (state) {
             startSeason(world, state);
         }
@@ -137,6 +139,45 @@ public class AcidSeasonManager implements Listener {
         return true;
     }
 
+    /**
+     * 取得世界的季节状态；首次访问时从磁盘恢复上一次落盘的内容。
+     */
+    private SeasonState stateFor(World world) {
+        return seasonStates.computeIfAbsent(world.getUID(), key -> restore(key, world));
+    }
+
+    /**
+     * 从磁盘恢复某个世界的季节状态。
+     *
+     * <p>恢复 {@code lastTriggerDayIndex} 是关键 —— 它归零正是「满月当天重启会让同一轮
+     * 酸雨季反复触发」的直接原因。</p>
+     */
+    private SeasonState restore(UUID worldId, World world) {
+        SeasonState state = new SeasonState();
+        SeasonStateStore.Snapshot snapshot = store.load(worldId);
+        if (snapshot == null) return state;
+
+        state.lastTriggerDayIndex = snapshot.lastTriggerDayIndex();
+        state.seasonEndFullTime = snapshot.endFullTime();
+        if (!snapshot.active()) return state;
+
+        if (world.getFullTime() < snapshot.endFullTime()) {
+            // 停机期间季节尚未走完 —— 恢复为进行中。
+            // trackedPlayers 刻意保持为空：跨越重启的这一轮不发放「全程存活」奖励，
+            // 因为所有人都被强制下线过，无法认定其全程在场。
+            state.active = true;
+            log.info("世界 {} 的酸雨季在重启后恢复，剩余 {} tick",
+                    world.getName(), snapshot.endFullTime() - world.getFullTime());
+        } else {
+            // 停机期间季节已自然走完 —— 静默标记结束。
+            // 这里刻意不广播、不触发结束事件：向从未见过季节开始的玩家播报「酸雨季结束」只会让人困惑。
+            state.active = false;
+            store.save(worldId, false, snapshot.endFullTime(), snapshot.lastTriggerDayIndex());
+            log.info("世界 {} 的酸雨季在服务器停机期间已自然结束", world.getName());
+        }
+        return state;
+    }
+
     private void startSeason(World world, SeasonState state) {
         long duration = Math.max(1L, AcidConfigLoader.config.getSeasonDurationTick());
 
@@ -146,6 +187,8 @@ public class AcidSeasonManager implements Listener {
         for (Player player : world.getPlayers()) {
             state.trackedPlayers.add(player.getUniqueId());
         }
+
+        store.save(world.getUID(), true, state.seasonEndFullTime, state.lastTriggerDayIndex);
 
         log.info("酸雨季在世界 {} 开始，持续 {} tick，参与追踪玩家数：{}", world.getName(), duration, state.trackedPlayers.size());
 
@@ -160,6 +203,7 @@ public class AcidSeasonManager implements Listener {
 
     private void endSeason(World world, SeasonState state) {
         state.active = false;
+        store.save(world.getUID(), false, state.seasonEndFullTime, state.lastTriggerDayIndex);
 
         Set<UUID> survivors = new HashSet<>();
         for (UUID uuid : state.trackedPlayers) {

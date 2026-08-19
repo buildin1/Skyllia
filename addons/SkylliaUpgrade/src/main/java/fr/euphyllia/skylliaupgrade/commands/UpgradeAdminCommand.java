@@ -6,7 +6,6 @@ import fr.euphyllia.skyllia.utils.PlayerUtils;
 import fr.euphyllia.skylliaupgrade.SkylliaUpgrade;
 import fr.euphyllia.skylliaupgrade.gui.UpgradeAdminGui;
 import net.kyori.adventure.text.Component;
-import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
@@ -33,7 +32,7 @@ public class UpgradeAdminCommand implements SubCommandInterface {
             sender.sendMessage(Component.text("§c此命令只能由玩家执行。"));
             return;
         }
-        Bukkit.getGlobalRegionScheduler().run(SkylliaUpgrade.getInstance(), t -> UpgradeAdminGui.openList(player, 0));
+        player.getScheduler().run(SkylliaUpgrade.getInstance(), t -> UpgradeAdminGui.openList(player, 0), null);
     }
 
     @Override

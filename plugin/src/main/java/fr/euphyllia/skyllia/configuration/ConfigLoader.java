@@ -7,6 +7,7 @@ import fr.euphyllia.skyllia.configuration.manager.DatabaseConfigManager;
 import fr.euphyllia.skyllia.configuration.manager.GeneralConfigManager;
 import fr.euphyllia.skyllia.configuration.manager.IslandConfigManager;
 import fr.euphyllia.skyllia.configuration.manager.IslandFlagsConfigManager;
+import fr.euphyllia.skyllia.configuration.manager.IslandTypeGuiConfigManager;
 import fr.euphyllia.skyllia.configuration.manager.LanguageConfigManager;
 import fr.euphyllia.skyllia.configuration.manager.PermissionsV2ConfigManager;
 import fr.euphyllia.skyllia.configuration.manager.PlayerConfigManager;
@@ -34,6 +35,7 @@ public class ConfigLoader implements IConfigRegistry {
     public static LanguageConfigManager language;
     public static PermissionsV2ConfigManager permissionsV2;
     public static IslandFlagsConfigManager islandFlags;
+    public static IslandTypeGuiConfigManager islandTypeGui;
 
     private static CommentedFileConfig generalConfig;
     private static CommentedFileConfig databaseConfig;
@@ -43,6 +45,7 @@ public class ConfigLoader implements IConfigRegistry {
     private static CommentedFileConfig schematicConfig;
     private static CommentedFileConfig permissionsV2Config;
     private static CommentedFileConfig flagsConfig;
+    private static CommentedFileConfig islandTypeGuiConfig;
 
     public static void init(File allConfig) {
 
@@ -56,6 +59,7 @@ public class ConfigLoader implements IConfigRegistry {
         schematicConfig = loadFile(new File(configDir, "schematics.toml"));
         permissionsV2Config = loadFile(new File(configDir, "permissions-v2.toml"));
         flagsConfig = loadFile(new File(configDir, "flags.toml"));
+        islandTypeGuiConfig = loadFile(new File(configDir, "island-types.toml"));
 
         general = new GeneralConfigManager(generalConfig);
         database = new DatabaseConfigManager(databaseConfig);
@@ -66,6 +70,9 @@ public class ConfigLoader implements IConfigRegistry {
         language = new LanguageConfigManager();
         permissionsV2 = new PermissionsV2ConfigManager(permissionsV2Config);
         islandFlags = new IslandFlagsConfigManager(flagsConfig);
+        islandTypeGui = new IslandTypeGuiConfigManager(islandTypeGuiConfig);
+        // 首次启动时按现有岛屿类型补全建岛菜单条目，服主无需手写。
+        islandTypeGui.seedFrom(schematicManager.getIslandTypes());
 
         configManagers.add(general);
         configManagers.add(database);
@@ -76,6 +83,7 @@ public class ConfigLoader implements IConfigRegistry {
         configManagers.add(language);
         configManagers.add(permissionsV2);
         configManagers.add(islandFlags);
+        configManagers.add(islandTypeGui);
 
         //reloadConfigs();
 

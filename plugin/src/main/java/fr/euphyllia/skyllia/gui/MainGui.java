@@ -102,7 +102,9 @@ public final class MainGui {
             if (hasIsland) {
                 dispatch(player, "is home");
             } else {
-                dispatch(player, "is create");
+                // 无岛屿时打开类型选择菜单，而不是盲发无参的 is create ——
+                // 后者会让玩家永远只能拿到配置里的第一个岛屿类型。
+                CreateIslandGui.open(player);
             }
         });
 

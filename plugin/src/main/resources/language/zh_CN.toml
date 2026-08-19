@@ -498,6 +498,10 @@ description = "允许驱逐当前在空岛上的玩家。"
 name = "管理标记"
 description = "允许修改空岛标记。"
 
+[island.permission.island_enter]
+name = "进入空岛"
+description = "允许进入该空岛的领地范围。未单独授予时，沿用「传送到空岛」权限。"
+
 [island.permission.invite]
 name = "邀请玩家"
 description = "允许发送和取消邀请。"

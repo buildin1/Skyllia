@@ -2,7 +2,6 @@ package fr.euphyllia.skyllia.gui;
 
 import fr.euphyllia.skyllia.Skyllia;
 import fr.euphyllia.skyllia.api.commands.SubCommandInterface;
-import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
@@ -33,7 +32,7 @@ public class GuiSubCommand implements SubCommandInterface {
             return;
         }
         // Folia: openInventory 必须在主线程执行
-        Bukkit.getGlobalRegionScheduler().run(Skyllia.getInstance(), t -> MainGui.open(player));
+        player.getScheduler().run(Skyllia.getInstance(), t -> MainGui.open(player), null);
     }
 
     @Override

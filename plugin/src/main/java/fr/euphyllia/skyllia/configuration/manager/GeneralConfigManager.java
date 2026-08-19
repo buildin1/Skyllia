@@ -48,6 +48,7 @@ public class GeneralConfigManager implements IConfigurationProvider {
                 getOrSetDefault("settings.island.invitation.teleport-when-accepting", true, Boolean.class),
                 getOrSetDefault("settings.island.queue.allow-bypass", true, Boolean.class),
                 getOrSetDefault("settings.island.queue.max-concurrent", -1, Integer.class),
+                getOrSetDefault("settings.island.prevent-ore-drops", false, Boolean.class),
                 new ChunkProcessingSettings(
                         getOrSetDefault("settings.island.chunk-processing.delete.threads", -1, Integer.class),
                         getOrSetDefault("settings.island.chunk-processing.delete.delay-ms", 50, Integer.class),
@@ -186,6 +187,14 @@ public class GeneralConfigManager implements IConfigurationProvider {
             boolean teleportWhenAcceptingInvitation,
             boolean allowBypassQueue,
             int maxConcurrentCreations,
+            /**
+             * 反矿物农场：破坏 / 熔炼 / 炸毁矿石方块时不掉落任何物品。
+             * <p>
+             * 默认 {@code false}。本服三个世界都是纯虚空生成器且未安装矿物生成器，
+             * 根本没有天然矿脉，这套机制没有存在意义，反而会让玩家自己放下的矿石
+             * 挖了什么都不掉。将来若安装了矿物生成器，改成 {@code true} 即可启用。
+             */
+            boolean preventOreDrops,
             ChunkProcessingSettings chunkProcessing
     ) {
         /**

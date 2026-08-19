@@ -8,7 +8,6 @@ import fr.euphyllia.skyllia.gui.zone.ZoneAdminGui;
 import fr.euphyllia.skyllia.managers.zone.ActivityZoneManager;
 import fr.euphyllia.skyllia.utils.PlayerUtils;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -215,7 +214,7 @@ public class ZoneAdminSubCommand implements SubCommandInterface {
             ConfigLoader.language.sendMessage(sender, "island.player.player-only-command");
             return;
         }
-        Bukkit.getGlobalRegionScheduler().run(Skyllia.getInstance(), t -> ZoneAdminGui.openList(player, 0));
+        player.getScheduler().run(Skyllia.getInstance(), t -> ZoneAdminGui.openList(player, 0), null);
     }
 
     // ═══════════════════════════════════════════════════════════

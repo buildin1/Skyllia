@@ -6,7 +6,6 @@ import fr.euphyllia.skyllia.utils.PlayerUtils;
 import fr.euphyllia.skylliachallenge.SkylliaChallenge;
 import fr.euphyllia.skylliachallenge.gui.ChallengeAdminGui;
 import net.kyori.adventure.text.Component;
-import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
@@ -30,7 +29,7 @@ public record ChallengeAdminCommand(SkylliaChallenge plugin) implements SubComma
                 sender.sendMessage(Component.text("§c此命令只能由玩家执行。"));
                 return;
             }
-            Bukkit.getGlobalRegionScheduler().run(plugin, t -> ChallengeAdminGui.openMain(player));
+            player.getScheduler().run(plugin, t -> ChallengeAdminGui.openMain(player), null);
             return;
         }
         if (args.length == 0 || !args[0].equalsIgnoreCase("reload")) {

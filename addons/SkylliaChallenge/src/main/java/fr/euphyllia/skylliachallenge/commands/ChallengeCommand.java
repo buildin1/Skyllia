@@ -7,7 +7,6 @@ import fr.euphyllia.skyllia.configuration.ConfigLoader;
 import fr.euphyllia.skyllia.utils.PlayerUtils;
 import fr.euphyllia.skylliachallenge.SkylliaChallenge;
 import fr.euphyllia.skylliachallenge.gui.ChallengeAdminGui;
-import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
@@ -30,7 +29,7 @@ public record ChallengeCommand(SkylliaChallenge plugin) implements SubCommandInt
                 ConfigLoader.language.sendMessage(sender, "addons.challenge.admin.no-permission");
                 return;
             }
-            Bukkit.getGlobalRegionScheduler().run(plugin, t -> ChallengeAdminGui.openMain(p));
+            p.getScheduler().run(plugin, t -> ChallengeAdminGui.openMain(p), null);
             return;
         }
 

@@ -21,6 +21,7 @@ public final class SkylliaGuiHolder implements org.bukkit.inventory.InventoryHol
     /** GUI 类型标识，便于 listener 区分菜单 */
     public enum GuiType {
         MAIN,           // 主菜单
+        CREATE_ISLAND,  // 建岛类型选择
         CONFIRM,        // 二次确认
         INFO,           // 信息菜单
         POSITION,       // 位置设置
