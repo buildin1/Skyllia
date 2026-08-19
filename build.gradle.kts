@@ -70,7 +70,7 @@ allprojects {
         maven(sonatypeRepo)
         maven(engineHubRepo)
         maven(mojang)
-        //maven(jitpack)
+        maven(jitpack)
         maven(extendedclip)
         maven(theNextLvl)
         maven(euphyRepo)
