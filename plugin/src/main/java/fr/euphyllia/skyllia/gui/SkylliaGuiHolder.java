@@ -3,7 +3,9 @@ package fr.euphyllia.skyllia.gui;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -46,6 +48,19 @@ public final class SkylliaGuiHolder implements org.bukkit.inventory.InventoryHol
     private Runnable onClose;
     /** 二次确认：要执行的危险操作 */
     private Runnable confirmAction;
+    /**
+     * 「允许摆放物品」的编辑格槽位（比如 SkylliaTrader 订单编辑页用来摆材料的槽）。
+     * <p>
+     * 默认空集合——绝大多数 Skyllia GUI 都是纯展示型菜单，{@link GuiListener#onClick}/
+     * {@link GuiListener#onDrag} 照旧取消一切点击/拖拽。只有显式调用
+     * {@link #markEditableSlots(int...)} 标记过的槽位，点击/拖拽才会放行给原版处理
+     * （放入/取出物品），且 {@link GuiListener#onClose} 会在菜单关闭时把这些槽位里
+     * 当前的物品原样退还给玩家——不管关闭原因是什么（ESC、切物品栏、退出游戏、
+     * 菜单内部触发的重开），这样"编辑型" GUI 才能安全地借用玩家背包物品来指定材料，
+     * 同时保证物品不会丢失也不会被重复退还（退还只在关闭事件里发生一次）。
+     * </p>
+     */
+    private final Set<Integer> editableSlots = ConcurrentHashMap.newKeySet();
 
     public SkylliaGuiHolder(@NotNull GuiType type) {
         this.type = type;
@@ -81,6 +96,23 @@ public final class SkylliaGuiHolder implements org.bukkit.inventory.InventoryHol
 
     public Runnable getConfirmAction() {
         return confirmAction;
+    }
+
+    /** 标记若干槽位为「允许摆放物品」的编辑格，见 {@link #editableSlots} 的说明。 */
+    public void markEditableSlots(int... slots) {
+        for (int slot : slots) {
+            editableSlots.add(slot);
+        }
+    }
+
+    /** 该槽位是否被标记为编辑格。未标记过任何编辑格的菜单（绝大多数）恒为 false。 */
+    public boolean isEditableSlot(int slot) {
+        return editableSlots.contains(slot);
+    }
+
+    /** 当前菜单全部编辑格槽位；供 {@link GuiListener#onClose} 关闭时扫描退还物品用。 */
+    public @NotNull Set<Integer> getEditableSlots() {
+        return Collections.unmodifiableSet(editableSlots);
     }
 
     /**

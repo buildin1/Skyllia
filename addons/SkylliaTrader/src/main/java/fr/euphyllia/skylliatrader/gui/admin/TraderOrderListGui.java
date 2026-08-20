@@ -6,7 +6,6 @@ import fr.euphyllia.skyllia.gui.SkylliaGuiHolder;
 import fr.euphyllia.skylliatrader.gui.GuiFormat;
 import fr.euphyllia.skylliatrader.SkylliaTrader;
 import fr.euphyllia.skylliatrader.configuration.OrdersConfigLoader;
-import fr.euphyllia.skylliatrader.configuration.model.ItemAmount;
 import fr.euphyllia.skylliatrader.configuration.model.OrderDefinition;
 import fr.euphyllia.skylliatrader.configuration.model.OrderType;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -23,19 +22,9 @@ import java.util.List;
 /**
  * 管理端「订单列表」：分页展示 orders.toml 里全部 {@code [[order]]} 条目。
  * <p>
- * T1 阶段只做只读展示 + 分页。新增/编辑/删除三个按钮已经摆在界面上（见 {@link #render}
- * 里的 4/49 两个槽位），但点击后只是提示"该功能将在 T3 加入"，不做任何实际操作——
- * 原因见类顶部下面这段：
- * </p>
- * <p>
- * <b>Folia GUI 安全提醒（TODO，留给 T3）</b>：一旦要做"编辑订单的物品字段"这种把
- * material 摆进虚拟格子代表配置数据的界面，必须在 {@code InventoryCloseEvent} 以及一切
- * 异常关闭路径（玩家掉线、被传送、插件被重载）上做原子化处理——格子里的物品要么正确
- * 写回 orders.toml 后清空，要么完整退回操作者背包，绝不能出现物品凭空消失或被复制。
- * 当前 {@code SkylliaGuiHolder}/{@code GuiListener} 默认会取消所有点击和拖拽（见
- * {@code GuiListener#onClick}），只要 T3 的编辑界面不主动把 giveItems/takeItems
- * 摆成"真物品放进格子"的交互方式，就不会触发这个风险；如果要做，必须仿
- * {@code GuiTextInput} 的思路专门处理好 {@code InventoryCloseEvent} 的原子写回/退回。
+ * T1 阶段只做只读展示 + 分页；<b>T3 第二波</b>补上了新增/编辑/删除的真正入口——
+ * 点"+ 新增订单"或点开任意一条已有订单都会跳转到 {@link TraderOrderEditGui} 详情编辑页，
+ * 具体的增删改逻辑、物品格子的 Folia 安全处理见该类的类注释。
  * </p>
  * <p>
  * 版式（边框/内容槽位/翻页数学）走核心的 {@link GuiPageLayout}——这套代码原本在这里和
@@ -71,7 +60,10 @@ public final class TraderOrderListGui {
         int from = clamped * GuiPageLayout.PAGE_SIZE;
         int to = Math.min(from + GuiPageLayout.PAGE_SIZE, orders.size());
         for (int i = from; i < to; i++) {
-            inv.setItem(GuiPageLayout.contentSlot(i - from), buildOrderItem(orders.get(i)));
+            OrderDefinition order = orders.get(i);
+            int slot = GuiPageLayout.contentSlot(i - from);
+            inv.setItem(slot, buildOrderItem(order));
+            holder.bind(slot, e -> TraderOrderEditGui.open(player, TraderOrderEditGui.OrderDraft.from(order)));
         }
 
         if (orders.isEmpty()) {
@@ -91,10 +83,10 @@ public final class TraderOrderListGui {
             holder.bind(GuiPageLayout.SLOT_NEXT_PAGE, e -> open(player, clamped + 1));
         }
 
-        // 新增/编辑/删除：T1 先摆出来，点了只提示"T3 实现"，不做任何写入（见类注释）。
-        inv.setItem(GuiPageLayout.SLOT_HEADER, GuiItem.placeholder(Material.EMERALD, "+ 新增订单", "在 GUI 里直接新建一条订单"));
-        holder.bind(GuiPageLayout.SLOT_HEADER, e -> player.sendMessage(net.kyori.adventure.text.Component.text(
-                "§7新增/编辑订单的 GUI 将在 T3 阶段加入，目前请直接编辑 config/orders.toml 后 /skyllia reload。")));
+        inv.setItem(GuiPageLayout.SLOT_HEADER, GuiItem.of(Material.EMERALD, "<!italic><green>+ 新增订单",
+                List.of("<dark_gray>─────────", "<gray>在 GUI 里直接新建一条订单</gray>",
+                        "<gray>不点“确认保存”退出的话不会写进 orders.toml</gray>")));
+        holder.bind(GuiPageLayout.SLOT_HEADER, e -> TraderOrderEditGui.open(player, TraderOrderEditGui.OrderDraft.fresh()));
 
         inv.setItem(GuiPageLayout.SLOT_CLOSE, GuiItem.back());
         holder.bind(GuiPageLayout.SLOT_CLOSE, e -> TraderAdminMainGui.open(player));
@@ -110,11 +102,11 @@ public final class TraderOrderListGui {
         lore.add("<gray>类型：<white>" + (order.type() == OrderType.MONEY ? "金币收购" : "物物交换") + "</white></gray>");
 
         // 两种类型都用 take-items 描述"岛屿交出去什么"，区别只在商队怎么付账。
-        lore.add("<gray>岛屿支付：<white>" + describeItems(order.takeItems()) + "</white></gray>");
+        lore.add("<gray>岛屿支付：<white>" + GuiFormat.describeItems(order.takeItems()) + "</white></gray>");
         if (order.type() == OrderType.MONEY) {
             lore.add("<gray>商队支付：<white>" + GuiFormat.fmt(order.price()) + " 金币</white>（整单总价）</gray>");
         } else {
-            lore.add("<gray>商队支付：<white>" + describeItems(order.giveItems()) + "</white></gray>");
+            lore.add("<gray>商队支付：<white>" + GuiFormat.describeItems(order.giveItems()) + "</white></gray>");
         }
 
         lore.add("<gray>声望奖励：<white>" + order.rewardReputation() + "</white></gray>");
@@ -122,19 +114,8 @@ public final class TraderOrderListGui {
         lore.add("<gray>终身限购：<white>" + (order.redeemLimitPerIsland() == 0 ? "不限" : order.redeemLimitPerIsland() + " 单") + "</white>（按岛屿计）</gray>");
         lore.add("<gray>门槛：<white>等级≥" + order.requiredLevelMin() + " 声望≥" + order.requiredReputationMin() + "</white></gray>");
         lore.add("<dark_gray>─────────");
-        lore.add("<dark_gray>编辑/删除将在 T3 加入</dark_gray>");
+        lore.add("<yellow>点击</yellow> <gray>进入编辑</gray>");
 
         return GuiItem.of(order.iconMaterial(), "<!italic><light_purple>" + order.displayName(), lore);
-    }
-
-    private static String describeItems(List<ItemAmount> items) {
-        if (items.isEmpty()) return "（无）";
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < items.size(); i++) {
-            if (i > 0) sb.append(", ");
-            ItemAmount item = items.get(i);
-            sb.append(item.material()).append(" x").append(item.amount());
-        }
-        return sb.toString();
     }
 }

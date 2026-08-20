@@ -58,8 +58,7 @@ public final class TraderAdminMainGui {
 
         inv.setItem(11, GuiItem.of(Material.WRITTEN_BOOK, "<!italic><green>📦 订单管理",
                 List.of("<dark_gray>─────────",
-                        "<gray>查看 orders.toml 里的全部商队订单</gray>",
-                        "<gray>（T1 只读；新增/编辑/删除见 T3）</gray>")));
+                        "<gray>查看/新增/编辑/删除 orders.toml 里的商队订单</gray>")));
         holder.bind(11, e -> TraderOrderListGui.open(player, 0));
 
         inv.setItem(13, GuiItem.of(Material.VILLAGER_SPAWN_EGG, "<!italic><green>🧑 商人管理",

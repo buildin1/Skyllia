@@ -3,10 +3,13 @@ package fr.euphyllia.skylliatrader.configuration;
 import com.electronwill.nightconfig.core.Config;
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import fr.euphyllia.skyllia.api.configuration.IConfigurationProvider;
+import fr.euphyllia.skyllia.utils.ConfigFileWriter;
 import fr.euphyllia.skylliatrader.configuration.model.ItemAmount;
 import fr.euphyllia.skylliatrader.configuration.model.OrderDefinition;
 import fr.euphyllia.skylliatrader.configuration.model.OrderType;
 import org.bukkit.Material;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,11 +22,21 @@ import java.util.Set;
  * orders.toml 的运行时读取。
  * <p>
  * 和 {@link TraderConfigManager} 不一样：orders.toml 里的每一条 {@code [[order]]} 都是管理员
- * 显式写的条目，不是"缺项自动补默认值"的键值表，所以本类只做"解析 + 校验 + 丢弃坏条目"，
- * 不做整表回写（连 {@code config-version} 缺失时也只警告不补写，免得整表重写丢注释）。
- * T3 起管理端 GUI 需要新增/编辑/删除订单时，再补写回磁盘的能力（写回时要保留 TOML 注释，
- * 直接用 {@link com.electronwill.nightconfig.toml.TomlWriter} 整表覆盖会丢注释，
- * 到时候需要专门处理，这里先留 TODO）。
+ * 显式写的条目，不是"缺项自动补默认值"的键值表，{@link #loadConfig()} 只做"解析 + 校验 + 丢弃坏
+ * 条目"，不做整表回写（连 {@code config-version} 缺失时也只警告不补写，免得整表重写丢注释）。
+ * </p>
+ * <p>
+ * <b>T3 第二波</b>：管理端 GUI（{@code TraderOrderEditGui}）新增/编辑/删除订单时，
+ * 走 {@link #upsertOrder(OrderDefinition, String)} / {@link #deleteOrder(String)} 整表回写
+ * 磁盘——这两个方法会把内存里当前的订单列表 + 本次改动，重新拼成一份 nightconfig 的
+ * {@code order} 数组整体替换掉 {@code config} 里的旧值，再走
+ * {@link ConfigFileWriter#writeAtomically} 原子落盘。<b>注意：这个重建过程会丢失
+ * orders.toml 里手写的行内注释</b>（比如每条订单上面那句"交 64 个圆石..."的说明）——
+ * nightconfig 的注释是挂在具体 key 路径上的，而这里是把整个 {@code order} 数组换成一批
+ * 全新构造的 subConfig，不是"原地改值"，没有旧注释可继承。这是可以接受的取舍：
+ * 一旦订单开始走 GUI 编辑，文件里那些手写注释本来就会随时间失去参考价值（描述的是
+ * 编辑前的数值），比起额外做一套"注释迁移"的复杂机制，不如接受它们在第一次 GUI 保存后
+ * 消失。{@code config-version} 等顶层键没有被整表替换，理论上其上的头部注释不受影响。
  * </p>
  * <p>
  * <b>校验的底线是"宁可整条订单不加载，也不能加载半残的订单"</b>：一条 take-items 为空的
@@ -210,6 +223,118 @@ public class OrdersConfigManager implements IConfigurationProvider {
 
     public int getConfigVersion() {
         return configVersion;
+    }
+
+    /**
+     * 新增或替换一条订单，校验通过并原子落盘成功后才更新内存态。
+     * <p>
+     * <b>磁盘写入失败时内存中的订单列表原封不动</b>——调用方（GUI）必须把 {@code false}
+     * 当成"这次保存没生效"处理，提示管理员重试，绝不能因为"内存里已经加进去了"就误报成功。
+     * </p>
+     *
+     * @param order      要保存的完整订单定义；id 已经在构造时被规范化（去空白+转小写）
+     * @param previousId 编辑既有订单时传入原 id（本方法据此找到并替换那一条）；
+     *                   新增订单传 {@code null}（直接追加）
+     * @return 是否成功落盘；{@code false} 还可能是因为 {@code order.id()} 与<b>另一条</b>
+     * 订单（不是本次正在编辑的这条）冲突
+     */
+    public synchronized boolean upsertOrder(@NotNull OrderDefinition order, @Nullable String previousId) {
+        String normalizedPrevId = previousId == null ? null : OrderDefinition.normalizeId(previousId);
+
+        List<OrderDefinition> current = new ArrayList<>(this.orders);
+        for (OrderDefinition existing : current) {
+            if (existing.id().equals(order.id()) && !existing.id().equals(normalizedPrevId)) {
+                log.error("保存订单失败：id '{}' 已被其它订单占用，未写入磁盘", order.id());
+                return false;
+            }
+        }
+
+        List<OrderDefinition> updated = new ArrayList<>(current.size() + 1);
+        boolean replaced = false;
+        for (OrderDefinition existing : current) {
+            if (normalizedPrevId != null && existing.id().equals(normalizedPrevId)) {
+                updated.add(order);
+                replaced = true;
+            } else {
+                updated.add(existing);
+            }
+        }
+        if (!replaced) {
+            updated.add(order);
+        }
+
+        if (!writeOrdersToDisk(updated)) {
+            return false;
+        }
+        this.orders = List.copyOf(updated);
+        return true;
+    }
+
+    /**
+     * 删除一条订单并原子落盘。
+     *
+     * @return {@code false} 表示这个 id 本来就不存在，或者落盘失败——两种情况下内存态都不变
+     */
+    public synchronized boolean deleteOrder(@NotNull String id) {
+        String normalized = OrderDefinition.normalizeId(id);
+        List<OrderDefinition> current = new ArrayList<>(this.orders);
+        boolean removed = current.removeIf(o -> o.id().equals(normalized));
+        if (!removed) return false;
+
+        if (!writeOrdersToDisk(current)) {
+            return false;
+        }
+        this.orders = List.copyOf(current);
+        return true;
+    }
+
+    /**
+     * 把整份订单列表重建成 nightconfig 的 {@code order} 数组并原子落盘。
+     * <b>不更新 {@link #orders} 内存态</b>——调用方（{@link #upsertOrder}/{@link #deleteOrder}）
+     * 落盘成功后自己更新，这样"落盘失败时内存态不变"这条规则只需要在一处保证。
+     */
+    private boolean writeOrdersToDisk(List<OrderDefinition> newOrders) {
+        List<Config> tables = new ArrayList<>(newOrders.size());
+        for (OrderDefinition order : newOrders) {
+            tables.add(toTomlTable(order));
+        }
+        config.set("order", tables);
+        if (!(config.get("config-version") instanceof Number)) {
+            config.set("config-version", this.configVersion);
+        }
+        return ConfigFileWriter.writeAtomically(config);
+    }
+
+    /** 把一条 {@link OrderDefinition} 拼成一张 nightconfig 表，字段名和 {@link #parseOrder} 一一对应。 */
+    private Config toTomlTable(OrderDefinition order) {
+        Config table = config.createSubConfig();
+        table.set("id", order.id());
+        table.set("enabled", order.enabled());
+        table.set("display-name", order.displayName());
+        table.set("type", order.type() == OrderType.MONEY ? "money" : "barter");
+        table.set("take-items", toItemTableList(order.takeItems()));
+        if (order.type() == OrderType.MONEY) {
+            table.set("price", order.price());
+        } else {
+            table.set("give-items", toItemTableList(order.giveItems()));
+        }
+        table.set("reward-reputation", order.rewardReputation());
+        table.set("weight", order.weight());
+        table.set("redeem-limit-per-island", order.redeemLimitPerIsland());
+        table.set("required-level-min", order.requiredLevelMin());
+        table.set("required-reputation-min", order.requiredReputationMin());
+        return table;
+    }
+
+    private List<Config> toItemTableList(List<ItemAmount> items) {
+        List<Config> list = new ArrayList<>(items.size());
+        for (ItemAmount item : items) {
+            Config itemTable = config.createSubConfig();
+            itemTable.set("material", item.material().name());
+            itemTable.set("amount", item.amount());
+            list.add(itemTable);
+        }
+        return list;
     }
 
     @Override
