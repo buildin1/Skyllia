@@ -3,6 +3,7 @@ package fr.euphyllia.skylliaislandlevel.gui;
 import fr.euphyllia.skyllia.api.SkylliaAPI;
 import fr.euphyllia.skyllia.api.skyblock.Island;
 import fr.euphyllia.skyllia.gui.GuiItem;
+import fr.euphyllia.skyllia.gui.GuiPageLayout;
 import fr.euphyllia.skyllia.gui.SkylliaGuiHolder;
 import fr.euphyllia.skylliaislandlevel.SkylliaIslandLevel;
 import fr.euphyllia.skylliaislandlevel.configuration.IslandLevelConfigLoader;
@@ -28,28 +29,10 @@ import java.util.Map;
 public final class ScoreDetailGui {
 
     private static final MiniMessage MM = MiniMessage.miniMessage();
-    private static final int PAGE_SIZE = 28;
-    private static final int[] BORDER = {0, 1, 2, 3, 5, 6, 7, 8, 9, 17, 18, 26, 27, 35, 36, 44, 46, 47, 50, 51, 52};
-    private static final int[] CONTENT_SLOTS = buildContentSlots();
+    /** 分页版式（边框/内容槽位/翻页数学）统一走核心的 {@link GuiPageLayout}，不再各自抄一份。 */
+    private static final int PAGE_SIZE = GuiPageLayout.PAGE_SIZE;
 
     private ScoreDetailGui() {}
-
-    private static int[] buildContentSlots() {
-        int[] slots = new int[PAGE_SIZE];
-        int slot = 10;
-        int col = 0;
-        int idx = 0;
-        while (idx < PAGE_SIZE) {
-            slots[idx++] = slot;
-            col++;
-            slot++;
-            if (col == 7) {
-                slot += 2;
-                col = 0;
-            }
-        }
-        return slots;
-    }
 
     public static void open(@NotNull Player player) {
         open(player, 0);
@@ -78,15 +61,13 @@ public final class ScoreDetailGui {
         }
         entries.sort(Comparator.comparingDouble(Entry::contribution).reversed());
 
-        int totalPages = Math.max(1, (int) Math.ceil(entries.size() / (double) PAGE_SIZE));
-        int clamped = Math.max(0, Math.min(page, totalPages - 1));
+        int totalPages = GuiPageLayout.totalPages(entries.size());
+        int clamped = GuiPageLayout.clampPage(page, totalPages);
 
         SkylliaGuiHolder holder = new SkylliaGuiHolder(SkylliaGuiHolder.GuiType.EXTENSION);
         Inventory inv = Bukkit.createInventory(holder, 54, MM.deserialize("<light_purple>📊 计分表 - " + (totalPages > 1 ? "第 " + (clamped + 1) + "/" + totalPages + " 页" : island.getId())));
 
-        for (int slot : BORDER) {
-            inv.setItem(slot, GuiItem.filler());
-        }
+        GuiPageLayout.fillBorder(inv);
 
         double score = manager.getStoredScore(island);
         long level = manager.getStoredLevel(island);
@@ -103,7 +84,7 @@ public final class ScoreDetailGui {
         int to = Math.min(from + PAGE_SIZE, entries.size());
         for (int i = from; i < to; i++) {
             Entry entry = entries.get(i);
-            inv.setItem(CONTENT_SLOTS[i - from], buildEntryItem(entry));
+            inv.setItem(GuiPageLayout.contentSlot(i - from), buildEntryItem(entry));
         }
 
         if (entries.isEmpty()) {
