@@ -6,6 +6,7 @@ import fr.euphyllia.skyllia.gui.GuiExtensionRegistry;
 import fr.euphyllia.skylliatrader.commands.TraderAdminCommand;
 import fr.euphyllia.skylliatrader.commands.TraderCommand;
 import fr.euphyllia.skylliatrader.configuration.OrdersConfigLoader;
+import fr.euphyllia.skylliatrader.configuration.ShopConfigLoader;
 import fr.euphyllia.skylliatrader.configuration.TraderConfigLoader;
 import fr.euphyllia.skylliatrader.data.TraderDataService;
 import fr.euphyllia.skylliatrader.gui.TraderProgressGui;
@@ -17,6 +18,7 @@ import fr.euphyllia.skylliatrader.merchant.MerchantKeys;
 import fr.euphyllia.skylliatrader.merchant.MerchantService;
 import fr.euphyllia.skylliatrader.merchant.MerchantSpawner;
 import fr.euphyllia.skylliatrader.permission.TraderPermissions;
+import fr.euphyllia.skylliatrader.shop.ShopPurchaseService;
 import fr.euphyllia.skylliatrader.task.NaturalSpawnTask;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -38,8 +40,11 @@ import java.util.List;
  * 自然刷新的临时游商（只开基础池 + 说明书）。
  * </p>
  * <p>
- * T3-T6（商店购买 GUI 与扣款发货事务、商队订单与声望、折扣与动态限购、等级联动）
- * 仍未实现，代码里能看到 {@code TODO(T3)} 之类标注的地方就是留给它们的口子。
+ * T3 第一波交付范围：<b>商店配置 + 购买事务 + 玩家购买 GUI</b>——{@code shop.toml} 固定全目录
+ * 商品表、先扣钱后发货的购买事务（{@link fr.euphyllia.skylliatrader.shop.ShopPurchaseService}）、
+ * 消费折扣与限购加成、钻石/下界合金锭的双轨门槛、{@link fr.euphyllia.skylliatrader.gui.shop.MerchantShopGui}。
+ * T3 第二波（统一管理员编辑 GUI）与 T4-T6（商队订单/声望、回收标签页、等级门槛回填）
+ * 仍未实现，代码里能看到 {@code TODO(T3)} / {@code TODO(T4)} 之类标注的地方就是留给它们的口子。
  * </p>
  */
 public final class SkylliaTrader extends JavaPlugin {
@@ -52,6 +57,7 @@ public final class SkylliaTrader extends JavaPlugin {
     private TraderDataService dataService;
     private TraderPermissions permissions;
     private MerchantService merchantService;
+    private ShopPurchaseService shopPurchaseService;
 
     public static SkylliaTrader getInstance() {
         return instance;
@@ -60,14 +66,16 @@ public final class SkylliaTrader extends JavaPlugin {
     @Override
     public void onEnable() {
         instance = this;
-        log.warn("SkylliaTrader 目前是测试版本！（T2 阶段：自然刷新 + 凭证召唤已可用，"
-                + "商店购买 / 商队订单 / 折扣联动尚未实现）");
+        log.warn("SkylliaTrader 目前是测试版本！（T3 第一波：商店购买 + 折扣/限购已可用，"
+                + "商队订单与声望 / 管理员编辑 GUI 尚未实现）");
 
         try {
             TraderConfigLoader.init(getDataFolder());
             OrdersConfigLoader.init(getDataFolder());
+            ShopConfigLoader.init(getDataFolder());
         } catch (Exception e) {
-            log.error("配置加载失败，插件已自动停用。请检查 config/config.toml 与 config/orders.toml。", e);
+            log.error("配置加载失败，插件已自动停用。请检查 config/config.toml、config/orders.toml"
+                    + " 与 config/shop.toml。", e);
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
@@ -75,6 +83,7 @@ public final class SkylliaTrader extends JavaPlugin {
         this.permissions = new TraderPermissions(this);
 
         this.dataService = new TraderDataService(this);
+        this.shopPurchaseService = new ShopPurchaseService(this, dataService);
 
         MerchantKeys merchantKeys = new MerchantKeys(this);
         MerchantSpawner merchantSpawner = new MerchantSpawner(merchantKeys);
@@ -128,6 +137,7 @@ public final class SkylliaTrader extends JavaPlugin {
 
         TraderConfigLoader.unregister();
         OrdersConfigLoader.unregister();
+        ShopConfigLoader.unregister();
         instance = null;
     }
 
@@ -138,6 +148,11 @@ public final class SkylliaTrader extends JavaPlugin {
 
     public TraderDataService getDataService() {
         return dataService;
+    }
+
+    /** 商店购买事务：扣款 + 发货 + 限购计数，见 {@link ShopPurchaseService} 类文档。 */
+    public ShopPurchaseService getShopPurchaseService() {
+        return shopPurchaseService;
     }
 
     /** 本插件注册的岛屿角色权限点；T2 的游商交互监听器判权限时用。 */

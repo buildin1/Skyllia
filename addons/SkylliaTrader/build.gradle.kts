@@ -6,6 +6,9 @@ group = "fr.euphyllia.skylliatrader"
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.20.6-R0.1-SNAPSHOT")
+    // Vault 经济接口：只拿来挂 RegisteredServiceProvider<Economy>（见 ShopPurchaseService），
+    // 不依赖 SkylliaBank 的具体实现类，松耦合写法照抄 SkylliaBank 自己的 EconomyManager。
+    compileOnly("com.github.MilkBowl:VaultAPI:1.7.1")
 
     compileOnly(project(":api"))
     compileOnly(project(":plugin"))

@@ -81,7 +81,8 @@ public class TraderConfigManager implements IConfigurationProvider {
     private static final String DEFAULT_GUIDEBOOK_MATERIAL = "WRITTEN_BOOK";
     private static final String DEFAULT_GUIDEBOOK_TITLE = "<gold>游商指南";
     private static final String DEFAULT_GUIDEBOOK_AUTHOR = "空岛商会";
-    private static final double DEFAULT_GUIDEBOOK_PRICE = 30.0;
+    /** 2026-08-21 起日均货币产出锚点由约 1000 下调为约 100，此默认值同步除以 10，与公开百科对齐。 */
+    private static final double DEFAULT_GUIDEBOOK_PRICE = 5.0;
     private static final int DEFAULT_GUIDEBOOK_PURCHASE_LIMIT = 0;
     /** 成书的页数上限（原版限制）。超出的页在 {@code CraftMetaBook#addPages} 里被静默丢弃。 */
     private static final int MAX_BOOK_PAGES = 100;
@@ -98,7 +99,11 @@ public class TraderConfigManager implements IConfigurationProvider {
     private static final List<Long> DEFAULT_TRADE_COUNT_TIERS = List.of(0L, 10L, 25L, 50L, 100L);
     private static final List<Long> DEFAULT_ISLAND_LEVEL_TIERS = List.of(1L, 5L, 10L, 15L, 20L, 30L);
     private static final List<Long> DEFAULT_REPUTATION_TIERS = List.of(0L, 100L, 300L, 700L, 1500L, 3000L);
-    private static final List<Double> DEFAULT_SPENDING_TIERS = List.of(0.0, 1000.0, 5000.0, 20000.0, 100000.0);
+    // T3 对齐公开百科/HANDOFF 9.3 的折扣档位表（消费 1,000/5,000/20,000/50,000 → 折扣 -3%/-6%/-10%/-15%）：
+    // 最后一档从 100000 改成 50000。注意这只影响"配置文件缺失时首次生成的默认值"——
+    // 已经跑起来的服务器如果 config.toml 早就存在（T1 上线时生成的），这里改了也不会
+    // 回填过去，需要服主自己去改线上的 config.toml（见项目"配置手改不用脚本"的既有规范）。
+    private static final List<Double> DEFAULT_SPENDING_TIERS = List.of(0.0, 1000.0, 5000.0, 20000.0, 50000.0);
 
     private final CommentedFileConfig config;
 

@@ -1,0 +1,1499 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# SkylliaTrader 商店商品表
+# ═══════════════════════════════════════════════════════════════════════════
+# 每一条 [[shop-item]] 都是显式配置的商品，不是靠公式批量生成——参照 orders.toml 的规矩。
+# 定价以公开百科（PlayerTask 日均产出 ~100 的新锚点）为准，改价格两边要一起改，见 HANDOFF.md 9.3。
+#
+# ── 字段说明 ────────────────────────────────────────────────────────────
+# id                     商品唯一标识。比较时会去掉首尾空白并转成小写，重复的 id 会被丢弃并报 error。
+# material               Bukkit Material 枚举名。
+# display-name           MiniMessage 格式的展示名。
+# price                  基础单价（未打折前），Vault 金币。
+# unlock-track           解锁轨道：TRADE_COUNT / ISLAND_LEVEL / REPUTATION 三选一。
+# unlock-tier            该轨道要求达到的档位数值（不是档位下标，是原始数字，
+#                        比如交易次数轨的 0/10/25/50/100、岛屿等级轨的 1/5/10/15/20/30、
+#                        商会声望轨的 0/100/300/700/1500/3000，要和 config.toml 的
+#                        [track.*] 档位表对应）。
+# natural-visible        是否也在"自然刷新的路人商人"货架上出现。只有交易次数轨第 0 档的
+#                        商品才应该是 true——路人商人只卖基础生活池，逼玩家去挑战任务换凭证。
+# purchase-limit-period  限购周期：NONE（不限购）/ DAILY / WEEKLY / MONTHLY / LIFETIME（终身）。
+#                        全部按"滚动窗口"判定，不对齐自然日/自然周，避免时区/月份天数的复杂度。
+# purchase-limit-count   该周期内每岛限购的数量；purchase-limit-period = NONE 时忽略此字段。
+# extra-gate             可选。目前只有一个取值 "NETHERITE_INGOT_DUAL"，表示这条商品除了
+#                        unlock-track/unlock-tier 之外，还要求岛屿等级 ≥45（硬编码在
+#                        ShopPurchaseService 里，见 HANDOFF.md 9.3 的 T6 双轨门槛）。
+#                        其余商品不填这个字段（单轨判定）。
+#
+# ⚠️ 钻石（id = "diamond"）的 purchase-limit-count 只是文档占位值：真实限购数字按岛屿等级
+#    动态决定（<20 级=1，20-29 级=3，≥30 级=10），运行时由代码按 Material.DIAMOND 特判覆盖，
+#    不读这个字段。这是 HANDOFF 9.3 明确要求"不要在这里直接写死一个数字"的唯一例外项。
+
+config-version = 1
+
+# ─────────────────────────────────────────────────────────────────────────
+# 交易次数轨 · 第 0 档（natural-visible = true，路人商人也卖）
+# ─────────────────────────────────────────────────────────────────────────
+
+[[shop-item]]
+id = "sand"
+material = "SAND"
+display-name = "<white>沙子"
+price = 3.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 0
+natural-visible = true
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "red_sand"
+material = "RED_SAND"
+display-name = "<white>红沙"
+price = 3.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 0
+natural-visible = true
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "gravel"
+material = "GRAVEL"
+display-name = "<white>砂砾"
+price = 3.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 0
+natural-visible = true
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "clay_ball"
+material = "CLAY_BALL"
+display-name = "<white>黏土球"
+price = 1.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 0
+natural-visible = true
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "sugar_cane"
+material = "SUGAR_CANE"
+display-name = "<white>甘蔗"
+price = 1.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 0
+natural-visible = true
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "wheat_seeds"
+material = "WHEAT_SEEDS"
+display-name = "<white>小麦种子"
+price = 1.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 0
+natural-visible = true
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "beetroot_seeds"
+material = "BEETROOT_SEEDS"
+display-name = "<white>甜菜种子"
+price = 1.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 0
+natural-visible = true
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "pumpkin_seeds"
+material = "PUMPKIN_SEEDS"
+display-name = "<white>南瓜种子"
+price = 1.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 0
+natural-visible = true
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "melon_seeds"
+material = "MELON_SEEDS"
+display-name = "<white>西瓜种子"
+price = 1.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 0
+natural-visible = true
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "oak_sapling"
+material = "OAK_SAPLING"
+display-name = "<white>橡木树苗"
+price = 1.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 0
+natural-visible = true
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "nether_wart"
+material = "NETHER_WART"
+display-name = "<white>下界疣"
+price = 4.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 0
+natural-visible = true
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "blaze_rod"
+material = "BLAZE_ROD"
+display-name = "<white>烈焰棒"
+price = 6.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 0
+natural-visible = true
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+# ─────────────────────────────────────────────────────────────────────────
+# 交易次数轨 · 第 10 档
+# ─────────────────────────────────────────────────────────────────────────
+
+[[shop-item]]
+id = "birch_sapling"
+material = "BIRCH_SAPLING"
+display-name = "<white>白桦树苗"
+price = 20.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 10
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "spruce_sapling"
+material = "SPRUCE_SAPLING"
+display-name = "<white>云杉树苗"
+price = 20.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 10
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "jungle_sapling"
+material = "JUNGLE_SAPLING"
+display-name = "<white>丛林树苗"
+price = 20.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 10
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "acacia_sapling"
+material = "ACACIA_SAPLING"
+display-name = "<white>金合欢树苗"
+price = 20.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 10
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "dark_oak_sapling"
+material = "DARK_OAK_SAPLING"
+display-name = "<white>深色橡木树苗"
+price = 20.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 10
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "mangrove_propagule"
+material = "MANGROVE_PROPAGULE"
+display-name = "<white>红树胎生苗"
+price = 20.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 10
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "cherry_sapling"
+material = "CHERRY_SAPLING"
+display-name = "<white>樱花树苗"
+price = 20.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 10
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "pale_oak_sapling"
+material = "PALE_OAK_SAPLING"
+display-name = "<white>苍白橡木树苗"
+price = 20.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 10
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "cocoa_beans"
+material = "COCOA_BEANS"
+display-name = "<white>可可豆"
+price = 20.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 10
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "cactus"
+material = "CACTUS"
+display-name = "<white>仙人掌"
+price = 20.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 10
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "red_mushroom"
+material = "RED_MUSHROOM"
+display-name = "<white>红蘑菇"
+price = 20.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 10
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "brown_mushroom"
+material = "BROWN_MUSHROOM"
+display-name = "<white>棕蘑菇"
+price = 20.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 10
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "bamboo"
+material = "BAMBOO"
+display-name = "<white>竹子"
+price = 20.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 10
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+# ─────────────────────────────────────────────────────────────────────────
+# 交易次数轨 · 第 25 档（16 色染料 + 花卉）
+# ─────────────────────────────────────────────────────────────────────────
+
+[[shop-item]]
+id = "white_dye"
+material = "WHITE_DYE"
+display-name = "<white>白色染料"
+price = 2.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 25
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "orange_dye"
+material = "ORANGE_DYE"
+display-name = "<white>橙色染料"
+price = 2.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 25
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "magenta_dye"
+material = "MAGENTA_DYE"
+display-name = "<white>品红色染料"
+price = 2.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 25
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "light_blue_dye"
+material = "LIGHT_BLUE_DYE"
+display-name = "<white>淡蓝色染料"
+price = 2.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 25
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "yellow_dye"
+material = "YELLOW_DYE"
+display-name = "<white>黄色染料"
+price = 2.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 25
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "lime_dye"
+material = "LIME_DYE"
+display-name = "<white>黄绿色染料"
+price = 2.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 25
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "pink_dye"
+material = "PINK_DYE"
+display-name = "<white>粉红色染料"
+price = 2.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 25
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "gray_dye"
+material = "GRAY_DYE"
+display-name = "<white>灰色染料"
+price = 2.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 25
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "light_gray_dye"
+material = "LIGHT_GRAY_DYE"
+display-name = "<white>淡灰色染料"
+price = 2.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 25
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "cyan_dye"
+material = "CYAN_DYE"
+display-name = "<white>青色染料"
+price = 2.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 25
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "purple_dye"
+material = "PURPLE_DYE"
+display-name = "<white>紫色染料"
+price = 2.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 25
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "blue_dye"
+material = "BLUE_DYE"
+display-name = "<white>蓝色染料"
+price = 2.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 25
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "brown_dye"
+material = "BROWN_DYE"
+display-name = "<white>棕色染料"
+price = 2.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 25
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "green_dye"
+material = "GREEN_DYE"
+display-name = "<white>绿色染料"
+price = 2.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 25
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "red_dye"
+material = "RED_DYE"
+display-name = "<white>红色染料"
+price = 2.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 25
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "black_dye"
+material = "BLACK_DYE"
+display-name = "<white>黑色染料"
+price = 2.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 25
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "dandelion"
+material = "DANDELION"
+display-name = "<white>蒲公英"
+price = 2.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 25
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "poppy"
+material = "POPPY"
+display-name = "<white>虞美人"
+price = 2.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 25
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "blue_orchid"
+material = "BLUE_ORCHID"
+display-name = "<white>蓝色兰花"
+price = 2.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 25
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "allium"
+material = "ALLIUM"
+display-name = "<white>紫红球花"
+price = 2.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 25
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "azure_bluet"
+material = "AZURE_BLUET"
+display-name = "<white>白花车轴草"
+price = 2.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 25
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "red_tulip"
+material = "RED_TULIP"
+display-name = "<white>红色郁金香"
+price = 2.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 25
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "orange_tulip"
+material = "ORANGE_TULIP"
+display-name = "<white>橙色郁金香"
+price = 2.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 25
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "white_tulip"
+material = "WHITE_TULIP"
+display-name = "<white>白色郁金香"
+price = 2.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 25
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "pink_tulip"
+material = "PINK_TULIP"
+display-name = "<white>粉色郁金香"
+price = 2.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 25
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "oxeye_daisy"
+material = "OXEYE_DAISY"
+display-name = "<white>滨菊"
+price = 2.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 25
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "cornflower"
+material = "CORNFLOWER"
+display-name = "<white>矢车菊"
+price = 2.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 25
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "lily_of_the_valley"
+material = "LILY_OF_THE_VALLEY"
+display-name = "<white>铃兰"
+price = 2.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 25
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "sunflower"
+material = "SUNFLOWER"
+display-name = "<white>向日葵"
+price = 2.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 25
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "lilac"
+material = "LILAC"
+display-name = "<white>丁香花"
+price = 2.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 25
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "rose_bush"
+material = "ROSE_BUSH"
+display-name = "<white>玫瑰丛"
+price = 2.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 25
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "peony"
+material = "PEONY"
+display-name = "<white>牡丹"
+price = 2.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 25
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "torchflower"
+material = "TORCHFLOWER"
+display-name = "<white>火把花"
+price = 2.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 25
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+# ─────────────────────────────────────────────────────────────────────────
+# 交易次数轨 · 第 50 档（海洋系）
+# ─────────────────────────────────────────────────────────────────────────
+
+[[shop-item]]
+id = "kelp"
+material = "KELP"
+display-name = "<white>海带"
+price = 3.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 50
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "seagrass"
+material = "SEAGRASS"
+display-name = "<white>海草"
+price = 3.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 50
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "sea_pickle"
+material = "SEA_PICKLE"
+display-name = "<white>海泡菜"
+price = 3.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 50
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "tube_coral"
+material = "TUBE_CORAL"
+display-name = "<white>管珊瑚"
+price = 3.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 50
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "brain_coral"
+material = "BRAIN_CORAL"
+display-name = "<white>脑纹珊瑚"
+price = 3.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 50
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "bubble_coral"
+material = "BUBBLE_CORAL"
+display-name = "<white>气泡珊瑚"
+price = 3.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 50
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "fire_coral"
+material = "FIRE_CORAL"
+display-name = "<white>火珊瑚"
+price = 3.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 50
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "horn_coral"
+material = "HORN_CORAL"
+display-name = "<white>鹿角珊瑚"
+price = 3.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 50
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "ice"
+material = "ICE"
+display-name = "<white>冰"
+price = 3.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 50
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "packed_ice"
+material = "PACKED_ICE"
+display-name = "<white>浮冰"
+price = 3.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 50
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "blue_ice"
+material = "BLUE_ICE"
+display-name = "<white>蓝冰"
+price = 3.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 50
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+# ─────────────────────────────────────────────────────────────────────────
+# 交易次数轨 · 第 100 档
+# ─────────────────────────────────────────────────────────────────────────
+
+[[shop-item]]
+id = "lily_pad"
+material = "LILY_PAD"
+display-name = "<white>睡莲"
+price = 20.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 100
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "vine"
+material = "VINE"
+display-name = "<white>藤蔓"
+price = 20.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 100
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "azalea"
+material = "AZALEA"
+display-name = "<white>杜鹃"
+price = 20.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 100
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "moss_block"
+material = "MOSS_BLOCK"
+display-name = "<white>苔藓"
+price = 20.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 100
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "weeping_vines"
+material = "WEEPING_VINES"
+display-name = "<white>垂根"
+price = 20.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 100
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "glow_lichen"
+material = "GLOW_LICHEN"
+display-name = "<white>发光地衣"
+price = 20.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 100
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "spore_blossom"
+material = "SPORE_BLOSSOM"
+display-name = "<white>孢子花"
+price = 20.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 100
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+# ─────────────────────────────────────────────────────────────────────────
+# 岛屿等级轨 · 1 级
+# ─────────────────────────────────────────────────────────────────────────
+
+[[shop-item]]
+id = "netherrack"
+material = "NETHERRACK"
+display-name = "<white>下界岩"
+price = 3.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 1
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "soul_sand"
+material = "SOUL_SAND"
+display-name = "<white>灵魂沙"
+price = 3.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 1
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "soul_soil"
+material = "SOUL_SOIL"
+display-name = "<white>灵魂土"
+price = 3.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 1
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "end_stone"
+material = "END_STONE"
+display-name = "<white>末地石"
+price = 3.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 1
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+# ─────────────────────────────────────────────────────────────────────────
+# 岛屿等级轨 · 5 级
+# ─────────────────────────────────────────────────────────────────────────
+
+[[shop-item]]
+id = "tuff"
+material = "TUFF"
+display-name = "<white>凝灰岩"
+price = 3.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 5
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "calcite"
+material = "CALCITE"
+display-name = "<white>方解石"
+price = 3.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 5
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "granite"
+material = "GRANITE"
+display-name = "<white>花岗岩"
+price = 3.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 5
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "diorite"
+material = "DIORITE"
+display-name = "<white>闪长岩"
+price = 3.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 5
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "andesite"
+material = "ANDESITE"
+display-name = "<white>安山岩"
+price = 3.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 5
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "pointed_dripstone"
+material = "POINTED_DRIPSTONE"
+display-name = "<white>滴水石锥"
+price = 4.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 5
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+# ─────────────────────────────────────────────────────────────────────────
+# 岛屿等级轨 · 10 级
+# ─────────────────────────────────────────────────────────────────────────
+
+[[shop-item]]
+id = "basalt"
+material = "BASALT"
+display-name = "<white>玄武岩"
+price = 3.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 10
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "blackstone"
+material = "BLACKSTONE"
+display-name = "<white>黑石"
+price = 3.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 10
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "nether_bricks"
+material = "NETHER_BRICKS"
+display-name = "<white>下界砖"
+price = 3.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 10
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "crimson_nylium"
+material = "CRIMSON_NYLIUM"
+display-name = "<white>绯红菌岩"
+price = 3.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 10
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "warped_nylium"
+material = "WARPED_NYLIUM"
+display-name = "<white>诡异菌岩"
+price = 3.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 10
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "nether_wart_block"
+material = "NETHER_WART_BLOCK"
+display-name = "<white>下界疣块"
+price = 3.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 10
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "shroomlight"
+material = "SHROOMLIGHT"
+display-name = "<white>荧光菌"
+price = 3.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 10
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+# ─────────────────────────────────────────────────────────────────────────
+# 岛屿等级轨 · 15 级（26.x 新建材，主推）
+# ─────────────────────────────────────────────────────────────────────────
+
+[[shop-item]]
+id = "cinnabar"
+material = "CINNABAR"
+display-name = "<white>朱砂"
+price = 3.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 15
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "sulfur"
+material = "SULFUR"
+display-name = "<white>硫磺"
+price = 3.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 15
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+# ─────────────────────────────────────────────────────────────────────────
+# 岛屿等级轨 · 20 级
+# ─────────────────────────────────────────────────────────────────────────
+
+[[shop-item]]
+id = "quartz_block"
+material = "QUARTZ_BLOCK"
+display-name = "<white>下界石英块"
+price = 3.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 20
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "purpur_block"
+material = "PURPUR_BLOCK"
+display-name = "<white>紫珀块"
+price = 3.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 20
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "chorus_fruit"
+material = "CHORUS_FRUIT"
+display-name = "<white>紫颂果"
+price = 5.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 20
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "prismarine_shard"
+material = "PRISMARINE_SHARD"
+display-name = "<white>海晶碎片"
+price = 5.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 20
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "prismarine_crystals"
+material = "PRISMARINE_CRYSTALS"
+display-name = "<white>海晶砂粒"
+price = 5.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 20
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+# ─────────────────────────────────────────────────────────────────────────
+# 岛屿等级轨 · 30 级
+# ─────────────────────────────────────────────────────────────────────────
+
+[[shop-item]]
+id = "resin_block"
+material = "RESIN_BLOCK"
+display-name = "<white>树脂块"
+price = 3.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 30
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "pale_moss_block"
+material = "PALE_MOSS_BLOCK"
+display-name = "<white>苍白苔藓"
+price = 3.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 30
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "creaking_heart"
+material = "CREAKING_HEART"
+display-name = "<white>嘎吱之心"
+price = 3.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 30
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "mycelium"
+material = "MYCELIUM"
+display-name = "<white>菌丝"
+price = 3.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 30
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+# ─────────────────────────────────────────────────────────────────────────
+# 商会声望轨 · 0（学徒）
+# ─────────────────────────────────────────────────────────────────────────
+
+[[shop-item]]
+id = "coal"
+material = "COAL"
+display-name = "<white>煤炭"
+price = 3.0
+unlock-track = "REPUTATION"
+unlock-tier = 0
+natural-visible = false
+purchase-limit-period = "DAILY"
+purchase-limit-count = 64
+
+[[shop-item]]
+id = "raw_iron"
+material = "RAW_IRON"
+display-name = "<white>粗铁"
+price = 3.0
+unlock-track = "REPUTATION"
+unlock-tier = 0
+natural-visible = false
+purchase-limit-period = "DAILY"
+purchase-limit-count = 64
+
+[[shop-item]]
+id = "raw_gold"
+material = "RAW_GOLD"
+display-name = "<white>粗金"
+price = 3.0
+unlock-track = "REPUTATION"
+unlock-tier = 0
+natural-visible = false
+purchase-limit-period = "DAILY"
+purchase-limit-count = 64
+
+[[shop-item]]
+id = "raw_copper"
+material = "RAW_COPPER"
+display-name = "<white>粗铜"
+price = 3.0
+unlock-track = "REPUTATION"
+unlock-tier = 0
+natural-visible = false
+purchase-limit-period = "DAILY"
+purchase-limit-count = 64
+
+# ─────────────────────────────────────────────────────────────────────────
+# 商会声望轨 · 100（伙计）
+# ─────────────────────────────────────────────────────────────────────────
+
+[[shop-item]]
+id = "glowstone"
+material = "GLOWSTONE"
+display-name = "<white>荧石"
+price = 8.0
+unlock-track = "REPUTATION"
+unlock-tier = 100
+natural-visible = false
+purchase-limit-period = "DAILY"
+purchase-limit-count = 16
+
+[[shop-item]]
+id = "magma_cream"
+material = "MAGMA_CREAM"
+display-name = "<white>岩浆膏"
+price = 8.0
+unlock-track = "REPUTATION"
+unlock-tier = 100
+natural-visible = false
+purchase-limit-period = "DAILY"
+purchase-limit-count = 16
+
+[[shop-item]]
+id = "ghast_tear"
+material = "GHAST_TEAR"
+display-name = "<white>恶魂之泪"
+price = 8.0
+unlock-track = "REPUTATION"
+unlock-tier = 100
+natural-visible = false
+purchase-limit-period = "DAILY"
+purchase-limit-count = 16
+
+[[shop-item]]
+id = "crimson_stem"
+material = "CRIMSON_STEM"
+display-name = "<white>绯红菌柄"
+price = 8.0
+unlock-track = "REPUTATION"
+unlock-tier = 100
+natural-visible = false
+purchase-limit-period = "DAILY"
+purchase-limit-count = 16
+
+# ─────────────────────────────────────────────────────────────────────────
+# 商会声望轨 · 300（商人）
+# ─────────────────────────────────────────────────────────────────────────
+
+[[shop-item]]
+id = "crying_obsidian"
+material = "CRYING_OBSIDIAN"
+display-name = "<white>哭泣的黑曜石"
+price = 10.0
+unlock-track = "REPUTATION"
+unlock-tier = 300
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "amethyst_shard"
+material = "AMETHYST_SHARD"
+display-name = "<white>紫水晶碎片"
+price = 15.0
+unlock-track = "REPUTATION"
+unlock-tier = 300
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "diamond"
+material = "DIAMOND"
+display-name = "<white>钻石"
+price = 60.0
+unlock-track = "REPUTATION"
+unlock-tier = 300
+natural-visible = false
+purchase-limit-period = "DAILY"
+purchase-limit-count = 1
+
+# ─────────────────────────────────────────────────────────────────────────
+# 商会声望轨 · 700（大商人）
+# ─────────────────────────────────────────────────────────────────────────
+
+[[shop-item]]
+id = "sponge"
+material = "SPONGE"
+display-name = "<white>海绵"
+price = 200.0
+unlock-track = "REPUTATION"
+unlock-tier = 700
+natural-visible = false
+purchase-limit-period = "DAILY"
+purchase-limit-count = 2
+
+[[shop-item]]
+id = "echo_shard"
+material = "ECHO_SHARD"
+display-name = "<white>回响碎片"
+price = 200.0
+unlock-track = "REPUTATION"
+unlock-tier = 700
+natural-visible = false
+purchase-limit-period = "DAILY"
+purchase-limit-count = 2
+
+[[shop-item]]
+id = "sculk_catalyst"
+material = "SCULK_CATALYST"
+display-name = "<white>幽匿催发体"
+price = 200.0
+unlock-track = "REPUTATION"
+unlock-tier = 700
+natural-visible = false
+purchase-limit-period = "DAILY"
+purchase-limit-count = 2
+
+[[shop-item]]
+id = "sea_lantern"
+material = "SEA_LANTERN"
+display-name = "<white>海晶灯"
+price = 200.0
+unlock-track = "REPUTATION"
+unlock-tier = 700
+natural-visible = false
+purchase-limit-period = "DAILY"
+purchase-limit-count = 2
+
+[[shop-item]]
+id = "heart_of_the_sea"
+material = "HEART_OF_THE_SEA"
+display-name = "<white>海洋之心"
+price = 400.0
+unlock-track = "REPUTATION"
+unlock-tier = 700
+natural-visible = false
+purchase-limit-period = "DAILY"
+purchase-limit-count = 2
+
+# ─────────────────────────────────────────────────────────────────────────
+# 商会声望轨 · 1500（商会理事）
+# ─────────────────────────────────────────────────────────────────────────
+
+[[shop-item]]
+id = "gilded_blackstone"
+material = "GILDED_BLACKSTONE"
+display-name = "<white>镀金黑石"
+price = 10.0
+unlock-track = "REPUTATION"
+unlock-tier = 1500
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "netherite_upgrade_smithing_template"
+material = "NETHERITE_UPGRADE_SMITHING_TEMPLATE"
+display-name = "<white>下界合金升级锻造模板"
+price = 500.0
+unlock-track = "REPUTATION"
+unlock-tier = 1500
+natural-visible = false
+purchase-limit-period = "LIFETIME"
+purchase-limit-count = 1
+
+[[shop-item]]
+id = "ancient_debris"
+material = "ANCIENT_DEBRIS"
+display-name = "<white>远古残骸"
+price = 800.0
+unlock-track = "REPUTATION"
+unlock-tier = 1500
+natural-visible = false
+purchase-limit-period = "WEEKLY"
+purchase-limit-count = 2
+
+[[shop-item]]
+id = "netherite_ingot"
+material = "NETHERITE_INGOT"
+display-name = "<white>下界合金锭"
+price = 3000.0
+unlock-track = "REPUTATION"
+unlock-tier = 1500
+natural-visible = false
+purchase-limit-period = "WEEKLY"
+purchase-limit-count = 2
+extra-gate = "NETHERITE_INGOT_DUAL"
+
+# ─────────────────────────────────────────────────────────────────────────
+# 商会声望轨 · 3000（贵宾）
+# ─────────────────────────────────────────────────────────────────────────
+
+[[shop-item]]
+id = "budding_amethyst"
+material = "BUDDING_AMETHYST"
+display-name = "<white>紫晶母岩"
+price = 3000.0
+unlock-track = "REPUTATION"
+unlock-tier = 3000
+natural-visible = false
+purchase-limit-period = "MONTHLY"
+purchase-limit-count = 1
+
+[[shop-item]]
+id = "elytra"
+material = "ELYTRA"
+display-name = "<white>鞘翅"
+price = 4000.0
+unlock-track = "REPUTATION"
+unlock-tier = 3000
+natural-visible = false
+# 贵宾档三件商品（紫晶母岩/鞘翅/下界之星）HANDOFF 6.2 原表统一标"每月 1"，此前这条漏配，
+# 与同档另外两件不一致，已对齐（2026-08-21 审查发现并修正）。
+purchase-limit-period = "MONTHLY"
+purchase-limit-count = 1
+
+[[shop-item]]
+id = "nether_star"
+material = "NETHER_STAR"
+display-name = "<white>下界之星"
+price = 5000.0
+unlock-track = "REPUTATION"
+unlock-tier = 3000
+natural-visible = false
+purchase-limit-period = "MONTHLY"
+purchase-limit-count = 1

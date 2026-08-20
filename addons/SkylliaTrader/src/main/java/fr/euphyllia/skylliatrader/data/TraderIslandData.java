@@ -94,6 +94,22 @@ public class TraderIslandData {
     public Map<String, Integer> orderCompletions = new HashMap<>();
 
     /**
+     * 商店每条商品在本岛的限购计数器，key 为规范化后的 {@code shop.toml} 商品 id
+     * （说明书用保留 key，见 {@code ShopConfigManager#GUIDEBOOK_RESERVED_ID}）。
+     * <p>
+     * <b>初始值是空 Map</b>，对老岛屿正确：反序列化后没有任何商品的计数记录，
+     * 等价于"这座岛在 T3 上线前从没买过任何东西"——第一次购买时按
+     * {@link PurchaseCounter} 的说明会自动建立一个新窗口，不需要迁移逻辑。
+     * </p>
+     * <p>
+     * <b>限购判定与扣减必须在 {@code TraderDataService#compute} 的同一个临界区内完成</b>
+     * （见该类文档），不能先 load 判一次、再 mutate 写一次——那会重新打开 T2 已经用 CAS
+     * 占位修过的那一类并发窗口：两名成员同时买最后一件限购商品，两边都会判定通过。
+     * </p>
+     */
+    public Map<String, PurchaseCounter> shopPurchaseCounts = new HashMap<>();
+
+    /**
      * 本岛实际生效的凭证槽位数：有单独记录时用记录值，{@code -1}（未初始化）时回退到配置默认值。
      *
      * @param configuredDefault config.toml 的 {@code credential.max-merchants-per-island}
@@ -145,5 +161,15 @@ public class TraderIslandData {
     /** 某条订单在本岛已完成的次数。 */
     public int completionCount(String normalizedOrderId) {
         return orderCompletions.getOrDefault(normalizedOrderId, 0);
+    }
+
+    /**
+     * 取（不存在则新建并登记）某条商品的限购计数器。<b>只应该在 {@code TraderDataService#compute}
+     * 的临界区内调用</b>——新建计数器本身就是一次状态改动，必须和外层的判定/扣减在同一次写库里。
+     *
+     * @param normalizedShopItemId 规范化后的商品 id（见 {@code ShopItemDefinition#normalizeId}）
+     */
+    public PurchaseCounter getOrCreatePurchaseCounter(String normalizedShopItemId) {
+        return shopPurchaseCounts.computeIfAbsent(normalizedShopItemId, k -> new PurchaseCounter());
     }
 }

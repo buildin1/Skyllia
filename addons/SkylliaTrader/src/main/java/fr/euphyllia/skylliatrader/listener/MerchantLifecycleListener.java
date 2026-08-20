@@ -4,7 +4,7 @@ import com.destroystokyo.paper.event.entity.EntityAddToWorldEvent;
 import fr.euphyllia.skyllia.api.SkylliaAPI;
 import fr.euphyllia.skyllia.api.skyblock.Island;
 import fr.euphyllia.skylliatrader.SkylliaTrader;
-import fr.euphyllia.skylliatrader.configuration.model.MerchantOfferScope;
+import fr.euphyllia.skylliatrader.gui.shop.MerchantShopGui;
 import fr.euphyllia.skylliatrader.merchant.CaravanType;
 import fr.euphyllia.skylliatrader.merchant.MerchantKeys;
 import fr.euphyllia.skylliatrader.merchant.MerchantOrigin;
@@ -297,13 +297,10 @@ public class MerchantLifecycleListener implements Listener {
                     player.sendMessage(Component.text("§c你在这座岛上没有和游商交易的权限。"));
                     return;
                 }
-                // TODO(T3) 这里打开自定义商店 GUI：商品池按下面这个 scope 筛（自然刷新的只开
-                //  交易次数轨的基础档 + 说明书，凭证游商四轨全开），购买事务的
-                //  「先扣钱后发货 + 发货失败退款 + inFlight 防双击」见 HANDOFF 6.8。
-                MerchantOfferScope scope = service.offerScopeFor(origin);
-                player.sendMessage(Component.text(scope.guidebook()
-                        ? "§7这位路过的商人只带了些基础货，还有一本《游商指南》。§8（商店界面将在下一阶段开放）"
-                        : "§7商队正在清点货物……§8（商店界面将在下一阶段开放）"));
+                // 商品池按来源筛（自然刷新的只开交易次数轨的基础档 + 说明书，凭证游商四轨全开）
+                // 的过滤逻辑在 MerchantShopGui 内部按 origin 分支处理，这里只需要把 island/origin
+                // 传过去；已经在 async 线程上了，直接调用不用再跳一次。
+                MerchantShopGui.openFromAsync(player, island, origin, 0);
             } catch (Throwable t) {
                 log.error("处理玩家 {} 与游商的交互时出错", player.getName(), t);
             }

@@ -17,6 +17,10 @@ dependencies:
       load: BEFORE
       required: false
       join-classpath: false
+    Vault:
+      load: BEFORE
+      required: false
+      join-classpath: true
 
 # Bukkit 权限声明。未声明的权限对非 OP 默认是 false，玩家必须由 LuckPerms 显式赋权
 # 才能用 /is trader —— 所以进度指南这条必须显式声明成 default: true。
