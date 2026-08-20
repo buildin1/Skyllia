@@ -68,6 +68,13 @@ public class TraderConfigManager implements IConfigurationProvider {
     private static final int DEFAULT_MAX_SPAWN_ATTEMPTS = 0;
     private static final int DEFAULT_VERTICAL_SCAN_RANGE_BLOCKS = 8;
     private static final int DEFAULT_ORDER_SLOTS_PER_ISLAND = 3;
+    /** 每个订单槽位独立计时，到点强制换新订单——这是订单吞吐的上限，不是"完成后立刻刷新"。 */
+    private static final int DEFAULT_ORDER_REFRESH_HOURS = 6;
+    /** 每岛每日通过订单获得的货币总额上限，对齐 HANDOFF 9.3（日均产出约 100 的新锚点，原 400 的十分之一）。 */
+    private static final double DEFAULT_DAILY_ORDER_INCOME_CAP = 40.0;
+    /** 订单看板巡检间隔（分钟）。判定口径是"是否已过期"，跑得比 refresh-hours 频繁得多也没问题，
+     *  只要别频繁到对数据库造成不必要压力——15 分钟对一个 6 小时的刷新周期来说粒度足够细。 */
+    private static final int DEFAULT_ORDER_BOARD_CHECK_INTERVAL_MINUTES = 15;
 
     private static final boolean DEFAULT_NATURAL_ENABLED = true;
     private static final int DEFAULT_NATURAL_CHECK_INTERVAL_SECONDS = 60;
@@ -150,6 +157,9 @@ public class TraderConfigManager implements IConfigurationProvider {
     private volatile GuidebookConfig guidebook;
 
     private volatile int orderSlotsPerIsland = DEFAULT_ORDER_SLOTS_PER_ISLAND;
+    private volatile int orderRefreshHours = DEFAULT_ORDER_REFRESH_HOURS;
+    private volatile double dailyOrderIncomeCap = DEFAULT_DAILY_ORDER_INCOME_CAP;
+    private volatile int orderBoardCheckIntervalMinutes = DEFAULT_ORDER_BOARD_CHECK_INTERVAL_MINUTES;
 
     public TraderConfigManager(CommentedFileConfig config) {
         this.config = config;
@@ -233,6 +243,16 @@ public class TraderConfigManager implements IConfigurationProvider {
 
         this.orderSlotsPerIsland = getOrSetDefault("order-board.slots-per-island",
                 DEFAULT_ORDER_SLOTS_PER_ISLAND, Integer.class);
+        // 每个槽位独立计时，到点强制换新订单，不管上一单有没有完成——这是订单吞吐的上限。
+        // 下限夹到 1：写成 0 会让每一轮巡检都判定"已过期"，槽位变成每次巡检都换一条订单。
+        this.orderRefreshHours = Math.max(1, getOrSetDefault("order-board.refresh-hours",
+                DEFAULT_ORDER_REFRESH_HOURS, Integer.class));
+        this.dailyOrderIncomeCap = Math.max(0.0, getOrSetDefault("order-board.daily-order-income-cap",
+                DEFAULT_DAILY_ORDER_INCOME_CAP, Double.class));
+        // 巡检间隔和 natural-spawn.check-interval-seconds 一样，只在【启动时】读一次就固定了，
+        // /skyllia reload 改不了巡检频率，需要重启。
+        this.orderBoardCheckIntervalMinutes = Math.max(1, getOrSetDefault("order-board.check-interval-minutes",
+                DEFAULT_ORDER_BOARD_CHECK_INTERVAL_MINUTES, Integer.class));
 
         if (changed) {
             writeAtomically();
@@ -668,5 +688,20 @@ public class TraderConfigManager implements IConfigurationProvider {
 
     public int getOrderSlotsPerIsland() {
         return orderSlotsPerIsland;
+    }
+
+    /** 每个订单槽位独立计时的刷新周期（小时）；到点强制换新订单，不管上一单是否已完成。 */
+    public int getOrderRefreshHours() {
+        return orderRefreshHours;
+    }
+
+    /** 每岛每日通过订单获得的货币总额上限，超过部分只给声望不给钱。 */
+    public double getDailyOrderIncomeCap() {
+        return dailyOrderIncomeCap;
+    }
+
+    /** 订单看板巡检间隔（分钟）；启动时读一次就固定，reload 不生效，需要重启。 */
+    public int getOrderBoardCheckIntervalMinutes() {
+        return orderBoardCheckIntervalMinutes;
     }
 }

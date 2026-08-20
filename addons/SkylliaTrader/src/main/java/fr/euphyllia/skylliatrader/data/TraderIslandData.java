@@ -110,6 +110,22 @@ public class TraderIslandData {
     public Map<String, PurchaseCounter> shopPurchaseCounts = new HashMap<>();
 
     /**
+     * 本岛"今日通过商队订单获得的货币总额"滚动窗口计数器（T4 新增）。
+     * <p>
+     * <b>初始值是一份全零的新对象</b>，对老岛屿正确：反序列化后没有任何窗口记录，
+     * 等价于"这座岛在 T4 上线前从没通过订单拿过钱"——第一次完成 money 类型订单时会按
+     * {@link DailyOrderIncome} 的说明自动开一个新窗口，不需要迁移逻辑。
+     * </p>
+     * <p>
+     * <b>判定与扣减（其实是"加算"）必须在 {@code TraderDataService#compute} 的同一个临界区内
+     * 完成</b>，理由和 {@link #shopPurchaseCounts} 一样：两名成员同时结算两条不同的 money 订单，
+     * 如果分开读一次判一次，两边都可能读到"还没超额"的旧状态，导致当日实际发放的金币总和
+     * 超过配置的上限。
+     * </p>
+     */
+    public DailyOrderIncome dailyOrderIncome = new DailyOrderIncome();
+
+    /**
      * 本岛实际生效的凭证槽位数：有单独记录时用记录值，{@code -1}（未初始化）时回退到配置默认值。
      *
      * @param configuredDefault config.toml 的 {@code credential.max-merchants-per-island}

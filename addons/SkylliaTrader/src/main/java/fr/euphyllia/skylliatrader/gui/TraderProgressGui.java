@@ -130,6 +130,14 @@ public final class TraderProgressGui {
 
         inv.setItem(31, buildSpendingTrackItem(data.totalSpent, tiers.spending()));
 
+        inv.setItem(40, GuiItem.of(Material.WRITABLE_BOOK, "<!italic><gold>📦 商队订单看板",
+                List.of("<dark_gray>─────────",
+                        "<gray>查看当前订单槽位，交材料换金币/物品 + 声望</gray>",
+                        "<gray>声望是解锁钻石/下界合金等稀有物资的唯一途径</gray>",
+                        "<dark_gray>─────────",
+                        "<yellow>点击打开</yellow>")));
+        holder.bind(40, e -> fr.euphyllia.skylliatrader.gui.order.TraderOrderBoardGui.open(player));
+
         inv.setItem(49, GuiItem.close());
         holder.bind(49, e -> player.closeInventory());
 

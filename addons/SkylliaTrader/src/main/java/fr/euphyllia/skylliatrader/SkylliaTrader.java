@@ -17,9 +17,11 @@ import fr.euphyllia.skylliatrader.listener.TraderIslandListener;
 import fr.euphyllia.skylliatrader.merchant.MerchantKeys;
 import fr.euphyllia.skylliatrader.merchant.MerchantService;
 import fr.euphyllia.skylliatrader.merchant.MerchantSpawner;
+import fr.euphyllia.skylliatrader.order.OrderBoardService;
 import fr.euphyllia.skylliatrader.permission.TraderPermissions;
 import fr.euphyllia.skylliatrader.shop.ShopPurchaseService;
 import fr.euphyllia.skylliatrader.task.NaturalSpawnTask;
+import fr.euphyllia.skylliatrader.task.OrderBoardRefreshTask;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -58,6 +60,7 @@ public final class SkylliaTrader extends JavaPlugin {
     private TraderPermissions permissions;
     private MerchantService merchantService;
     private ShopPurchaseService shopPurchaseService;
+    private OrderBoardService orderBoardService;
 
     public static SkylliaTrader getInstance() {
         return instance;
@@ -66,8 +69,9 @@ public final class SkylliaTrader extends JavaPlugin {
     @Override
     public void onEnable() {
         instance = this;
-        log.warn("SkylliaTrader 目前是测试版本！（T3 第一波：商店购买 + 折扣/限购已可用，"
-                + "商队订单与声望 / 管理员编辑 GUI 尚未实现）");
+        log.warn("SkylliaTrader 目前是测试版本！（T3：商店购买 + 折扣/限购 + 管理员编辑 GUI，"
+                + "T4：商队订单看板刷新 + 一键结算 + 声望，均已可用；T5 回收标签页 / "
+                + "T6 凭证等级门槛回填尚未实现）");
 
         try {
             TraderConfigLoader.init(getDataFolder());
@@ -84,6 +88,7 @@ public final class SkylliaTrader extends JavaPlugin {
 
         this.dataService = new TraderDataService(this);
         this.shopPurchaseService = new ShopPurchaseService(this, dataService);
+        this.orderBoardService = new OrderBoardService(this, dataService);
 
         MerchantKeys merchantKeys = new MerchantKeys(this);
         MerchantSpawner merchantSpawner = new MerchantSpawner(merchantKeys);
@@ -100,6 +105,7 @@ public final class SkylliaTrader extends JavaPlugin {
         getServer().getPluginManager().registerEvents(locationTracker, this);
 
         NaturalSpawnTask.start(this, merchantService, locationTracker);
+        OrderBoardRefreshTask.start(this, dataService);
 
         SkylliaAPI.registerCommands(new TraderCommand(), "trader");
         SkylliaAPI.registerAdminCommands(new TraderAdminCommand(), "trader");
@@ -153,6 +159,11 @@ public final class SkylliaTrader extends JavaPlugin {
     /** 商店购买事务：扣款 + 发货 + 限购计数，见 {@link ShopPurchaseService} 类文档。 */
     public ShopPurchaseService getShopPurchaseService() {
         return shopPurchaseService;
+    }
+
+    /** 商队订单结算事务：扣材料 + 发奖励 + 限购/声望/每日收入计数，见 {@link OrderBoardService} 类文档。 */
+    public OrderBoardService getOrderBoardService() {
+        return orderBoardService;
     }
 
     /** 本插件注册的岛屿角色权限点；T2 的游商交互监听器判权限时用。 */
