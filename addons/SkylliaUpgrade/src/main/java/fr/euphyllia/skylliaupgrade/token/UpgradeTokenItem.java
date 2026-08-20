@@ -1,10 +1,13 @@
 package fr.euphyllia.skylliaupgrade.token;
 
+import fr.euphyllia.skylliaupgrade.SkylliaUpgrade;
 import fr.euphyllia.skylliaupgrade.configuration.UpgradeConfigLoader;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -22,7 +25,23 @@ public final class UpgradeTokenItem {
 
     private static final MiniMessage MM = MiniMessage.miniMessage();
 
+    /**
+     * 插件自己打在令牌上的持久化标记。玩家无论用铁砧改名、丢在地上再捡、还是塞进箱子拿出来，
+     * 这个标记都不会丢；而生存模式下玩家没有任何途径给物品写 PDC，所以也伪造不出来。
+     * 延迟初始化是因为构造 NamespacedKey 需要插件实例，类加载时机可能早于 onEnable。
+     */
+    private static volatile NamespacedKey TOKEN_KEY;
+
     private UpgradeTokenItem() {}
+
+    private static NamespacedKey tokenKey() {
+        NamespacedKey key = TOKEN_KEY;
+        if (key == null) {
+            key = new NamespacedKey(SkylliaUpgrade.getInstance(), "territory_token");
+            TOKEN_KEY = key;
+        }
+        return key;
+    }
 
     public static @NotNull ItemStack build(int amount) {
         ItemStack item = new ItemStack(UpgradeConfigLoader.config.getTokenMaterial(), Math.max(1, amount));
@@ -35,6 +54,7 @@ public final class UpgradeTokenItem {
             }
             meta.lore(lore);
             meta.setCustomModelData(UpgradeConfigLoader.config.getTokenCustomModelData());
+            meta.getPersistentDataContainer().set(tokenKey(), PersistentDataType.BYTE, (byte) 1);
             item.setItemMeta(meta);
         }
         return item;
@@ -44,7 +64,16 @@ public final class UpgradeTokenItem {
         if (stack == null || stack.getType().isAir()) return false;
         if (stack.getType() != UpgradeConfigLoader.config.getTokenMaterial()) return false;
         ItemMeta meta = stack.getItemMeta();
-        if (meta == null || !meta.hasCustomModelData()) return false;
+        if (meta == null) return false;
+
+        // 优先认 PDC 标记：这是本插件自己发出去的令牌，改名不会失效，也无法被伪造。
+        Byte tag = meta.getPersistentDataContainer().get(tokenKey(), PersistentDataType.BYTE);
+        if (tag != null && tag == (byte) 1) return true;
+
+        // 回退到「材质 + customModelData」：SkylliaChallenge 的 ItemReward 只能配 customModelData，
+        // 写不了 PDC，所以挑战奖励发出去的令牌只有这一个特征。删掉这条分支会让已发放的令牌全部作废。
+        // 这条同样不怕改名（压根不看名字），customModelData 生存模式下玩家也设不了。
+        if (!meta.hasCustomModelData()) return false;
         return meta.getCustomModelData() == UpgradeConfigLoader.config.getTokenCustomModelData();
     }
 
