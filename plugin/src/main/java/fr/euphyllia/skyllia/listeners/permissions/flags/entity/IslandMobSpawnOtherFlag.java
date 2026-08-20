@@ -36,10 +36,16 @@ public class IslandMobSpawnOtherFlag implements FlagModule {
         this.flagByType = new EnumMap<>(EntityType.class);
         Map<EntityType, String> supported = SkylliaAPI.getMobsSpawnImpl().supportedOtherMobs();
         for (Map.Entry<EntityType, String> entry : supported.entrySet()) {
+            // 盔甲架不是"生物生成"意义上的生物，而是玩家手动放置的装饰物（Bukkit 用
+            // CreatureSpawnEvent+SpawnReason.DEFAULT 表示这个放置动作），不应该和
+            // 巨人/唤魔者这类需要岛主手动开启的稀有生物共用"默认关闭"的口径，否则新岛
+            // 玩家连自己的盔甲架都放不了。
+            boolean defaultValue = entry.getKey() == EntityType.ARMOR_STAND;
             flagByType.put(entry.getKey(), registry.idOrRegister(new FlagNode(
                     new NamespacedKey(owner, "island.spawn.other." + entry.getValue()),
                     "island.flag.spawn_other_" + entry.getValue() + ".name",
-                    "island.flag.spawn_other_" + entry.getValue() + ".description"
+                    "island.flag.spawn_other_" + entry.getValue() + ".description",
+                    defaultValue
             )));
         }
     }
