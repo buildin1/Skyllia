@@ -151,6 +151,31 @@ public class Skyllia extends JavaPlugin {
         ConfigLoader.permissionsV2.compileNow();
         ConfigLoader.islandFlags.compileNow();
 
+        // ── 附属插件权限/标志的注册时序补偿 ───────────────────────────────────
+        // 各 addon 的 paper-plugin.yml 都声明了 `Skyllia: load: BEFORE`，也就是核心先
+        // enable、addon 后 enable。上面这次 compileNow() 跑在核心自己的 onEnable 里，
+        // 此刻 addon 还没来得及调用 idOrRegister()，于是：
+        //   1) permissions-v2.toml 里写好的 addon 权限行会被 readDefaultsFlat 当成
+        //      "未注册的未知权限"静默丢弃；
+        //   2) ensureRoleBlocksContainAllFlat 只遍历注册表，也补不上这一位；
+        //   3) 结果 compiledDefaults 缺位 → buildDefaultRoleBlobs 生成的岛屿权限位图该位为 0
+        //      → 新建岛屿连 OWNER 都是 false，而位图是建岛时就写库的，事后 reload 救不回来。
+        // 因此在所有插件 enable 完成之后（延迟 1 tick）统一再编译一次，把各 addon 注册的
+        // 权限点/标志补进 compiledDefaults。
+        //
+        // 幂等性：compileNow() -> loadConfig() 只会为"配置里还不存在的键"写入默认值
+        // （ensureRoleBlocksContainAllFlat 遇到已有键直接 continue），管理员改过的值一律保留；
+        // 没有新增键时 changed 保持 false，连文件都不会重写，所以重复执行是安全的。
+        //
+        // 这里用 globalRegionScheduler.runDelayed 而不是 ServerLoadEvent：本仓库已经在
+        // 上面的维度映射里验证过这种延迟任务在 Folia 上可靠，而 ServerLoadEvent 在 Folia
+        // 上的触发时机/线程没有现成用例可参考。
+        Bukkit.getGlobalRegionScheduler().runDelayed(this, task -> {
+            ConfigLoader.permissionsV2.compileNow();
+            ConfigLoader.islandFlags.compileNow();
+            logger.info("[Skyllia-权限] 全部插件加载完毕，已重新编译权限/标志默认值（纳入各附属插件注册的条目）");
+        }, 1L);
+
         this.interneAPI.getActivityZoneManager().loadAll();
 
         if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {

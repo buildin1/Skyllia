@@ -2,9 +2,6 @@ package fr.euphyllia.skyllia.configuration.manager;
 
 import com.electronwill.nightconfig.core.CommentedConfig;
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
-import com.electronwill.nightconfig.core.io.IndentStyle;
-import com.electronwill.nightconfig.core.io.WritingMode;
-import com.electronwill.nightconfig.toml.TomlWriter;
 import fr.euphyllia.skyllia.api.SkylliaAPI;
 import fr.euphyllia.skyllia.api.configuration.IConfigurationProvider;
 import fr.euphyllia.skyllia.api.permissions.PermissionId;
@@ -12,6 +9,7 @@ import fr.euphyllia.skyllia.api.permissions.PermissionRegistry;
 import fr.euphyllia.skyllia.api.permissions.PermissionSet;
 import fr.euphyllia.skyllia.api.permissions.PermissionSetCodec;
 import fr.euphyllia.skyllia.api.skyblock.model.RoleType;
+import fr.euphyllia.skyllia.utils.ConfigFileWriter;
 import org.bukkit.NamespacedKey;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -348,9 +346,7 @@ public class PermissionsV2ConfigManager implements IConfigurationProvider {
         this.globalOverrides = readGlobalOverrides(registry);
 
         if (changed) {
-            TomlWriter tomlWriter = new TomlWriter();
-            tomlWriter.setIndent(IndentStyle.NONE);
-            tomlWriter.write(config, config.getFile(), WritingMode.REPLACE);
+            persist();
         }
     }
 
@@ -551,9 +547,11 @@ public class PermissionsV2ConfigManager implements IConfigurationProvider {
         return created;
     }
 
+    /**
+     * 整表落盘。走 {@link ConfigFileWriter#writeAtomically}「先写 .tmp 再原子改名」，
+     * 不直接截断目标文件：permissions-v2.toml 写坏了就是全服权限判定失效。
+     */
     private void persist() {
-        TomlWriter tomlWriter = new TomlWriter();
-        tomlWriter.setIndent(IndentStyle.NONE);
-        tomlWriter.write(config, config.getFile(), WritingMode.REPLACE);
+        ConfigFileWriter.writeAtomically(config);
     }
 }

@@ -62,8 +62,9 @@ public class ConfigLoader implements IConfigRegistry {
         islandConfig = loadFile(new File(configDir, "islands.toml"));
         playerConfig = loadFile(new File(configDir, "players.toml"));
         schematicConfig = loadFile(new File(configDir, "schematics.toml"));
-        permissionsV2Config = loadFile(new File(configDir, "permissions-v2.toml"));
-        flagsConfig = loadFile(new File(configDir, "flags.toml"));
+        // permissions-v2.toml / flags.toml 走「不带 autosave」的加载方式，原因见 loadFileNoAutosave。
+        permissionsV2Config = loadFileNoAutosave(new File(configDir, "permissions-v2.toml"));
+        flagsConfig = loadFileNoAutosave(new File(configDir, "flags.toml"));
         islandTypeGuiConfig = loadFile(new File(configDir, "island-types.toml"));
 
         general = new GeneralConfigManager(generalConfig);
@@ -104,8 +105,40 @@ public class ConfigLoader implements IConfigRegistry {
         logger.log(Level.INFO, "[Config] Configurations loaded successfully.");
     }
 
+    /**
+     * 默认加载方式：带 {@code autosave}。
+     * <p>
+     * {@code island-types.toml} 与 {@code gui/*.toml} 的管理器（{@link IslandTypeGuiConfigManager}、
+     * {@link GuiLayoutConfigManager}）补默认值之后<b>没有任何显式落盘</b>，全靠 autosave 兜底，
+     * 所以这里的 autosave 不能一刀切去掉——去掉会让这两份配置的默认值补全静默丢失。
+     * </p>
+     */
     private static CommentedFileConfig loadFile(File file) {
         CommentedFileConfig configFile = CommentedFileConfig.builder(file).sync().autosave().build();
+        configFile.load();
+        return configFile;
+    }
+
+    /**
+     * 不带 autosave 的加载方式，供「自己负责显式整表落盘」的配置使用
+     * （目前是 {@link PermissionsV2ConfigManager} 与 {@link IslandFlagsConfigManager}）。
+     * <p>
+     * 这两份配置在启动时可能一次性补上几百个缺失的权限/标志键（附属插件注册的权限位越多补得越多）。
+     * 开着 autosave 的话，<b>每一次 {@code set} 都会把整份配置同步落盘一遍</b>，几百次 set
+     * 就是几百次整表写盘，最后管理器末尾那次显式写入还要再写一遍，纯属重复双写；而且 autosave
+     * 走的是 {@code WritingMode.REPLACE}（截断 + 写入两步，非原子），在启动那一 tick 里反复
+     * 截断线上的 permissions-v2.toml，中途崩溃就会留下半截文件。
+     * </p>
+     * <p>
+     * 去掉 autosave 之后，这两份配置的落盘完全由各自管理器里的
+     * {@link fr.euphyllia.skyllia.utils.ConfigFileWriter#writeAtomically} 负责：
+     * {@code loadConfig()} 末尾补全后写一次，{@code persist()}（{@code /skylliadmin perm set}
+     * 之类的运行时改动）每次改完写一次，一次都不会漏。<b>今后给这两个管理器新增任何
+     * {@code config.set} 路径时，必须记得在末尾调 persist()。</b>
+     * </p>
+     */
+    private static CommentedFileConfig loadFileNoAutosave(File file) {
+        CommentedFileConfig configFile = CommentedFileConfig.builder(file).sync().build();
         configFile.load();
         return configFile;
     }
