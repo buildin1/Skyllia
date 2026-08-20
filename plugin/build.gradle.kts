@@ -4,18 +4,18 @@ plugins {
 }
 group = "fr.euphyllia.skyllia"
 
-repositories {
-    maven {
-        name = "Luminol"
-        url = uri("https://repo.menthamc.org/repository/maven-public/")
-    }
-}
-
 dependencies {
+    // 此前这里没有显式声明 paper-api，org.bukkit 是靠 luminol-api（Paper 分支的 API）顺带带进来的。
+    // luminol 上游仓库失效后那条路断了，补回显式声明（上游 Skyllia 本来也是这么写的）。
+    compileOnly("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT") { isTransitive = false }
     compileOnly("net.kyori:adventure-text-minimessage:4.26.1")
     compileOnly("net.kyori:adventure-text-serializer-legacy:4.26.1")
+    // 这个模块此前也是靠 luminol-api 传递进来的。显式声明而不是放开 paper-api 的传递依赖，
+    // 是为了让三个 adventure 模块保持同一个钉死的版本，不让 paper 自带的版本参与仲裁。
+    compileOnly("net.kyori:adventure-text-serializer-plain:4.26.1")
     compileOnly("me.clip:placeholderapi:2.11.6")
-    compileOnly("me.earthme.luminol:luminol-api:1.21.11-R0.1-SNAPSHOT")
+    // Luminol 的异步传送事件。上游仓库域名已过期、项目已归档，改用本仓库内的编译期占位模块。
+    compileOnly(project(":stubs:luminol-api"))
     compileOnly("dev.faststats.metrics:bukkit:0.27.0")
     compileOnly(project(":api"))
     compileOnly(project(":database"))

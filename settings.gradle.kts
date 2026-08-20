@@ -26,6 +26,8 @@ include("addons:SkylliaIslandValue")
 include("addons:SkylliaBackup")
 include("addons:SkylliaUpgrade")
 include("addons:SkylliaTrader")
+// 编译期占位模块：只允许被 compileOnly 依赖，绝不能打进最终 jar
+include("stubs:luminol-api")
 //include("addons:SkylliaExtra")
 // Hook
 include("hook:worldedit")
