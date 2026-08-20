@@ -475,6 +475,10 @@ description = "Allows withdrawing money from the island bank."
 name = "Island Chest"
 description = "Allows opening the island's shared chest."
 
+[addons.trader.permission.merchant_interact]
+name = "Trader: Interact"
+description = "Allows this role to interact with the island's trader (including purchases and orders)."
+
 [island.permission.access]
 name = "Access: Open/Close"
 description = "Allows changing the island access (public/private)."

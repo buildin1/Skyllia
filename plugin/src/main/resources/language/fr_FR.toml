@@ -482,6 +482,10 @@ description = "Autorise à retirer de l'argent de la banque de l'île."
 name = "Coffre d'île"
 description = "Autorise à ouvrir le coffre partagé de l'île."
 
+[addons.trader.permission.merchant_interact]
+name = "Marchand : interaction"
+description = "Autorise ce rôle à interagir avec le marchand de l'île (achats et commandes inclus)."
+
 [island.permission.command.access]
 name = "Accès : ouvrir/fermer"
 description = "Autorise à changer l'accès de l'île (public/privé)."

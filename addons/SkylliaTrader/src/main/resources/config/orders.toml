@@ -1,0 +1,96 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# SkylliaTrader 商队订单表
+# ═══════════════════════════════════════════════════════════════════════════
+# 每一条 [[order]] 都是一条显式配置的订单，不是靠公式批量生成的——
+# 每种材料该给多少声望、该开多高门槛，都需要人工权衡，写成公式反而容易失控。
+#
+# ── 两种类型的共同点 ──────────────────────────────────────────────────────
+# 不论哪种 type，"岛屿要交出去什么"一律写在 take-items 里（material + amount 的列表，
+# 最多 4 组）。take-items 决定了"完成一单"到底是什么，因此**不能为空**：
+# 空的 take-items 等于"什么都不用交就能领走奖励和声望"，而声望是不能用钱替代的稀缺资源。
+# 加载时如果 take-items 为空、或者里面任何一项的材料名拼写错误，整条订单会被丢弃并报 error
+# ——宁可这条订单不出现，也不能加载一条半残的订单。
+#
+# ── 两种 type 的区别只在"商队怎么付账" ───────────────────────────────────
+#   "money"  —— 商队支付 Vault 金币。
+#                price = **完成这一整单支付的总金额，不是单价**。
+#                比如 take-items 写 64 个圆石、price 写 32，就是"交 64 圆石得 32 金币"，
+#                不会再拿 32 去乘数量。想调价直接改 price 这一个数即可。
+#   "barter" —— 商队支付 give-items 里的物品（最多 4 组），不涉及金币，give-items 不能为空。
+#
+# 两种 type 都可以额外配 reward-reputation（不小于 0）：
+# 填 0 就是"纯交易不换声望"，填大于 0 就是"顺带换声望"。
+#
+# ── 其余字段 ──────────────────────────────────────────────────────────────
+# id：订单唯一标识。比较时会**去掉首尾空白并转成小写**，所以 "Iron-Buy" 和 "iron-buy"
+#     算同一个 id；重复的 id 会被丢弃并报 error（重复 id 会让两条订单共用同一个限购计数器，
+#     做满一条另一条也跟着锁死）。
+#
+# redeem-limit-per-island：这条订单在同一座岛屿"终身"最多能完成**几单**，0 = 不限。
+# 注意这个计数器是挂在岛屿维度的，不是玩家维度——同一座岛换人来交易也不会刷新次数，
+# 这是防止"退出小队再加入"刷单的生命线，不能改成按玩家计数。
+#
+# weight：自然刷新时的抽取权重，最小 1。
+#
+# required-level-min / required-reputation-min：解锁这条订单需要的岛屿等级/商会声望门槛，
+# 对齐 config.toml 里 [track.island-level] / [track.reputation] 的档位设计。
+
+config-version = 1
+
+[[order]]
+id = "cobblestone-buy"
+enabled = true
+display-name = "<gray>圆石收购"
+type = "money"
+
+# 交 64 个圆石，商队支付 32 金币（整单总价，不是每个 0.5）
+take-items = [
+    { material = "COBBLESTONE", amount = 64 },
+]
+price = 32.0
+
+reward-reputation = 0
+weight = 10
+redeem-limit-per-island = 0
+required-level-min = 0
+required-reputation-min = 0
+
+[[order]]
+id = "iron-block-buy"
+enabled = true
+display-name = "<white>铁块收购"
+type = "money"
+
+# 交 8 个铁块，商队支付 320 金币（整单总价）
+take-items = [
+    { material = "IRON_BLOCK", amount = 8 },
+]
+price = 320.0
+
+reward-reputation = 2
+weight = 6
+redeem-limit-per-island = 0
+required-level-min = 1
+required-reputation-min = 0
+
+[[order]]
+id = "diamond-for-emerald-block"
+enabled = true
+display-name = "<aqua>钻石兑换绿宝石块"
+type = "barter"
+
+# take-items：岛屿需要交给商队的物品（最多 4 组 material + amount）
+take-items = [
+    { material = "DIAMOND", amount = 4 },
+]
+
+# give-items：商队支付给岛屿的物品（最多 4 组 material + amount）
+give-items = [
+    { material = "EMERALD_BLOCK", amount = 2 },
+]
+
+reward-reputation = 5
+weight = 3
+redeem-limit-per-island = 5
+required-level-min = 5
+required-reputation-min = 100

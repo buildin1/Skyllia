@@ -476,6 +476,10 @@ description = "允许从空岛银行取款。"
 name = "空岛箱子"
 description = "允许打开空岛共享箱子。"
 
+[addons.trader.permission.merchant_interact]
+name = "游商：交易"
+description = "允许该角色与本岛的游商交互（含购买、提交订单）。"
+
 [island.permission.access]
 name = "访问：开放/关闭"
 description = "允许更改空岛访问状态（公开/私密）。"

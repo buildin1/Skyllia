@@ -34,7 +34,10 @@ public class EntityTradePermissions implements PermissionModule {
     @EventHandler(ignoreCancelled = true)
     public void onInteractVillager(final PlayerInteractEntityEvent event) {
         final Entity target = event.getRightClicked();
-        if (target.getType() != EntityType.VILLAGER) return;
+        // 流浪商人和村民共用同一个 entity.trade 权限：EntityInteractPermissions 把两者都排除在
+        // entity.interact 判定之外（见其注释"已拆分至 EntityTradePermissions"），如果这里只认
+        // VILLAGER，WANDERING_TRADER 就会两头都没人管——岛主关掉"允许游客用游商"实际不生效。
+        if (target.getType() != EntityType.VILLAGER && target.getType() != EntityType.WANDERING_TRADER) return;
 
         final Player player = event.getPlayer();
         final World world = target.getWorld();

@@ -1,0 +1,31 @@
+name: SkylliaTrader
+main: fr.euphyllia.skylliatrader.SkylliaTrader
+loader: fr.euphyllia.skylliatrader.SkylliaTraderLoader
+version: ${version}
+api-version: 1.20.6
+folia-supported: true
+authors:
+  - Euphyllia
+
+dependencies:
+  server:
+    Skyllia:
+      load: BEFORE
+      required: true
+      join-classpath: true
+    SkylliaIslandLevel:
+      load: BEFORE
+      required: false
+      join-classpath: false
+
+# Bukkit 权限声明。未声明的权限对非 OP 默认是 false，玩家必须由 LuckPerms 显式赋权
+# 才能用 /is trader —— 所以进度指南这条必须显式声明成 default: true。
+# 注意这跟岛屿角色权限（permissions-v2.toml 里的 skylliatrader:merchant.interact）是两套东西：
+# 这里管的是"服务器允不允许你敲这个命令"，那里管的是"你在这座岛上是什么角色、能不能操作"。
+permissions:
+  skyllia.trader.command:
+    description: 允许打开游商进度指南（/is trader）
+    default: true
+  skyllia.trader.admin:
+    description: 允许使用游商管理命令与管理 GUI（/skylliadmin trader）
+    default: op
