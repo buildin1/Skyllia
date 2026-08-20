@@ -38,15 +38,18 @@ import java.util.concurrent.ConcurrentHashMap;
  * 攒下一堆早已不存在的岛屿 id。进程重启后集合清空，最多每岛多跑一次 SELECT，可以接受。
  * </p>
  *
- * <h2>并发窗口（T2 加锁时必须一起处理）</h2>
+ * <h2>并发窗口（T2 已处理）</h2>
  * <p>
  * 同一座岛的两名玩家同时冷缓存登录时，两个 async 线程可能同时穿过下面的
  * {@code initialized.add(...)}（{@link Set#add} 本身是原子的，所以实际上只有一个能进去，
  * 但如果第一个线程正卡在 {@code ensureOrderSlots} 的读库上，另一条来自
- * {@link SkyblockCreateEvent} 的路径仍可能并发进入）。T1 阶段两次写入的内容完全相同，
- * 后写覆盖先写无害；<b>但 T2 给 {@code TraderDataService#mutate} 加 island 维度互斥锁时，
- * {@code ensureOrderSlots} 必须纳入同一把锁</b>——它是 mutate 之外的第二条"读-改-写"路径，
- * 只锁 mutate 会让"补槽"和"记账"互相覆盖。
+ * {@link SkyblockCreateEvent} 的路径仍可能并发进入）。
+ * </p>
+ * <p>
+ * T2 已经把 {@code ensureOrderSlots} 纳入了 {@code TraderDataService} 里
+ * <b>与 {@code mutate} 相同的那把 island 维度互斥锁</b>——它是 mutate 之外的第二条
+ * "读-改-写"路径，只锁 mutate 会让"补槽"和"记账"互相覆盖：补槽读到的旧状态里没有
+ * 刚记上的凭证占位，写回去就把占位抹掉了。
  * </p>
  */
 public class TraderIslandListener implements Listener {

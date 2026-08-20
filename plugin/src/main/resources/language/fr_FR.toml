@@ -486,6 +486,10 @@ description = "Autorise à ouvrir le coffre partagé de l'île."
 name = "Marchand : interaction"
 description = "Autorise ce rôle à interagir avec le marchand de l'île (achats et commandes inclus)."
 
+[addons.trader.permission.merchant_summon]
+name = "Marchand : invocation"
+description = "Autorise ce rôle à invoquer un marchand permanent sur l’île avec un laissez-passer de caravane (occupe l’unique emplacement de cette caravane)."
+
 [island.permission.command.access]
 name = "Accès : ouvrir/fermer"
 description = "Autorise à changer l'accès de l'île (public/privé)."

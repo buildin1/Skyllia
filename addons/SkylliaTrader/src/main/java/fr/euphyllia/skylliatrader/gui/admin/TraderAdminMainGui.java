@@ -62,11 +62,18 @@ public final class TraderAdminMainGui {
                         "<gray>（T1 只读；新增/编辑/删除见 T3）</gray>")));
         holder.bind(11, e -> TraderOrderListGui.open(player, 0));
 
-        inv.setItem(13, GuiItem.placeholder(Material.VILLAGER_SPAWN_EGG, "🧑 商人管理",
-                "查看/召回各岛屿已召唤的游商（T2 实现）"));
+        inv.setItem(13, GuiItem.of(Material.VILLAGER_SPAWN_EGG, "<!italic><green>🧑 商人管理",
+                List.of("<dark_gray>─────────",
+                        "<gray>查看某座岛登记的常驻商人：</gray>",
+                        "<white>/skylliadmin trader merchants <玩家></white>",
+                        "<gray>强制释放一种商队的名额：</gray>",
+                        "<white>/skylliadmin trader release <玩家> <商队></white>",
+                        "<dark_gray>─────────",
+                        "<gray>（图形化管理界面见后续阶段）</gray>")));
 
         inv.setItem(15, GuiItem.placeholder(Material.PAPER, "🎫 凭证管理",
-                "发放/回收游商召唤凭证（T4 实现）"));
+                "按岛发放/回收召唤名额（T4 实现）；"
+                        + "凭证样品见 /skylliadmin trader credential"));
 
         inv.setItem(4, buildTierSummaryItem());
 

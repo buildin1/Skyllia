@@ -39,13 +39,21 @@ public class TraderIslandData {
     public long reputation = 0L;
 
     /**
-     * 本岛已解锁的游商召唤凭证槽位数量。
+     * 本岛的游商<b>总</b>名额上限（三种商队加起来最多几个常驻商人）。
      * <p>
      * <b>{@code -1} 表示"本岛从未被单独发放/回收过凭证"</b>，此时一律回退到 config.toml 的
      * {@code credential.max-merchants-per-island}（见 {@link #effectiveCredentialSlots(int)}）。
      * 之所以不用 0 当"未初始化"：T4 要做的是"按岛发放/回收凭证"，届时 0 是一个合法值
      * （表示这座岛的凭证被管理员收光了），必须和"没记录过"区分开；而且如果用 0 当哨兵，
      * 所有存量岛屿反序列化后都会拿到 0，等于一次静默的全服凭证清零。
+     * </p>
+     * <p>
+     * <b>它不是主判定。</b>规格要求的是「每岛<b>每种</b>商队最多 1 个」，主判定是
+     * config.toml 的 {@code credential.max-per-caravan}（见 {@link #occupiedSlots(long)} 的调用方
+     * {@code MerchantService}）。总名额只是叠在分类型上限之上的一道额外天花板，
+     * 用来支撑 HANDOFF.md 7.1 里「岛屿等级 10-20 级：凭证游商名额 1→2」这类按岛调整的玩法：
+     * 默认 3 = 三种商队各 1 个，等于不生效；调成 2 就表示这座岛只能同时留 2 个常驻商人，
+     * 至于是哪两种由玩家自己选。<b>两条上限是「与」的关系，任何一条不满足都召唤失败。</b>
      * </p>
      */
     public int credentialSlots = -1;
@@ -65,7 +73,13 @@ public class TraderIslandData {
      */
     public long lastMerchantDeathAt = 0L;
 
-    /** 当前已召唤、存活的游商列表；上限见 {@link #effectiveCredentialSlots(int)}。 */
+    /**
+     * 当前已召唤的<b>凭证</b>游商列表（含尚未生成完成的占位记录）。
+     * <p>
+     * 自然刷新的游商<b>不</b>出现在这里——它们不占名额，见 {@link MerchantRecord} 类注释。
+     * 上限有两条，见 {@link #credentialSlots}。
+     * </p>
+     */
     public List<MerchantRecord> merchants = new ArrayList<>();
 
     /** 当前各订单槽位的状态；槽位数量、自然刷新时机由 T2 决定，这里只保存快照。 */
@@ -88,9 +102,44 @@ public class TraderIslandData {
         return credentialSlots < 0 ? configuredDefault : credentialSlots;
     }
 
-    /** 当前存活的游商数量。 */
-    public int activeMerchantCount() {
-        return merchants.size();
+    /**
+     * 当前真正占着名额的记录数（正式记录 + 尚未超时的占位）。
+     * <p>
+     * <b>不能直接用 {@code merchants.size()}</b>：超时的占位记录是崩溃残留的垃圾，
+     * 算进去会让名额永远回不来。
+     * </p>
+     *
+     * @param now 当前时间戳（epoch millis）
+     */
+    public int occupiedSlots(long now) {
+        int count = 0;
+        for (MerchantRecord record : merchants) {
+            if (record.occupiesSlot(now)) count++;
+        }
+        return count;
+    }
+
+    /**
+     * 某种商队当前占着名额的记录数。规格是「每种最多 1 个」，所以正常情况下只会是 0 或 1；
+     * 返回计数而不是 boolean，是为了让上限本身可配置（{@code credential.max-per-caravan}）。
+     *
+     * @param caravanName {@code CaravanType} 的枚举名
+     * @param now         当前时间戳（epoch millis）
+     */
+    public int occupiedSlotsFor(String caravanName, long now) {
+        int count = 0;
+        for (MerchantRecord record : merchants) {
+            if (caravanName.equals(record.caravan) && record.occupiesSlot(now)) count++;
+        }
+        return count;
+    }
+
+    /** 按占位 id 找记录；找不到返回 {@code null}。回滚与转正都靠它精确定位，理由见 {@link MerchantRecord}。 */
+    public MerchantRecord findByClaimId(String claimId) {
+        for (MerchantRecord record : merchants) {
+            if (claimId.equals(record.claimId)) return record;
+        }
+        return null;
     }
 
     /** 某条订单在本岛已完成的次数。 */

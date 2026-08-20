@@ -72,6 +72,7 @@ verbose = false
 "skylliabank:command.bank.deposit" = true
 "skylliabank:command.bank.withdraw" = true
 "skylliatrader:merchant.interact" = true
+"skylliatrader:merchant.summon" = true
 
 [defaults.CO_OWNER]
 "skyllia:command.island.gamerule" = true
@@ -113,6 +114,7 @@ verbose = false
 "skylliabank:command.bank.deposit" = true
 "skylliabank:command.bank.withdraw" = true
 "skylliatrader:merchant.interact" = true
+"skylliatrader:merchant.summon" = true
 
 [defaults.MODERATOR]
 "skyllia:command.island.gamerule" = false
@@ -154,6 +156,7 @@ verbose = false
 "skylliabank:command.bank.deposit" = true
 "skylliabank:command.bank.withdraw" = false
 "skylliatrader:merchant.interact" = true
+"skylliatrader:merchant.summon" = true
 
 [defaults.MEMBER]
 "skyllia:command.island.gamerule" = false
@@ -195,6 +198,7 @@ verbose = false
 "skylliabank:command.bank.deposit" = true
 "skylliabank:command.bank.withdraw" = false
 "skylliatrader:merchant.interact" = true
+"skylliatrader:merchant.summon" = true
 
 [defaults.VISITOR]
 "skyllia:command.island.gamerule" = false
@@ -236,6 +240,7 @@ verbose = false
 "skylliabank:command.bank.deposit" = false
 "skylliabank:command.bank.withdraw" = false
 "skylliatrader:merchant.interact" = false
+"skylliatrader:merchant.summon" = false
 
 [defaults.BAN]
 "skyllia:command.island.gamerule" = false
@@ -277,3 +282,4 @@ verbose = false
 "skylliabank:command.bank.deposit" = false
 "skylliabank:command.bank.withdraw" = false
 "skylliatrader:merchant.interact" = false
+"skylliatrader:merchant.summon" = false

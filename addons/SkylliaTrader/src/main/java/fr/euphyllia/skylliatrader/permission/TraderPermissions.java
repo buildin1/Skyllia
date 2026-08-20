@@ -35,6 +35,16 @@ public final class TraderPermissions {
     /** 是否允许该角色与本岛的游商交互（含未来的购买 / 提交订单）。T2 起在监听器里实际判定。 */
     private final PermissionId merchantInteract;
 
+    /**
+     * 是否允许该角色在本岛使用商队凭证召唤常驻商人。
+     * <p>
+     * 和 {@link #merchantInteract} 分开是因为两者的后果完全不同：交互只是买东西，
+     * 而召唤会<b>占掉这座岛这一种商队的唯一名额</b>——名额被占之后，其他成员再用凭证会失败。
+     * 岛主应该能把「谁可以决定用掉这个名额」单独收回去，而不是被迫连买东西的权限一起关掉。
+     * </p>
+     */
+    private final PermissionId merchantSummon;
+
     public TraderPermissions(@NotNull Plugin plugin) {
         this.merchantInteract = SkylliaAPI.getPermissionRegistry().idOrRegister(
                 new PermissionNode(
@@ -44,9 +54,21 @@ public final class TraderPermissions {
                         true
                 )
         );
+        this.merchantSummon = SkylliaAPI.getPermissionRegistry().idOrRegister(
+                new PermissionNode(
+                        new NamespacedKey(plugin, "merchant.summon"),
+                        "addons.trader.permission.merchant_summon.name",
+                        "addons.trader.permission.merchant_summon.description",
+                        true
+                )
+        );
     }
 
     public @NotNull PermissionId merchantInteract() {
         return merchantInteract;
+    }
+
+    public @NotNull PermissionId merchantSummon() {
+        return merchantSummon;
     }
 }

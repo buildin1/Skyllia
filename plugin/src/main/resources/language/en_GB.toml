@@ -479,6 +479,10 @@ description = "Allows opening the island's shared chest."
 name = "Trader: Interact"
 description = "Allows this role to interact with the island's trader (including purchases and orders)."
 
+[addons.trader.permission.merchant_summon]
+name = "Trader: Summon"
+description = "Allows this role to use a caravan credential to summon a permanent trader on the island (uses up that caravan’s only slot)."
+
 [island.permission.access]
 name = "Access: Open/Close"
 description = "Allows changing the island access (public/private)."
