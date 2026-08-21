@@ -139,6 +139,15 @@ public class TraderIslandData {
     public DailyOrderReputation dailyOrderReputation = new DailyOrderReputation();
 
     /**
+     * 本岛"今日通过回收获得的货币总额"，用于回收收入的每日上限（见 {@link DailyRecycleIncome}）。
+     * <p>
+     * 和订单的两个计数器一样，字段带默认初始化，老岛屿反序列化时拿到的是一个全零的新实例，
+     * 语义正确（"这个窗口还没回收过"），不需要额外的数据迁移。
+     * </p>
+     */
+    public DailyRecycleIncome dailyRecycleIncome = new DailyRecycleIncome();
+
+    /**
      * 本岛实际生效的凭证槽位数：有单独记录时用记录值，{@code -1}（未初始化）时回退到默认值。
      *
      * @param defaultSlots 未被管理员单独设置过时使用的默认值。T6 起调用方应该传

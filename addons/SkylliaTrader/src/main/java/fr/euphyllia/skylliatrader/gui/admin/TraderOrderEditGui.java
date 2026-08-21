@@ -401,7 +401,7 @@ public final class TraderOrderEditGui {
             boolean ok = OrdersConfigLoader.config.upsertOrder(order, previousId);
             player.getScheduler().run(plugin, t -> {
                 if (ok) {
-                    player.sendMessage(Component.text("§a订单已保存：" + draft.displayName));
+                    player.sendMessage(Component.text("§a订单已保存：§f" + GuiFormat.legacyName(draft.displayName)));
                 } else {
                     player.sendMessage(Component.text(
                             "§c订单保存失败（id 冲突或磁盘写入出错），请查看控制台日志，orders.toml 未被修改。"));
@@ -420,7 +420,7 @@ public final class TraderOrderEditGui {
             boolean ok = OrdersConfigLoader.config.deleteOrder(draft.id);
             player.getScheduler().run(plugin, t -> {
                 if (ok) {
-                    player.sendMessage(Component.text("§a订单已删除：" + draft.displayName));
+                    player.sendMessage(Component.text("§a订单已删除：§f" + GuiFormat.legacyName(draft.displayName)));
                 } else {
                     player.sendMessage(Component.text("§c删除失败（订单可能已经被删过，或磁盘写入出错），请查看控制台日志。"));
                 }

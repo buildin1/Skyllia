@@ -1,7 +1,12 @@
 package fr.euphyllia.skylliatrader.shop;
 
+import fr.euphyllia.skyllia.api.SkylliaAPI;
+import fr.euphyllia.skyllia.api.skyblock.Island;
 import fr.euphyllia.skylliatrader.SkylliaTrader;
 import fr.euphyllia.skylliatrader.configuration.ShopConfigLoader;
+import fr.euphyllia.skylliatrader.configuration.TraderConfigLoader;
+import fr.euphyllia.skylliatrader.data.DailyRecycleIncome;
+import fr.euphyllia.skylliatrader.data.TraderDataService;
 import fr.euphyllia.skylliatrader.configuration.model.ShopItemDefinition;
 import fr.euphyllia.skylliatrader.gui.GuiFormat;
 import net.kyori.adventure.text.Component;
@@ -12,8 +17,12 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
+import org.bukkit.inventory.meta.Damageable;
+import org.bukkit.inventory.meta.EnchantmentStorageMeta;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,6 +85,9 @@ public final class RecycleService {
 
     /** 回收价折算比例：基础单价（折扣前原价）的 40%，HANDOFF 9.3 已拍板，不要改成读配置。 */
     private static final double RECYCLE_RATE = 0.40;
+
+    /** 每日回收额度的滚动窗口长度，和订单那两个每日计数器保持一致。 */
+    private static final long DAY_MILLIS = 24L * 60L * 60L * 1000L;
 
     private final SkylliaTrader plugin;
 
@@ -140,6 +152,15 @@ public final class RecycleService {
             fail(player, "§c这件东西游商不收。");
             return;
         }
+        if (!item.recyclable()) {
+            // 可再生物品（树苗/竹子/仙人掌/作物这类农场能无限量产的）一律不回收。
+            // 理由见 HANDOFF 5.1 的定价不变量：计分体系早就因为"树场可无限量产"给这些材料
+            // 判了 ×0 分，回收却是拿真钱换它们，放开就是一个零成本的无限印钞口
+            // （2026-08-21 服主指出，服主拍板"可再生物品一律不收 + 每日上限"）。
+            fail(player, "§e" + GuiFormat.legacyName(item.displayName())
+                    + " §e可以自己种/养出来，游商不回收这类可再生物资。");
+            return;
+        }
 
         var scheduled = player.getScheduler().run(plugin,
                 t -> materialScanAndDeductStage(player, normalizedId, item.material(), item.displayName(), mode, econ),
@@ -162,7 +183,7 @@ public final class RecycleService {
         PlayerInventory inv = player.getInventory();
         int owned = countMaterial(inv, material);
         if (owned <= 0) {
-            fail(player, "§c你的背包里没有 " + displayName + "。");
+            fail(player, "§c你的背包里没有 " + GuiFormat.legacyName(displayName) + "§c。");
             return;
         }
 
@@ -172,35 +193,20 @@ public final class RecycleService {
             case ALL -> owned;
         };
 
-        Map<Integer, ItemStack> leftover = inv.removeItem(new ItemStack(material, quantity));
-        if (!leftover.isEmpty()) {
-            // ⚠️ 不完全是"理论上不该发生"：Inventory#removeItem 内部按 ItemStack#isSimilar
-            // （材质 + 完整组件，含耐久/附魔/自定义名字）匹配，而这里传的是一个没有任何组件的
-            // 裸物品；countMaterial 只按材质统计持有量，两边口径不一致。已用 Shiroha 源码核实
-            // （2026-08-21 审查）：当前商品目录里 ELYTRA（鞘翅）一旦被使用过（耐久非满），
-            // 就会确定性地、每次都命中这条分支——不是并发异常，是可复现的已知限制。
-            // 防御性处理：把已经扣掉的部分（quantity 减去扣不动的部分）退回去，这一步的计算
-            // 本身是安全的（不会退多退少），只是"扣不干净"这件事本身目前拿这类物品没办法。
-            int notRemoved = leftover.values().stream().mapToInt(ItemStack::getAmount).sum();
-            int actuallyRemoved = quantity - notRemoved;
+        // 按"价值是否相同"扣除（见 isRecyclable）：改名/加 lore 这类纯外观差异照收，
+        // 耐久损耗、附魔这类影响价值的一律不收。countMaterial 和这里用的是同一个判据，
+        // 两边口径一致，不会再出现"统计说有、扣的时候一件都扣不到"那种自相矛盾的情况。
+        int actuallyRemoved = removeRecyclable(inv, material, quantity);
+        if (actuallyRemoved < quantity) {
+            // 口径已经统一，正常路径下不该走到这里；真走到了说明背包在
+            // countMaterial 和本次扣除之间被并发改动了（玩家同时在别处丢/存物品）。
             if (actuallyRemoved > 0) {
                 giveBack(player, material, actuallyRemoved);
             }
-            if (actuallyRemoved == 0) {
-                // 一件都没扣到：多半就是上面说的"耐久/附魔/改名等组件不匹配"，不是并发异常，
-                // 给玩家一个准确的解释而不是"请重试"（重试对这种情况永远没用），
-                // 日志降级成 warn 且措辞明确，避免和真正的并发/背包异常混在一起污染日志。
-                log.warn("玩家 {} 回收商品 '{}' 时完全没能匹配到对应物品（可能因为耐久/附魔/"
-                        + "自定义名字等属性和全新状态不一致），已跳过", player.getName(), normalizedId);
-                fail(player, "§c这件 " + displayName + " 带有耐久损耗、附魔或自定义属性，"
-                        + "游商只收全新状态的同款物品。");
-            } else {
-                // 只扣到了一部分：这种情况更像是背包在扣除过程中真的被并发改动了，
-                // 维持原有的"请重试"提示和 error 级别日志。
-                log.error("玩家 {} 回收商品 '{}' 时物品扣除中途只扣到部分（已退还已扣部分），"
-                        + "可能是背包在扣除过程中被其它代码并发改动", player.getName(), normalizedId);
-                fail(player, "§c物品扣除失败，请重试。");
-            }
+            log.error("玩家 {} 回收商品 '{}' 时只扣到 {}/{} 件（已退还已扣部分），"
+                    + "可能是背包在扣除过程中被其它代码并发改动",
+                    player.getName(), normalizedId, actuallyRemoved, quantity);
+            fail(player, "§c物品扣除失败，请重试。");
             return;
         }
 
@@ -212,10 +218,62 @@ public final class RecycleService {
     private int countMaterial(PlayerInventory inv, Material material) {
         int total = 0;
         for (ItemStack stack : inv.getStorageContents()) {
-            if (stack == null || stack.getType() != material) continue;
+            if (!isRecyclable(stack, material)) continue;
             total += stack.getAmount();
         }
         return total;
+    }
+
+    /**
+     * 这一叠物品能不能按「全新的 {@code material}」回收。
+     * <p>
+     * 判据是<b>会不会影响价值</b>，而不是「和一个裸物品完全一致」：
+     * </p>
+     * <ul>
+     *   <li><b>耐久有损耗</b> → 不收。用坏的鞘翅按全新价回收就是白拿钱。</li>
+     *   <li><b>带附魔</b>（含附魔书上的存储附魔） → 不收。附魔物品的价值和裸物品不是一回事。</li>
+     *   <li><b>只是改了个名字 / 加了 lore</b> → <b>照收</b>。这类差异不改变物品价值，
+     *       而且历史上商店发货曾经给每件商品都打过自定义名字（见
+     *       {@code ShopPurchaseService#buildDeliveryItem} 的说明），玩家背包里存量的
+     *       那批带名字的商品必须还能回收，不能因为一次实现变更就变成死物品。</li>
+     * </ul>
+     * <p>
+     * 之所以自己写匹配而不是继续用 {@code Inventory#removeItem}：后者按
+     * {@code ItemStack#isSimilar}（材质 + <b>完整</b>组件）匹配，口径比"价值是否相同"严格得多，
+     * 改名这种纯外观差异也会被判成不匹配 —— 这正是 2026-08-21 服主实测到
+     * 「买来的沙子回收不了、还提示带有耐久损耗」的直接原因。
+     * </p>
+     */
+    private boolean isRecyclable(@Nullable ItemStack stack, Material material) {
+        if (stack == null || stack.getType() != material) return false;
+        ItemMeta meta = stack.getItemMeta();
+        if (meta == null) return true;
+        if (meta.hasEnchants()) return false;
+        if (meta instanceof EnchantmentStorageMeta storage && storage.hasStoredEnchants()) return false;
+        if (meta instanceof Damageable damageable && damageable.hasDamage()) return false;
+        return true;
+    }
+
+    /**
+     * 从背包里扣掉 {@code amount} 个可回收的 {@code material}，返回<b>实际扣掉的数量</b>。
+     * <p>
+     * 手写扣除而不是用 {@code Inventory#removeItem}，理由见 {@link #isRecyclable}：
+     * 需要按"价值是否相同"而不是"组件是否完全一致"来匹配。
+     * </p>
+     */
+    private int removeRecyclable(PlayerInventory inv, Material material, int amount) {
+        int remaining = amount;
+        ItemStack[] contents = inv.getStorageContents();
+        for (int i = 0; i < contents.length && remaining > 0; i++) {
+            ItemStack stack = contents[i];
+            if (!isRecyclable(stack, material)) continue;
+            int take = Math.min(remaining, stack.getAmount());
+            int left = stack.getAmount() - take;
+            contents[i] = left <= 0 ? null : stack.asQuantity(left);
+            remaining -= take;
+        }
+        inv.setStorageContents(contents);
+        return amount - remaining;
     }
 
     private void giveBack(Player player, Material material, int amount) {
@@ -248,14 +306,52 @@ public final class RecycleService {
         }
 
         double unitPrice = recyclePriceFor(liveItem);
-        double totalPrice = ShopEconomics.round2(unitPrice * quantity);
+        double rawPrice = ShopEconomics.round2(unitPrice * quantity);
+
+        // 每日回收收入上限：这是<b>整座岛屿共享</b>的状态，必须在岛屿维度的互斥临界区里
+        // 判定 + 记账，否则两名成员同时回收就能各自读到同一个"剩余额度"把上限刷穿。
+        // 本类原先刻意没有临界区（类文档里写过"回收不碰任何共享状态"），加上每日上限之后
+        // 那个前提不再成立，这里补上——语义和 OrderBoardService 的每日货币上限完全一致：
+        // 超出上限的部分<b>不发钱</b>，但物品已经扣了，所以要把超出的部分按"少发多少钱"
+        // 换算成"退回多少物品"是行不通的（物品是整数、单价可能带小数）。因此改成：
+        // 上限不足以覆盖本次回收时，直接<b>整笔拒绝并退还物品</b>，让玩家自己少选几件再来，
+        // 而不是悄悄少给钱——后者会变成一个玩家完全看不懂的"回收价怎么变了"。
+        Island island = SkylliaAPI.getIslandByPlayerId(player.getUniqueId());
+        if (island == null) {
+            refundItems(player, material, quantity, "找不到岛屿");
+            fail(player, "§c你还没有空岛，物品已退还。");
+            return;
+        }
+        double cap = TraderConfigLoader.config.getDailyRecycleIncomeCap();
+        Double accepted = plugin.getDataService().compute(island, data -> {
+            long now = System.currentTimeMillis();
+            DailyRecycleIncome income = data.dailyRecycleIncome;
+            if (income.windowStartAt == 0L || now - income.windowStartAt > DAY_MILLIS) {
+                income.amount = 0.0;
+                income.windowStartAt = now;
+            }
+            double remaining = Math.max(0.0, cap - income.amount);
+            if (rawPrice > remaining) {
+                return TraderDataService.Mutation.readOnly(null);
+            }
+            income.amount = ShopEconomics.round2(income.amount + rawPrice);
+            return TraderDataService.Mutation.commit(rawPrice, null);
+        });
+        if (accepted == null) {
+            refundItems(player, material, quantity, "今日回收额度不足");
+            fail(player, "§e今天的回收额度已经用完了（每日上限 §f" + GuiFormat.fmt(cap)
+                    + " §e金币），物品已退还，明天再来吧。");
+            return;
+        }
+        double totalPrice = accepted;
 
         try {
             EconomyResponse response = econ.depositPlayer(player, totalPrice);
             if (response == null || !response.transactionSuccess()) {
                 String reason = response == null ? "经济插件未返回结果" : response.errorMessage;
-                log.error("玩家 {} 回收商品 '{}' 发钱失败：{}，已退还物品",
+                log.error("玩家 {} 回收商品 '{}' 发钱失败：{}，已退还物品并回滚每日额度",
                         player.getName(), normalizedId, reason);
+                rollbackDailyIncome(island, totalPrice);
                 refundItems(player, material, quantity, "发钱失败");
                 fail(player, "§c回收失败：发钱异常，物品已退还，请稍后重试或联系管理员。");
                 return;
@@ -263,7 +359,9 @@ public final class RecycleService {
         } catch (Throwable t) {
             // econ 是另一个插件的代码，不能假设它只会通过 EconomyResponse 表达失败、
             // 不会直接抛异常（理由同 ShopPurchaseService#chargeStage）。
-            log.error("玩家 {} 回收商品 '{}' 发钱阶段抛出异常，已退还物品", player.getName(), normalizedId, t);
+            log.error("玩家 {} 回收商品 '{}' 发钱阶段抛出异常，已退还物品并回滚每日额度",
+                    player.getName(), normalizedId, t);
+            rollbackDailyIncome(island, totalPrice);
             refundItems(player, material, quantity, "发钱异常");
             fail(player, "§c回收失败：经济插件出错，物品已退还，请稍后重试或联系管理员。");
             return;
@@ -271,7 +369,7 @@ public final class RecycleService {
 
         // player.sendMessage 是线程安全的（ShopPurchaseService/OrderBoardService 已有同样的用法），
         // 不需要跳回玩家线程。
-        player.sendMessage(Component.text("§a回收成功：§f" + displayName + " x" + quantity
+        player.sendMessage(Component.text("§a回收成功：§f" + GuiFormat.legacyName(displayName) + " §fx" + quantity
                 + " §a，获得 §f" + GuiFormat.fmt(totalPrice) + " §a金币"));
         inFlight.remove(playerId);
     }
@@ -286,6 +384,24 @@ public final class RecycleService {
      * 只能把细节完整记进错误日志，交给管理员手动补偿——这条路径和
      * {@code ShopPurchaseService}/{@code OrderBoardService} 对失败退还的处理是同一个思路。
      */
+    /**
+     * 把已经记进"今日回收收入"的额度扣回去。用于"额度扣了、物品扣了，但钱没发出去"的分支——
+     * 不回滚的话玩家会白白损失一次额度（物品退回来了，额度却没了）。
+     */
+    private void rollbackDailyIncome(Island island, double amount) {
+        if (amount <= 0) return;
+        try {
+            plugin.getDataService().compute(island, data -> {
+                DailyRecycleIncome income = data.dailyRecycleIncome;
+                income.amount = Math.max(0.0, ShopEconomics.round2(income.amount - amount));
+                return TraderDataService.Mutation.commit(Boolean.TRUE, Boolean.FALSE);
+            });
+        } catch (Throwable t) {
+            // 回滚失败只影响这座岛今天的额度多扣了一点，绝不能让它把"退还物品"那一步顶掉。
+            log.error("回滚岛屿 {} 的每日回收额度（{}）失败", island.getId(), amount, t);
+        }
+    }
+
     private void refundItems(Player player, Material material, int quantity, String reasonForLog) {
         var scheduled = player.getScheduler().run(plugin, t -> giveBack(player, material, quantity),
                 () -> logRefundFailure(player, material, quantity, reasonForLog));

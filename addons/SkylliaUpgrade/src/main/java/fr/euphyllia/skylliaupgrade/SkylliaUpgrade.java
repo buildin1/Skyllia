@@ -91,6 +91,11 @@ public final class SkylliaUpgrade extends JavaPlugin {
 
         this.upgradeManager = new UpgradeManager(generator);
 
+        // 登录时校正岛屿边境：救回历史上被「升级表低档位比建岛初始值还小」这个配置错误
+        // 缩过地的存量岛屿（见 BorderCorrectionListener 类文档）。
+        Bukkit.getPluginManager().registerEvents(
+                new fr.euphyllia.skylliaupgrade.listener.BorderCorrectionListener(this.upgradeManager), this);
+
         SkylliaAPI.registerCommands(new UpgradeCommand(), "upgrade", "up");
         SkylliaAPI.registerAdminCommands(new UpgradeAdminCommand(), "upgrade");
 

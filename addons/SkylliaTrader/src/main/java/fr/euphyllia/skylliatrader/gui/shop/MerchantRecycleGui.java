@@ -112,6 +112,9 @@ public final class MerchantRecycleGui {
     private static List<RecycleEntry> buildEntries(PlayerInventory inv) {
         List<RecycleEntry> entries = new ArrayList<>();
         for (ShopItemDefinition item : ShopConfigLoader.config.getItems()) {
+            // 不可回收的商品（可再生物资，见 shop.toml 的 recyclable 字段）根本不进货架：
+            // 摆出来让玩家点一下再被拒绝，只会让人以为是 bug。
+            if (!item.recyclable()) continue;
             int owned = countMaterial(inv, item.material());
             entries.add(new RecycleEntry(item.id(), item.material(), item.displayName(),
                     RecycleService.recyclePriceFor(item), owned));

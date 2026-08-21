@@ -181,5 +181,17 @@ public final class MerchantSpawner {
         // ⑤ 可以被杀死（规格明确要求），所以不设 invulnerable。
         //    这里显式写一次是为了防止将来有人「顺手」加上无敌——那会让「打死重召」这条规则失效。
         trader.setInvulnerable(false);
+
+        // ⑥ 冻结 AI —— 不加这一条，游商在空岛上活不过 5 秒。
+        //    原版 WanderingTrader 会自己四处走动，而空岛的边缘外面就是虚空：它必然会走出岛边
+        //    掉下去摔死。玩家看到的现象就是「召唤成功了，商人几秒钟就没了」，而死亡又会正常
+        //    触发 EntityDeathEvent → handleDeath → 释放名额，所以连记录都一起消失，
+        //    表面上像是「召唤根本没生效」。
+        //    2026-08-21 在本地测试服实测确认：不冻结 AI 的游商（含用 /summon 生成的原版游商）
+        //    5 秒内必然消失；带 NoAI 的在 T0/T25/T50 三次采样全部存活。
+        //    选 setAI(false) 而不是 Paper 的 setAware(false)：前者同时关掉重力，
+        //    连「玩家把商人脚下的方块挖了」这条掉虚空的路径一起堵死；后者只关 AI 决策，
+        //    方块一挖照样会掉下去。冻结 AI 不影响右键交互，也不影响被攻击致死。
+        trader.setAI(false);
     }
 }

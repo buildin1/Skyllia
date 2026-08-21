@@ -59,7 +59,15 @@ public final class GuidebookItem {
             // 不抛异常、不打日志，所以这里传多少页都不会崩服，只会悄悄少几页。
             // 页数校验放在配置加载时做（TraderConfigManager#loadGuidebook 会打 warn），
             // 那里才是服主能看到反馈的地方；这里不再重复判断，也不截断。
-            bookMeta.pages(pages);
+            //
+            // ⚠️ 这里<b>必须</b>用 addPages(Component...) 而不是 pages(List)：
+            // 本模块编译依赖是 paper-api 1.20.6，那一版 BookMeta.pages(List) 的返回类型是
+            // net.kyori.adventure.inventory.Book；而线上跑的 26.2 把返回类型改成了协变的
+            // BookMeta。返回类型属于 JVM 方法描述符的一部分，签名对不上就是
+            // NoSuchMethodError——编译期完全看不出来，一到线上买说明书就报"发货异常"
+            // （2026-08-21 服主实测反馈，测试服日志确认）。
+            // addPages 返回 void，描述符不含返回类型差异，跨版本稳定。
+            bookMeta.addPages(pages.toArray(new Component[0]));
         } else {
             meta.displayName(title);
             List<Component> lore = new ArrayList<>();

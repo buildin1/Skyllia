@@ -234,7 +234,7 @@ public final class ShopPurchaseService {
             OfflinePlayer offline = player;
             if (!econ.has(offline, reservation.totalPrice())) {
                 rollbackReservationOnly(island, normalizedId, reservation);
-                fail(player, "§c金币不足，购买 " + displayName + " x" + reservation.quantity()
+                fail(player, "§c金币不足，购买 " + GuiFormat.legacyName(displayName) + " §cx" + reservation.quantity()
                         + " 需要 §f" + GuiFormat.fmt(reservation.totalPrice()) + " §c金币。");
                 return false;
             }
@@ -379,7 +379,7 @@ public final class ShopPurchaseService {
                 try {
                     String discountNote = reservation.unitPrice() < reservation.basePrice()
                             ? "（原价 §f" + GuiFormat.fmt(reservation.basePrice()) + " §a已享折扣）" : "";
-                    player.sendMessage(Component.text("§a购买成功：§f" + displayName + " x" + reservation.quantity()
+                    player.sendMessage(Component.text("§a购买成功：§f" + GuiFormat.legacyName(displayName) + " §fx" + reservation.quantity()
                             + " §a，花费 §f" + GuiFormat.fmt(reservation.totalPrice()) + " §a金币" + discountNote));
                 } catch (Throwable ex) {
                     // 物品已经真的发出去了，这里出错只记日志，绝不能再触发退款/回滚。
@@ -410,14 +410,17 @@ public final class ShopPurchaseService {
             book.setAmount(Math.max(1, quantity));
             return book;
         }
-        ItemStack stack = new ItemStack(material, Math.max(1, quantity));
-        ItemMeta meta = stack.getItemMeta();
-        if (meta != null) {
-            meta.displayName(net.kyori.adventure.text.minimessage.MiniMessage.miniMessage()
-                    .deserialize("<!italic>" + displayName));
-            stack.setItemMeta(meta);
-        }
-        return stack;
+        // ⚠️ 这里<b>刻意不给商品打自定义名字</b>。
+        // 之前会把 shop.toml 的 display-name 写进物品的 displayName，两个后果都是实打实的坑：
+        //   ① 买来的沙子带自定义名、挖来的沙子不带，两者在背包里<b>不能互相堆叠</b>；
+        //   ② 回收流程用 `new ItemStack(material, n)`（裸物品）去扣，而 Inventory#removeItem
+        //      是按<b>完整组件</b>匹配的，带名字的物品永远匹配不上——也就是
+        //      <b>凡是从商店买来的东西一件都回收不掉</b>，还会报一句莫名其妙的
+        //      "带有耐久损耗、附魔或自定义属性"（2026-08-21 服主实测反馈）。
+        // 而这些 display-name 的内容本来就只是物品的中文名（"<white>沙子"），
+        // 和客户端自带的原版名称完全重复，打上去没有任何信息增量。
+        // 显示名只在<b>商店 GUI 的货架上</b>用（见 MerchantShopGui#buildItem），不进实物。
+        return new ItemStack(material, Math.max(1, quantity));
     }
 
     // ══════════════════════════════════════════════════════════════════════

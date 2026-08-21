@@ -81,6 +81,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "sugar_cane"
 material = "SUGAR_CANE"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>甘蔗"
 price = 1.0
 unlock-track = "TRADE_COUNT"
@@ -92,6 +93,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "wheat_seeds"
 material = "WHEAT_SEEDS"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>小麦种子"
 price = 1.0
 unlock-track = "TRADE_COUNT"
@@ -103,6 +105,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "beetroot_seeds"
 material = "BEETROOT_SEEDS"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>甜菜种子"
 price = 1.0
 unlock-track = "TRADE_COUNT"
@@ -114,6 +117,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "pumpkin_seeds"
 material = "PUMPKIN_SEEDS"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>南瓜种子"
 price = 1.0
 unlock-track = "TRADE_COUNT"
@@ -125,6 +129,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "melon_seeds"
 material = "MELON_SEEDS"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>西瓜种子"
 price = 1.0
 unlock-track = "TRADE_COUNT"
@@ -136,6 +141,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "oak_sapling"
 material = "OAK_SAPLING"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>橡木树苗"
 price = 1.0
 unlock-track = "TRADE_COUNT"
@@ -147,6 +153,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "nether_wart"
 material = "NETHER_WART"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>下界疣"
 price = 4.0
 unlock-track = "TRADE_COUNT"
@@ -173,6 +180,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "birch_sapling"
 material = "BIRCH_SAPLING"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>白桦树苗"
 price = 20.0
 unlock-track = "TRADE_COUNT"
@@ -184,6 +192,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "spruce_sapling"
 material = "SPRUCE_SAPLING"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>云杉树苗"
 price = 20.0
 unlock-track = "TRADE_COUNT"
@@ -195,6 +204,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "jungle_sapling"
 material = "JUNGLE_SAPLING"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>丛林树苗"
 price = 20.0
 unlock-track = "TRADE_COUNT"
@@ -206,6 +216,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "acacia_sapling"
 material = "ACACIA_SAPLING"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>金合欢树苗"
 price = 20.0
 unlock-track = "TRADE_COUNT"
@@ -217,6 +228,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "dark_oak_sapling"
 material = "DARK_OAK_SAPLING"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>深色橡木树苗"
 price = 20.0
 unlock-track = "TRADE_COUNT"
@@ -228,6 +240,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "mangrove_propagule"
 material = "MANGROVE_PROPAGULE"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>红树胎生苗"
 price = 20.0
 unlock-track = "TRADE_COUNT"
@@ -239,6 +252,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "cherry_sapling"
 material = "CHERRY_SAPLING"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>樱花树苗"
 price = 20.0
 unlock-track = "TRADE_COUNT"
@@ -250,6 +264,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "pale_oak_sapling"
 material = "PALE_OAK_SAPLING"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>苍白橡木树苗"
 price = 20.0
 unlock-track = "TRADE_COUNT"
@@ -261,6 +276,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "cocoa_beans"
 material = "COCOA_BEANS"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>可可豆"
 price = 20.0
 unlock-track = "TRADE_COUNT"
@@ -272,6 +288,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "cactus"
 material = "CACTUS"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>仙人掌"
 price = 20.0
 unlock-track = "TRADE_COUNT"
@@ -283,6 +300,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "red_mushroom"
 material = "RED_MUSHROOM"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>红蘑菇"
 price = 20.0
 unlock-track = "TRADE_COUNT"
@@ -294,6 +312,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "brown_mushroom"
 material = "BROWN_MUSHROOM"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>棕蘑菇"
 price = 20.0
 unlock-track = "TRADE_COUNT"
@@ -305,6 +324,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "bamboo"
 material = "BAMBOO"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>竹子"
 price = 20.0
 unlock-track = "TRADE_COUNT"
@@ -320,6 +340,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "white_dye"
 material = "WHITE_DYE"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>白色染料"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -331,6 +352,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "orange_dye"
 material = "ORANGE_DYE"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>橙色染料"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -342,6 +364,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "magenta_dye"
 material = "MAGENTA_DYE"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>品红色染料"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -353,6 +376,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "light_blue_dye"
 material = "LIGHT_BLUE_DYE"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>淡蓝色染料"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -364,6 +388,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "yellow_dye"
 material = "YELLOW_DYE"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>黄色染料"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -375,6 +400,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "lime_dye"
 material = "LIME_DYE"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>黄绿色染料"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -386,6 +412,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "pink_dye"
 material = "PINK_DYE"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>粉红色染料"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -397,6 +424,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "gray_dye"
 material = "GRAY_DYE"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>灰色染料"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -408,6 +436,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "light_gray_dye"
 material = "LIGHT_GRAY_DYE"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>淡灰色染料"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -419,6 +448,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "cyan_dye"
 material = "CYAN_DYE"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>青色染料"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -430,6 +460,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "purple_dye"
 material = "PURPLE_DYE"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>紫色染料"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -441,6 +472,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "blue_dye"
 material = "BLUE_DYE"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>蓝色染料"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -452,6 +484,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "brown_dye"
 material = "BROWN_DYE"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>棕色染料"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -463,6 +496,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "green_dye"
 material = "GREEN_DYE"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>绿色染料"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -474,6 +508,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "red_dye"
 material = "RED_DYE"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>红色染料"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -485,6 +520,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "black_dye"
 material = "BLACK_DYE"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>黑色染料"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -496,6 +532,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "dandelion"
 material = "DANDELION"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>蒲公英"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -507,6 +544,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "poppy"
 material = "POPPY"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>虞美人"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -518,6 +556,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "blue_orchid"
 material = "BLUE_ORCHID"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>蓝色兰花"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -529,6 +568,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "allium"
 material = "ALLIUM"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>紫红球花"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -540,6 +580,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "azure_bluet"
 material = "AZURE_BLUET"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>白花车轴草"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -551,6 +592,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "red_tulip"
 material = "RED_TULIP"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>红色郁金香"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -562,6 +604,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "orange_tulip"
 material = "ORANGE_TULIP"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>橙色郁金香"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -573,6 +616,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "white_tulip"
 material = "WHITE_TULIP"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>白色郁金香"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -584,6 +628,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "pink_tulip"
 material = "PINK_TULIP"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>粉色郁金香"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -595,6 +640,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "oxeye_daisy"
 material = "OXEYE_DAISY"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>滨菊"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -606,6 +652,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "cornflower"
 material = "CORNFLOWER"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>矢车菊"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -617,6 +664,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "lily_of_the_valley"
 material = "LILY_OF_THE_VALLEY"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>铃兰"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -628,6 +676,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "sunflower"
 material = "SUNFLOWER"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>向日葵"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -639,6 +688,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "lilac"
 material = "LILAC"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>丁香花"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -650,6 +700,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "rose_bush"
 material = "ROSE_BUSH"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>玫瑰丛"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -661,6 +712,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "peony"
 material = "PEONY"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>牡丹"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -672,6 +724,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "torchflower"
 material = "TORCHFLOWER"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>火把花"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -687,6 +740,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "kelp"
 material = "KELP"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>海带"
 price = 3.0
 unlock-track = "TRADE_COUNT"
@@ -698,6 +752,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "seagrass"
 material = "SEAGRASS"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>海草"
 price = 3.0
 unlock-track = "TRADE_COUNT"
@@ -709,6 +764,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "sea_pickle"
 material = "SEA_PICKLE"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>海泡菜"
 price = 3.0
 unlock-track = "TRADE_COUNT"
@@ -775,6 +831,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "ice"
 material = "ICE"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>冰"
 price = 3.0
 unlock-track = "TRADE_COUNT"
@@ -786,6 +843,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "packed_ice"
 material = "PACKED_ICE"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>浮冰"
 price = 3.0
 unlock-track = "TRADE_COUNT"
@@ -797,6 +855,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "blue_ice"
 material = "BLUE_ICE"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>蓝冰"
 price = 3.0
 unlock-track = "TRADE_COUNT"
@@ -812,6 +871,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "lily_pad"
 material = "LILY_PAD"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>睡莲"
 price = 20.0
 unlock-track = "TRADE_COUNT"
@@ -823,6 +883,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "vine"
 material = "VINE"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>藤蔓"
 price = 20.0
 unlock-track = "TRADE_COUNT"
@@ -834,6 +895,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "azalea"
 material = "AZALEA"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>杜鹃"
 price = 20.0
 unlock-track = "TRADE_COUNT"
@@ -845,6 +907,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "moss_block"
 material = "MOSS_BLOCK"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>苔藓"
 price = 20.0
 unlock-track = "TRADE_COUNT"
@@ -856,6 +919,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "weeping_vines"
 material = "WEEPING_VINES"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>垂根"
 price = 20.0
 unlock-track = "TRADE_COUNT"
@@ -867,6 +931,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "glow_lichen"
 material = "GLOW_LICHEN"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>发光地衣"
 price = 20.0
 unlock-track = "TRADE_COUNT"
@@ -996,6 +1061,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "pointed_dripstone"
 material = "POINTED_DRIPSTONE"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>滴水石锥"
 price = 4.0
 unlock-track = "ISLAND_LEVEL"
@@ -1044,6 +1110,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "crimson_nylium"
 material = "CRIMSON_NYLIUM"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>绯红菌岩"
 price = 3.0
 unlock-track = "ISLAND_LEVEL"
@@ -1055,6 +1122,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "warped_nylium"
 material = "WARPED_NYLIUM"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>诡异菌岩"
 price = 3.0
 unlock-track = "ISLAND_LEVEL"
@@ -1066,6 +1134,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "nether_wart_block"
 material = "NETHER_WART_BLOCK"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>下界疣块"
 price = 3.0
 unlock-track = "ISLAND_LEVEL"
@@ -1077,6 +1146,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "shroomlight"
 material = "SHROOMLIGHT"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>荧光菌"
 price = 3.0
 unlock-track = "ISLAND_LEVEL"
@@ -1129,6 +1199,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "purpur_block"
 material = "PURPUR_BLOCK"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>紫珀块"
 price = 3.0
 unlock-track = "ISLAND_LEVEL"
@@ -1140,6 +1211,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "chorus_fruit"
 material = "CHORUS_FRUIT"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>紫颂果"
 price = 5.0
 unlock-track = "ISLAND_LEVEL"
@@ -1151,6 +1223,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "prismarine_shard"
 material = "PRISMARINE_SHARD"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>海晶碎片"
 price = 5.0
 unlock-track = "ISLAND_LEVEL"
@@ -1162,6 +1235,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "prismarine_crystals"
 material = "PRISMARINE_CRYSTALS"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>海晶砂粒"
 price = 5.0
 unlock-track = "ISLAND_LEVEL"
@@ -1177,6 +1251,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "resin_block"
 material = "RESIN_BLOCK"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>树脂块"
 price = 3.0
 unlock-track = "ISLAND_LEVEL"
@@ -1188,6 +1263,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "pale_moss_block"
 material = "PALE_MOSS_BLOCK"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>苍白苔藓"
 price = 3.0
 unlock-track = "ISLAND_LEVEL"
@@ -1210,6 +1286,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "mycelium"
 material = "MYCELIUM"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>菌丝"
 price = 3.0
 unlock-track = "ISLAND_LEVEL"
@@ -1284,6 +1361,7 @@ purchase-limit-count = 16
 [[shop-item]]
 id = "magma_cream"
 material = "MAGMA_CREAM"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>岩浆膏"
 price = 8.0
 unlock-track = "REPUTATION"
@@ -1295,6 +1373,7 @@ purchase-limit-count = 16
 [[shop-item]]
 id = "ghast_tear"
 material = "GHAST_TEAR"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>恶魂之泪"
 price = 8.0
 unlock-track = "REPUTATION"
@@ -1306,6 +1385,7 @@ purchase-limit-count = 16
 [[shop-item]]
 id = "crimson_stem"
 material = "CRIMSON_STEM"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>绯红菌柄"
 price = 8.0
 unlock-track = "REPUTATION"
@@ -1332,6 +1412,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "amethyst_shard"
 material = "AMETHYST_SHARD"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>紫水晶碎片"
 price = 15.0
 unlock-track = "REPUTATION"
@@ -1358,6 +1439,7 @@ purchase-limit-count = 1
 [[shop-item]]
 id = "sponge"
 material = "SPONGE"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>海绵"
 price = 200.0
 unlock-track = "REPUTATION"
@@ -1380,6 +1462,7 @@ purchase-limit-count = 2
 [[shop-item]]
 id = "sculk_catalyst"
 material = "SCULK_CATALYST"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>幽匿催发体"
 price = 200.0
 unlock-track = "REPUTATION"
@@ -1391,6 +1474,7 @@ purchase-limit-count = 2
 [[shop-item]]
 id = "sea_lantern"
 material = "SEA_LANTERN"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>海晶灯"
 price = 200.0
 unlock-track = "REPUTATION"

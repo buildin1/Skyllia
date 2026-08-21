@@ -40,7 +40,8 @@ public record ShopItemDefinition(
         boolean naturalVisible,
         ShopPurchaseLimitPeriod purchaseLimitPeriod,
         int purchaseLimitCount,
-        ShopExtraGate extraGate
+        ShopExtraGate extraGate,
+        boolean recyclable
 ) {
 
     public ShopItemDefinition {

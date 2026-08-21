@@ -165,8 +165,15 @@ public class ShopConfigManager implements IConfigurationProvider {
                     + "' 无法识别，目前只支持 NETHERITE_INGOT_DUAL（留空表示无额外门槛）");
         }
 
+        // 可再生物品（树苗/作物/竹子/仙人掌这类能靠农场无限量产的）必须标成 recyclable = false。
+        // 理由见 HANDOFF 5.1 的定价不变量：计分体系早就把「*_LEAVES / 作物 / 植被」判成 ×0 分，
+        // 因为"树场可无限量产"；回收却是拿真金白银换这些东西，一旦放开就是一个零成本的
+        // 无限印钞口（2026-08-21 服主指出：一个自动竹子农场每小时能换到设计日收入的几十倍）。
+        // 默认 true 是为了兼容存量配置，新增可量产商品时务必显式写 false。
+        boolean recyclable = table.getOrElse("recyclable", true);
+
         return new ShopItemDefinition(normalizedId, material, displayName, price, unlockTrack, unlockTier,
-                naturalVisible, limitPeriod, limitCount, extraGate);
+                naturalVisible, limitPeriod, limitCount, extraGate, recyclable);
     }
 
     private Material parseMaterial(String rawName, String itemId) {

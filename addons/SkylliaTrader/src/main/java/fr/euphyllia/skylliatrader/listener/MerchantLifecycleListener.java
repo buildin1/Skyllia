@@ -4,6 +4,7 @@ import com.destroystokyo.paper.event.entity.EntityAddToWorldEvent;
 import fr.euphyllia.skyllia.api.SkylliaAPI;
 import fr.euphyllia.skyllia.api.skyblock.Island;
 import fr.euphyllia.skylliatrader.SkylliaTrader;
+import fr.euphyllia.skylliatrader.configuration.TraderConfigLoader;
 import fr.euphyllia.skylliatrader.gui.shop.MerchantShopGui;
 import fr.euphyllia.skylliatrader.merchant.CaravanType;
 import fr.euphyllia.skylliatrader.merchant.MerchantKeys;
@@ -12,6 +13,7 @@ import fr.euphyllia.skylliatrader.merchant.MerchantService;
 import fr.euphyllia.skylliatrader.merchant.MerchantSpawner;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
+import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.WanderingTrader;
@@ -197,7 +199,13 @@ public class MerchantLifecycleListener implements Listener {
     public void onEntityAddToWorld(EntityAddToWorldEvent event) {
         Entity entity = event.getEntity();
         if (!(entity instanceof WanderingTrader trader)) return;
-        if (!keys.isMerchant(entity)) return;
+        if (!keys.isMerchant(entity)) {
+            // 原版自己刷出来的游商：收编成「普通游商」，否则玩家右键它开出来的是原版空交易界面
+            // ——规格要求任何游商都卖基础池 + 给一本游商指南，不收编等于这条规格在原版游商
+            // 身上完全没实现（2026-08-21 服主实测反馈）。
+            adoptVanillaTrader(trader);
+            return;
+        }
 
         UUID islandId = keys.readIslandId(entity);
         CaravanType caravan = keys.readCaravan(entity);
@@ -246,6 +254,53 @@ public class MerchantLifecycleListener implements Listener {
                 log.warn("游商 {}（岛屿 {}）的孤儿检查失败，本次跳过：{}", entityId, islandId, t.toString());
             }
         });
+    }
+
+    /**
+     * 把原版自己刷出来的游商收编成本插件的「普通游商」。
+     * <p>
+     * 原版的 {@code WanderingTraderSpawner} 会在玩家附近周期性刷游商，这些实体没有本插件的
+     * PDC 标记，于是 {@link #onPlayerInteractMerchant} 认不出它们、右键直接开原版交易界面。
+     * 而规格要求的是「普通游商出售基础池商品，并附带一份游商指南」——不收编的话，
+     * 玩家在岛上遇到的绝大多数游商都是原版行为，这条规格等于没实现。
+     * </p>
+     * <p>
+     * 只收编<b>空岛世界里、且落在某座岛屿范围内</b>的游商：岛外（世界边缘、区域之间的虚空）
+     * 刷出来的不归任何岛屿管，收编了也没有对应的岛屿数据可用，直接放着不动。
+     * </p>
+     * <p>
+     * 收编后按 {@code NATURAL} 来源处理：打上标记 → 清空原版商品表 + 冻结 AI 等运行时设置
+     * → 挂一个到点自己走的任务。停留时长复用配置里自然刷新那一套（{@code natural.stay-minutes}），
+     * 语义一致：普通游商就是临时路过的。
+     * </p>
+     * <p>
+     * <b>不占用自然刷新的名额与冷却</b>：那套配额是给本插件<i>主动刷</i>的游商用的，
+     * 原版刷出来多少不该消耗它，否则岛上出现一只原版游商就会把插件自己的刷新压制掉。
+     * </p>
+     */
+    private void adoptVanillaTrader(WanderingTrader trader) {
+        try {
+            World world = trader.getWorld();
+            if (!SkylliaAPI.isWorldSkyblock(world.getName())) return;
+
+            Island island = SkylliaAPI.getIslandByChunk(
+                    trader.getLocation().getBlockX() >> 4, trader.getLocation().getBlockZ() >> 4);
+            if (island == null) return;
+
+            long expireAt = System.currentTimeMillis()
+                    + TraderConfigLoader.config.getNaturalStayMinutes() * 60_000L;
+
+            keys.mark(trader, island.getId(), CaravanType.OVERWORLD, MerchantOrigin.NATURAL, expireAt);
+            spawner.applyRuntimeSettings(trader, CaravanType.OVERWORLD, MerchantOrigin.NATURAL, expireAt);
+
+            long delayTicks = Math.max(1L, (expireAt - System.currentTimeMillis()) / 50L);
+            trader.getScheduler().runDelayed(plugin, t -> trader.remove(), null, delayTicks);
+
+            log.info("收编了一只原版游商 {}（岛屿 {}），按普通游商处理", trader.getUniqueId(), island.getId());
+        } catch (Throwable t) {
+            // 收编失败不该影响别的逻辑：最坏结果只是这一只游商保持原版行为。
+            log.warn("收编原版游商 {} 失败：{}", trader.getUniqueId(), t.toString());
+        }
     }
 
     // ══════════════════════════════════════════════════════════════════════

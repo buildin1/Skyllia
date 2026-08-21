@@ -467,7 +467,7 @@ public final class OrderBoardService {
     }
 
     private void notifySuccessMoney(Player player, OrderDefinition order, double moneyAwarded, long reputationAwarded) {
-        StringBuilder msg = new StringBuilder("§a订单交付成功：§f" + order.displayName());
+        StringBuilder msg = new StringBuilder("§a订单交付成功：§f" + GuiFormat.legacyName(order.displayName()));
         if (moneyAwarded > 0) {
             msg.append("§a，获得 §f").append(GuiFormat.fmt(moneyAwarded)).append(" §a金币");
         }
@@ -481,7 +481,7 @@ public final class OrderBoardService {
     }
 
     private void notifySuccessBarter(Player player, OrderDefinition order, long reputationAwarded) {
-        StringBuilder msg = new StringBuilder("§a订单交付成功：§f" + order.displayName()
+        StringBuilder msg = new StringBuilder("§a订单交付成功：§f" + GuiFormat.legacyName(order.displayName())
                 + "§a，获得 §f" + GuiFormat.describeItems(order.giveItems()));
         appendReputationNote(msg, order, reputationAwarded);
         player.sendMessage(Component.text(msg.toString()));

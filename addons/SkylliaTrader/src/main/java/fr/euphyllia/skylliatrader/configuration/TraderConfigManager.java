@@ -90,6 +90,12 @@ public class TraderConfigManager implements IConfigurationProvider {
     private static final int DEFAULT_ORDER_REFRESH_HOURS = 6;
     /** 每岛每日通过订单获得的货币总额上限，对齐 HANDOFF 9.3（日均产出约 100 的新锚点，原 400 的十分之一）。 */
     private static final double DEFAULT_DAILY_ORDER_INCOME_CAP = 40.0;
+    /**
+     * 每岛每日回收收入上限（金币）。回收系统通胀防线的<b>第二道</b>，第一道是 shop.toml 的
+     * {@code recyclable = false}（见 {@code DailyRecycleIncome} 类文档）。
+     * 取 40 和订单上限同一个量级：两者都是"辅助收入"，不该盖过 PlayerTask 的日均 100 主线。
+     */
+    private static final double DEFAULT_DAILY_RECYCLE_INCOME_CAP = 40.0;
     /** 订单看板巡检间隔（分钟）。判定口径是"是否已过期"，跑得比 refresh-hours 频繁得多也没问题，
      *  只要别频繁到对数据库造成不必要压力——15 分钟对一个 6 小时的刷新周期来说粒度足够细。 */
     private static final int DEFAULT_ORDER_BOARD_CHECK_INTERVAL_MINUTES = 15;
@@ -194,6 +200,7 @@ public class TraderConfigManager implements IConfigurationProvider {
     private volatile int orderSlotsPerIsland = DEFAULT_ORDER_SLOTS_PER_ISLAND;
     private volatile int orderRefreshHours = DEFAULT_ORDER_REFRESH_HOURS;
     private volatile double dailyOrderIncomeCap = DEFAULT_DAILY_ORDER_INCOME_CAP;
+    private volatile double dailyRecycleIncomeCap = DEFAULT_DAILY_RECYCLE_INCOME_CAP;
     private volatile long dailyOrderReputationCap = DEFAULT_DAILY_ORDER_REPUTATION_CAP;
     private volatile int slotRedeemCooldownSeconds = DEFAULT_SLOT_REDEEM_COOLDOWN_SECONDS;
     private volatile int orderBoardCheckIntervalMinutes = DEFAULT_ORDER_BOARD_CHECK_INTERVAL_MINUTES;
@@ -292,6 +299,8 @@ public class TraderConfigManager implements IConfigurationProvider {
                 DEFAULT_ORDER_REFRESH_HOURS, Integer.class));
         this.dailyOrderIncomeCap = Math.max(0.0, getOrSetDefault("order-board.daily-order-income-cap",
                 DEFAULT_DAILY_ORDER_INCOME_CAP, Double.class));
+        this.dailyRecycleIncomeCap = Math.max(0.0, getOrSetDefault("recycle.daily-income-cap",
+                DEFAULT_DAILY_RECYCLE_INCOME_CAP, Double.class));
         this.dailyOrderReputationCap = Math.max(0L, getOrSetDefault("order-board.daily-reputation-cap",
                 DEFAULT_DAILY_ORDER_REPUTATION_CAP, Long.class));
         // 下限夹到 0：写成负数没有意义，0 表示"完全不能重复结算同一个槽位直到它自然过期"
@@ -794,6 +803,11 @@ public class TraderConfigManager implements IConfigurationProvider {
     /** 每岛每日通过订单获得的货币总额上限，超过部分只给声望不给钱。 */
     public double getDailyOrderIncomeCap() {
         return dailyOrderIncomeCap;
+    }
+
+    /** 每岛每日回收收入上限（金币）；0 表示完全禁止回收换钱。 */
+    public double getDailyRecycleIncomeCap() {
+        return dailyRecycleIncomeCap;
     }
 
     /** 每岛每日通过订单获得的声望总额上限，超过部分订单依然算完成、材料依然被扣，只是不再加声望。 */

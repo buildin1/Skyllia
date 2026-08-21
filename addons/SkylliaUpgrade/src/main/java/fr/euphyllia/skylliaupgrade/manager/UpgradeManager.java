@@ -114,8 +114,22 @@ public class UpgradeManager {
         UpgradeLevelDefinition next = result.next();
         assert next != null;
 
+        // ⚠️ 升级<b>永远不能把边境缩小</b>。
+        // 2026-08-22 生产事故：islands.toml 的建岛初始半径是 100，而 upgrades.toml 的
+        // Lv.1~Lv.4 分别是 60/70/80/90 —— 玩家升到 Lv.2 时 setSize(70) 直接把地从 100 缩到 70，
+        // 岛外的建筑瞬间落到边境之外。这是配置写错了（升级表起点低于建岛初始值），
+        // 但代码这边必须有防线：一次"升级"在任何情况下都不该让玩家损失已有的领地。
+        // 取 max(当前半径, 目标半径)，并在真的发生这种情况时打 warn 让服主看得见配置问题。
+        double targetSize = Math.max(island.getSize(), next.size());
+        if (targetSize > next.size()) {
+            log.warn("[SkylliaUpgrade] 岛屿 {} 升级到等级 {} 时，配置里的目标半径 {} 小于当前半径 {}，"
+                            + "已按当前半径保持不变（请检查 upgrades.toml：升级表的半径不该低于"
+                            + " islands.toml 的建岛初始半径，也不该随等级下降）",
+                    island.getId(), next.level(), next.size(), island.getSize());
+        }
+
         try {
-            island.setSize(next.size());
+            island.setSize(targetSize);
         } catch (MaxIslandSizeExceedException e) {
             log.warn("[SkylliaUpgrade] 岛屿 {} 升级到等级 {} 时 setSize 被核心拒绝: {}",
                     island.getId(), next.level(), e.getMessage());

@@ -168,7 +168,14 @@ public final class MerchantShopGui {
 
     private static ShopEntry buildPreviewEntry(ShopItemDefinition item, TraderIslandData data, long islandLevel) {
         long remainingToUnlock = ShopVisibility.remainingToUnlock(item, data, islandLevel);
-        String hint = "还差 §f" + remainingToUnlock + " §7" + ShopVisibility.trackLabel(item.unlockTrack()) + " 解锁";
+        // ⚠️ 这里只能用 MiniMessage 标签，绝对不能混 §x 这类老式颜色码。
+        // 这段文案会被 buildItem 拼进 lore 再交给 GuiItem.of → MiniMessage.deserialize，
+        // 而服务端运行时的 adventure-text-minimessage 是 5.x，遇到 § 会直接抛
+        // ParsingException（4.x 只是打警告，本仓库编译依赖恰好是 4.26.1，所以编译期发现不了）。
+        // 一旦抛出，整个 render() 中断 → 商店界面根本打不开，玩家侧表现为"右键游商没反应"，
+        // 异常只会静默落在控制台。2026-08-21 在本地测试服实测复现并定位。
+        String hint = "还差 <white>" + remainingToUnlock + "</white> <gray>"
+                + ShopVisibility.trackLabel(item.unlockTrack()) + " 解锁</gray>";
         return new ShopEntry(item.id(), item.material(), item.displayName(), true, hint,
                 0, item.price(), false, 0, 0, item.purchaseLimitPeriod());
     }
