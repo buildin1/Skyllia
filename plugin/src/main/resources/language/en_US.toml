@@ -584,6 +584,10 @@ description = "Allows removing item frames and paintings."
 name = "Place Decorations"
 description = "Allows placing item frames and paintings."
 
+[island.permission.decor_armorstand_place]
+name = "Place Armor Stands"
+description = "Allows placing armor stands."
+
 [island.permission.entity_breed]
 name = "Breed Animals"
 description = "Allows breeding animals on the island."

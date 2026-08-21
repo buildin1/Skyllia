@@ -590,6 +590,10 @@ description = "Autorise à retirer des cadres et tableaux."
 name = "Accrocher des décorations"
 description = "Autorise à placer des cadres et tableaux."
 
+[island.permission.decor_armorstand_place]
+name = "Placer des porte-armures"
+description = "Autorise à placer des porte-armures."
+
 [island.permission.entity_breed]
 name = "Reproduire des animaux"
 description = "Autorise à faire se reproduire des animaux sur l'île."

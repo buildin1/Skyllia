@@ -584,6 +584,10 @@ description = "允许移除物品展示框和画。"
 name = "放置装饰"
 description = "允许放置物品展示框和画。"
 
+[island.permission.decor_armorstand_place]
+name = "放置盔甲架"
+description = "允许放置盔甲架。"
+
 [island.permission.entity_breed]
 name = "繁殖动物"
 description = "允许在空岛繁殖动物。"
