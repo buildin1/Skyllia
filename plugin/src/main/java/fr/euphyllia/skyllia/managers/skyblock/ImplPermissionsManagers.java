@@ -136,11 +136,23 @@ public class ImplPermissionsManagers implements PermissionsManagers {
      * 解析优先级：<b>单体标志的全局接管 &gt; 全体（{@code .all}）标志的全局接管 &gt; 岛屿自身设置</b>。
      * </p>
      * <p>
-     * 单体接管排在全体接管之前，是为了让「全服禁止某一种生物」成为可能：在此之前，
-     * {@code hostile.all = true} 会让所有单体标志彻底失效（判定是纯粹的「或」，
-     * 单体只能加、不能减），因此无法单独关掉幻翼这类生物。现在
-     * {@code /isadmin flag set island.spawn.hostile.phantom false} 会在最外层直接返回 false，
-     * 根本不进入下面的「或」逻辑。
+     * 单体接管排在全体接管之前，是为了让「全服禁止某一种生物」成为可能：管理员全局接管层
+     * 用 {@code Boolean}（可空）表达「没碰过 / 明确开 / 明确关」三种状态，所以能做到
+     * 「即便 hostile.all = true，也能单独强制关掉幻翼」——接管层这部分逻辑没有问题。
+     * </p>
+     * <p>
+     * <b>岛屿自身设置这一层（走到这里说明两层全局接管都没碰过）目前是纯布尔位图，没有
+     * 「没碰过」这个状态</b>——单体标志和总开关都只有开/关两种值，新建岛屿两者默认都是开的。
+     * 2026-08-21 服主反馈实测确认：这一层如果用「或」（旧写法），会导致「关掉总开关，
+     * 但没碰过的单体标志仍是默认开」时总开关形同虚设——单体默认开着，或出来永远是开；
+     * 反过来「只关掉某一个单体标志，总开关还开着」也一样会被或穿。也就是说旧的「或」在
+     * 这一层实际上只能表达「加」，永远表达不了「减」，跟这段方法本来想解决的问题（总开关
+     * 关了应该真的把所有生物都关掉）背道而驰。改成「与」：两者都开，这种生物才允许生成；
+     * 任意一个关掉，就不允许。代价是「总开关关了、但单独放行某一种生物」这种玩法在岛屿
+     * 自身设置这一层做不到了——想做到仍然可以靠上面的全局接管层（那一层是三态判定，不受
+     * 这个限制）。这是有意的取舍：真正能让岛屿自身设置也两种用法都支持，需要给它也补一套
+     * 三态标记（记录某个具体标志有没有被玩家亲手碰过），工作量更大，留作后续单独一轮，
+     * 这里先保证总开关和单体开关都能按直觉正常工作。
      * </p>
      */
     @Override
@@ -153,7 +165,7 @@ public class ImplPermissionsManagers implements PermissionsManagers {
 
         var flags = island.getIslandFlags(worldName);
         var registry = SkylliaAPI.getFlagRegistry();
-        return flags.has(registry, specific) || flags.has(registry, fallback);
+        return flags.has(registry, specific) && flags.has(registry, fallback);
     }
 
     /**
