@@ -32,6 +32,20 @@ public class UpgradeManager {
 
     private static final Logger log = LoggerFactory.getLogger(UpgradeManager.class);
 
+    /**
+     * 单座岛屿边长的硬上限（格）。
+     * <p>
+     * 1 个 region = 32×32 区块 = 512×512 格，而核心按"一岛一 region 格子"做坐标反查
+     * （{@code SkyblockManager#getIslandByChunk} → {@code chunk >> 5}）。边长超过 512 的部分
+     * 反查不到岛屿，会变成不能建造的死地，详见 {@link #performUpgrade} 里的说明。
+     * </p>
+     * <p>
+     * 取 496（31 区块）而不是 512：留一个区块的余量，避免边界正好压在 region 边缘上时
+     * 出现"某一格算进上一个 region"这类边界条件问题。
+     * </p>
+     */
+    private static final double MAX_ISLAND_SIZE = 496.0;
+
     public enum FailReason {
         NO_NEXT_LEVEL,
         SCORE_TOO_LOW,
@@ -92,7 +106,8 @@ public class UpgradeManager {
             }
         }
 
-        int haveTokens = UpgradeTokenItem.countInInventory(inventory);
+        // 分级令牌：升到 Lv.N 只认第 N 级的令牌（老的无等级令牌当万能，见 UpgradeTokenItem#usableFor）
+        int haveTokens = UpgradeTokenItem.countInInventory(inventory, next.level());
         int missingTokens = Math.max(0, next.tokenCount() - haveTokens);
 
         if (!missing.isEmpty() || missingTokens > 0) {
@@ -121,6 +136,22 @@ public class UpgradeManager {
         // 但代码这边必须有防线：一次"升级"在任何情况下都不该让玩家损失已有的领地。
         // 取 max(当前半径, 目标半径)，并在真的发生这种情况时打 warn 让服主看得见配置问题。
         double targetSize = Math.max(island.getSize(), next.size());
+
+        // ⚠️ 硬上限：一座岛只在它中心所处的那<b>一个</b> 512×512 region 格子里能被反查到。
+        // 核心的 SkyblockManager#getIslandByChunk 走的是 (chunk >> 5) → getIslandByRegion(rx, rz)，
+        // 而 getIslandByRegion 只认 region 坐标<b>完全相等</b>的那一座岛。也就是说边长一旦超过
+        // 512，超出中心格子的那部分地会反查不到岛屿（返回 null），而所有权限监听器遇到
+        // island == null 一律 setCancelled(true) —— 玩家在那片地上挖不了也放不了，
+        // 但 isInside() 的纯数学判定又说"在岛内"，两套系统直接打架，
+        // 结果是一大片"看得见、进得去、什么都不能做"的死地（2026-08-22 排查确认）。
+        // 所以这里按 region 容量夹死，配置写超了也不会真的生效。
+        if (targetSize > MAX_ISLAND_SIZE) {
+            log.warn("[SkylliaUpgrade] 岛屿 {} 升级到等级 {} 的目标边长 {} 超过单 region 上限 {}，"
+                            + "已夹到上限。超过这个值的部分反查不到岛屿，会变成不能建造的死地——"
+                            + "请把 upgrades.toml 的半径调回 {} 以内（想突破需要先做跨 region 寻址改造）",
+                    island.getId(), next.level(), targetSize, MAX_ISLAND_SIZE, MAX_ISLAND_SIZE);
+            targetSize = MAX_ISLAND_SIZE;
+        }
         if (targetSize > next.size()) {
             log.warn("[SkylliaUpgrade] 岛屿 {} 升级到等级 {} 时，配置里的目标半径 {} 小于当前半径 {}，"
                             + "已按当前半径保持不变（请检查 upgrades.toml：升级表的半径不该低于"
@@ -146,7 +177,7 @@ public class UpgradeManager {
         for (MaterialCost cost : next.materials()) {
             consumeMaterial(inventory, cost.material(), cost.amount());
         }
-        UpgradeTokenItem.consume(inventory, next.tokenCount());
+        UpgradeTokenItem.consume(inventory, next.level(), next.tokenCount());
         player.updateInventory();
 
         generator.setLevel(island.getId(), next.level());

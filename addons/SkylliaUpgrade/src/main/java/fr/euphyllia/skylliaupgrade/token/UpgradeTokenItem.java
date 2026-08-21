@@ -32,7 +32,22 @@ public final class UpgradeTokenItem {
      */
     private static volatile NamespacedKey TOKEN_KEY;
 
+    /**
+     * 令牌的<b>等级</b>标记。Lv.N 的升级只认第 N 级的令牌，这样每一级都有专属的挑战目标，
+     * 而不是攒一堆通用令牌一路点上去（2026-08-22 服主拍板）。
+     */
+    private static volatile NamespacedKey TIER_KEY;
+
     private UpgradeTokenItem() {}
+
+    private static NamespacedKey tierKey() {
+        NamespacedKey key = TIER_KEY;
+        if (key == null) {
+            key = new NamespacedKey(SkylliaUpgrade.getInstance(), "territory_token_tier");
+            TIER_KEY = key;
+        }
+        return key;
+    }
 
     private static NamespacedKey tokenKey() {
         NamespacedKey key = TOKEN_KEY;
@@ -43,18 +58,29 @@ public final class UpgradeTokenItem {
         return key;
     }
 
-    public static @NotNull ItemStack build(int amount) {
+    /**
+     * 造一张<b>指定等级</b>的领地拓展令。
+     *
+     * @param tier   这张令牌对应的升级等级（Lv.N 的升级只吃第 N 级的令牌）
+     * @param amount 数量
+     */
+    public static @NotNull ItemStack build(int tier, int amount) {
         ItemStack item = new ItemStack(UpgradeConfigLoader.config.getTokenMaterial(), Math.max(1, amount));
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
-            meta.displayName(MM.deserialize(UpgradeConfigLoader.config.getTokenDisplayName()));
+            // 名字里带上等级，玩家一眼能看出这张是给哪一级用的，避免攒了一堆分不清。
+            meta.displayName(MM.deserialize(
+                    UpgradeConfigLoader.config.getTokenDisplayName() + " <gray>· Lv." + tier + "</gray>"));
             List<Component> lore = new ArrayList<>();
             for (String line : UpgradeConfigLoader.config.getTokenLore()) {
                 lore.add(MM.deserialize(line));
             }
+            lore.add(MM.deserialize("<dark_gray>─────────"));
+            lore.add(MM.deserialize("<gray>可用于：<white>岛屿升级至 Lv." + tier + "</white></gray>"));
             meta.lore(lore);
             meta.setCustomModelData(UpgradeConfigLoader.config.getTokenCustomModelData());
             meta.getPersistentDataContainer().set(tokenKey(), PersistentDataType.BYTE, (byte) 1);
+            meta.getPersistentDataContainer().set(tierKey(), PersistentDataType.INTEGER, tier);
             item.setItemMeta(meta);
         }
         return item;
@@ -77,29 +103,68 @@ public final class UpgradeTokenItem {
         return meta.getCustomModelData() == UpgradeConfigLoader.config.getTokenCustomModelData();
     }
 
-    /** 统计玩家背包中的令牌数量 */
-    public static int countInInventory(org.bukkit.inventory.PlayerInventory inventory) {
+    /**
+     * 读取一张令牌的等级。
+     *
+     * @return 令牌等级；<b>{@code 0} 表示"没有等级标记"</b>——那是分级机制上线之前发出去的
+     * 老令牌，按<b>万能令牌</b>处理（见 {@link #usableFor}），不能因为一次机制变更就把玩家
+     * 手里已有的东西作废。
+     */
+    public static int readTier(ItemStack stack) {
+        if (stack == null) return 0;
+        ItemMeta meta = stack.getItemMeta();
+        if (meta == null) return 0;
+        Integer tier = meta.getPersistentDataContainer().get(tierKey(), PersistentDataType.INTEGER);
+        return tier == null ? 0 : tier;
+    }
+
+    /**
+     * 这张令牌能不能用于升到 {@code targetTier} 级。
+     * <p>
+     * 规则：等级完全相等才行；等级为 0 的老令牌（分级上线前发出去的）当万能令牌，任何级都能用。
+     * </p>
+     */
+    public static boolean usableFor(ItemStack stack, int targetTier) {
+        if (!matches(stack)) return false;
+        int tier = readTier(stack);
+        return tier == 0 || tier == targetTier;
+    }
+
+    /** 统计玩家背包中<b>可用于指定等级</b>的令牌数量。 */
+    public static int countInInventory(org.bukkit.inventory.PlayerInventory inventory, int targetTier) {
         int count = 0;
         for (ItemStack stack : inventory.getContents()) {
-            if (matches(stack)) count += stack.getAmount();
+            if (usableFor(stack, targetTier)) count += stack.getAmount();
         }
         return count;
     }
 
-    /** 从玩家背包扣除指定数量的令牌，返回是否成功（数量不足则不做任何修改） */
-    public static boolean consume(org.bukkit.inventory.PlayerInventory inventory, int amount) {
+    /**
+     * 从玩家背包扣除指定数量、<b>可用于该等级</b>的令牌，返回是否成功（数量不足则不做任何修改）。
+     * <p>
+     * 扣除时<b>优先消耗等级完全匹配的</b>，把万能的老令牌留到最后——老令牌哪一级都能用，
+     * 先花掉它等于浪费了它的通用性。
+     * </p>
+     */
+    public static boolean consume(org.bukkit.inventory.PlayerInventory inventory, int targetTier, int amount) {
         if (amount <= 0) return true;
-        if (countInInventory(inventory) < amount) return false;
+        if (countInInventory(inventory, targetTier) < amount) return false;
 
         int remaining = amount;
         ItemStack[] contents = inventory.getContents();
-        for (int i = 0; i < contents.length && remaining > 0; i++) {
-            ItemStack stack = contents[i];
-            if (!matches(stack)) continue;
-            int take = Math.min(stack.getAmount(), remaining);
-            stack.setAmount(stack.getAmount() - take);
-            if (stack.getAmount() <= 0) contents[i] = null;
-            remaining -= take;
+        // 第一轮：只扣等级精确匹配的
+        for (int pass = 0; pass < 2 && remaining > 0; pass++) {
+            boolean exactOnly = (pass == 0);
+            for (int i = 0; i < contents.length && remaining > 0; i++) {
+                ItemStack stack = contents[i];
+                if (!usableFor(stack, targetTier)) continue;
+                boolean exact = readTier(stack) == targetTier;
+                if (exactOnly != exact) continue;
+                int take = Math.min(stack.getAmount(), remaining);
+                stack.setAmount(stack.getAmount() - take);
+                if (stack.getAmount() <= 0) contents[i] = null;
+                remaining -= take;
+            }
         }
         inventory.setContents(contents);
         return true;

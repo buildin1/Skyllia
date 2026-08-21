@@ -93,7 +93,23 @@ public final class UpgradeGui {
                                                   UpgradeLevelDefinition next, Island island) {
         List<String> lore = new ArrayList<>();
         lore.add("<dark_gray>─────────");
-        lore.add("<gray>边境：" + formatSize(island.getSize()) + " → " + formatSize(next.size()) + "</gray>");
+        // 显示的目标半径必须和 UpgradeManager#performUpgrade 实际会设置的值一致：
+        // 那边取的是 max(当前半径, 配置里的目标半径)——升级永远不该把边境缩小
+        // （2026-08-22 生产事故：升级表 Lv.1~Lv.4 的半径比建岛初始值 100 还小，
+        // 升到 Lv.2 会把地从 100 缩到 70）。这里如果照抄配置原值，界面就会显示
+        // "100 → 60" 这种把玩家吓一跳、而且和实际结果对不上的预览。
+        double effectiveSize = Math.max(island.getSize(), next.size());
+        double delta = effectiveSize - island.getSize();
+        if (delta > 0) {
+            // 玩家真正关心的是"这一级能多拿多少地"，所以把增量直接写出来，不用自己做减法。
+            lore.add("<gray>边境：" + formatSize(island.getSize()) + " → "
+                    + formatSize(effectiveSize) + " <green>(+" + formatSize(delta) + ")</green></gray>");
+        } else {
+            // 配置里这一级的目标半径不比当前大 —— 升上去边境不会变。
+            // 这通常意味着 upgrades.toml 的低档位数值低于建岛初始半径（配置写错了），
+            // 如实显示"不变"，不要显示一个会缩小的数字去吓玩家。
+            lore.add("<gray>边境：" + formatSize(island.getSize()) + " <dark_gray>(本级不扩大)</dark_gray></gray>");
+        }
         lore.add("<gray>成员上限：" + island.getMaxMembers() + " → " + next.maxMembers() + "</gray>");
         lore.add("<dark_gray>─────────");
 
