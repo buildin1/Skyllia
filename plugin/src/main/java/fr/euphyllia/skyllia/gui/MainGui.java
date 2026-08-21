@@ -20,17 +20,11 @@ import java.util.UUID;
 import java.util.function.Consumer;
 
 /**
- * Skyllia 主菜单（54 格）。
+ * Skyllia 主菜单（54 格，第 1 页）。
  * <p>
- * 全功能布局：
- * <pre>
- * 行1: ▓▓▓▓ 📋信息 ▓▓ 🏠回家 ▓▓▓▓
- * 行2: ▓ 📍设家园 ▓ ⚛设出生 ▓ 🧭设访问 ▓
- * 行3: ▓ 🔓开放/私密 ▓ 📛重置名称 ▓ 📝重置描述 ▓
- * 行4: ▓ 📊服务器TPS ▓ ⚙权限列表 ▓ 🚩标记列表 ▓
- * 行5: ▓ 🌐访问空岛 ▓ 🔑成员管理 ▓ 🚷访客管理 ▓
- * 行6: ▓▓▓▓▓ ⚠危险操作 ▓ ❌关闭 ▓▓▓▓▓
- * </pre>
+ * 内容区固定在 x2y2~x8y5 矩形内，具体分组见 {@link fr.euphyllia.skyllia.gui.layout.GuiLayoutDefaults#main()}
+ * 的类图；第 1 行纯装饰。底部操作栏（行 6）：x3=危险操作、x5=关闭、x7=下一页（跳转 {@link ExtensionGui} 页 2，
+ * 页 2 提供 addon 扩展入口 + 「加入其他岛屿」+ 「群系修改」选区工具）。
  * </p>
  */
 public final class MainGui {
@@ -131,7 +125,7 @@ public final class MainGui {
 
         layout.place(inv, holder, "close", e -> player.closeInventory());
 
-        layout.place(inv, holder, "extension", e -> ExtensionGui.open(player, 0));
+        layout.place(inv, holder, "next-page", e -> ExtensionGui.open(player, 0));
 
         player.openInventory(inv);
     }

@@ -96,6 +96,7 @@ public class ListenersRegistrar {
         registerEvent(pluginManager, new FrostWalkerListener());
         registerEvent(pluginManager, new ProjectileBlockBreakListener());
         registerEvent(pluginManager, new OreDropPreventionListener());
+        registerEvent(pluginManager, new fr.euphyllia.skyllia.listeners.bukkitevents.player.BiomeSelectionToolListener());
 
         // Skyblock Events
         registerEvent(pluginManager, new SkyblockEvent(interneAPI));

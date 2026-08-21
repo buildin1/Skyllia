@@ -22,43 +22,56 @@ public final class GuiLayoutDefaults {
         return new GuiButtonDef(slot, icon, name, desc, hint, null);
     }
 
-    /** 主菜单 {@code gui/main.toml}。 */
+    /**
+     * 主菜单 {@code gui/main.toml}。
+     * <p>
+     * 内容区固定在 x2y2~x8y5（0-indexed 槽位 10-16 / 19-25 / 28-34 / 37-43）这个矩形内，
+     * 第 1 行（0-8）纯装饰，不放任何功能按钮；第 6 行（45-53）是底部操作栏。
+     * 按分组占用各行（同一行内允许留白，不要求塞满 7 格）：
+     * </p>
+     * <pre>
+     * y2（信息）      : x2=info  x3=home  x4=tps
+     * y3（位置设置）  : x2=set-home  x3=set-spawn  x4=set-visit
+     * y4（空岛设置）  : x2=access  x3=name-reset  x4=desc-reset
+     * y5（管理）      : x2=permission  x3=flag  x4=visit  x5=member  x6=visitor
+     * y6（操作栏）    : x3=danger  x5=close  x7=next-page
+     * </pre>
+     */
     public static @NotNull GuiLayout main() {
         Map<String, GuiButtonDef> b = new LinkedHashMap<>();
-        // 行 1
-        b.put("info", btn(4, Material.ENDER_CHEST,
+        // y2：信息（info/home 放在最显眼的第一行前两格）
+        b.put("info", btn(10, Material.ENDER_CHEST,
                 "<!italic><light_purple>📋 空岛信息", "查看空岛详细信息", "点击查看"));
-        b.put("home", btn(7, Material.RED_BED,
+        b.put("home", btn(11, Material.RED_BED,
                 "<!italic><light_purple>🏠 回到空岛", "传送回你的空岛", "点击传送"));
-        // 行 2：位置设置
-        b.put("set-home", btn(11, Material.GRASS_BLOCK,
-                "<!italic><light_purple>📍 设置家园点", "将当前位置设为空岛家园", "点击设置（需在空岛上）"));
-        b.put("set-spawn", btn(13, Material.RESPAWN_ANCHOR,
-                "<!italic><light_purple>⚛ 设置出生点", "将当前位置设为空岛出生点", "点击设置（需在空岛上）"));
-        b.put("set-visit", btn(15, Material.COMPASS,
-                "<!italic><light_purple>🧭 设置访问点", "访客访问空岛时的到达点", "点击设置（需在空岛上）"));
-        // 行 3：空岛设置
-        b.put("access", btn(20, Material.IRON_DOOR,
-                "<!italic><light_purple>🔓 开放/私密切换", "切换空岛是否允许访客进入", "点击切换"));
-        b.put("name-reset", btn(22, Material.NAME_TAG,
-                "<!italic><light_purple>📛 重置空岛名称", "清除自定义名称，恢复默认", "点击重置"));
-        b.put("desc-reset", btn(24, Material.WRITABLE_BOOK,
-                "<!italic><light_purple>📝 重置空岛描述", "清除自定义描述", "点击重置"));
-        // 行 4：TPS + 权限 + 标记
-        b.put("tps", btn(29, Material.CLOCK,
+        b.put("tps", btn(12, Material.CLOCK,
                 "<!italic><light_purple>📊 服务器 TPS", "查看服务器运行状态", "点击查看"));
-        b.put("permission", btn(31, Material.GOLD_NUGGET,
+        // y3：位置设置
+        b.put("set-home", btn(19, Material.GRASS_BLOCK,
+                "<!italic><light_purple>📍 设置家园点", "将当前位置设为空岛家园", "点击设置（需在空岛上）"));
+        b.put("set-spawn", btn(20, Material.RESPAWN_ANCHOR,
+                "<!italic><light_purple>⚛ 设置出生点", "将当前位置设为空岛出生点", "点击设置（需在空岛上）"));
+        b.put("set-visit", btn(21, Material.COMPASS,
+                "<!italic><light_purple>🧭 设置访问点", "访客访问空岛时的到达点", "点击设置（需在空岛上）"));
+        // y4：空岛设置
+        b.put("access", btn(28, Material.IRON_DOOR,
+                "<!italic><light_purple>🔓 开放/私密切换", "切换空岛是否允许访客进入", "点击切换"));
+        b.put("name-reset", btn(29, Material.NAME_TAG,
+                "<!italic><light_purple>📛 重置空岛名称", "清除自定义名称，恢复默认", "点击重置"));
+        b.put("desc-reset", btn(30, Material.WRITABLE_BOOK,
+                "<!italic><light_purple>📝 重置空岛描述", "清除自定义描述", "点击重置"));
+        // y5：管理（权限/标记/访问/成员/访客）
+        b.put("permission", btn(37, Material.GOLD_NUGGET,
                 "<!italic><light_purple>⚙ 权限管理", "管理各角色的操作权限", "点击打开"));
-        b.put("flag", btn(33, Material.REDSTONE_TORCH,
+        b.put("flag", btn(38, Material.REDSTONE_TORCH,
                 "<!italic><light_purple>🚩 空岛标记", "管理生物生成等空岛规则", "点击打开"));
-        // 行 5：访问 + 成员 + 访客
-        b.put("visit", btn(38, Material.OAK_DOOR,
+        b.put("visit", btn(39, Material.OAK_DOOR,
                 "<!italic><light_purple>🌐 访问其他空岛", "选择在线玩家前往其空岛", "点击打开列表"));
         b.put("member", btn(40, Material.GOLDEN_APPLE,
                 "<!italic><light_purple>🔑 成员管理", "晋升/降级/踢出/转让", "点击打开成员列表"));
-        b.put("visitor", btn(42, Material.IRON_DOOR,
+        b.put("visitor", btn(41, Material.IRON_DOOR,
                 "<!italic><light_purple>🚷 访客管理", "封禁/驱逐/解封访客", "点击打开管理列表"));
-        // 行 6
+        // y6：底部操作栏
         b.put("danger", new GuiButtonDef(47, Material.TNT,
                 "<!italic><red>⚠ 危险操作", "", "", List.of(
                 "<dark_gray>─────────",
@@ -69,15 +82,22 @@ public final class GuiLayoutDefaults {
                 "<yellow>⚠ 需要二次确认</yellow>")));
         b.put("close", new GuiButtonDef(49, Material.BARRIER,
                 "<!italic><red>✖ 关闭", "", "", List.of("<dark_gray>点击关闭菜单")));
-        b.put("extension", btn(51, Material.NETHER_STAR,
-                "<!italic><light_purple>🧩 扩展功能", "由附属模块注册的功能入口", "点击打开"));
+        // 原「扩展功能」子菜单入口改为「下一页」，key 从 extension 改名为 next-page——
+        // 存量服务器 gui/main.toml 里残留的 extension 键会变成孤儿键，自然被忽略
+        // （GuiLayoutConfigManager 只按 defaults 的 key 集合读取），无需迁移。
+        b.put("next-page", new GuiButtonDef(51, Material.NETHER_STAR,
+                "<!italic><light_purple>下一页 ▶", "", "", List.of(
+                "<dark_gray>─────────",
+                "<gray>扩展功能 / 加入其他岛屿 / 群系修改</gray>",
+                "<dark_gray>─────────",
+                "<yellow>点击翻页</yellow>")));
 
         return new GuiLayout("main",
                 "<light_purple>空岛管理",
                 54,
                 Material.PURPLE_STAINED_GLASS_PANE,
                 "<!italic><dark_gray> ",
-                List.of(0, 1, 2, 3, 5, 6, 8,
+                List.of(0, 1, 2, 3, 4, 5, 6, 7, 8,
                         9, 17, 18, 26, 27, 35, 36, 44,
                         45, 46, 48, 50, 52, 53),
                 b,

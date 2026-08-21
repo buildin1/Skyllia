@@ -57,22 +57,35 @@ public class VisitSubCommand implements SubCommandInterface {
 
         try {
             String visitPlayer = args[0];
-            UUID visitPlayerId;
+
+            // 先尝试把参数当成岛屿 ID 解析：能解析成 UUID 且 getIslandByIslandId 命中的话，
+            // 直接用这座岛，不再假设这个 UUID 一定是玩家 UUID。解析失败或查无此岛时，
+            // 退回原有逻辑（当成玩家 UUID / 玩家名查找），完全向后兼容。
+            Island island = null;
+            UUID parsedId = null;
             try {
-                visitPlayerId = UUID.fromString(visitPlayer);
+                parsedId = UUID.fromString(visitPlayer);
+                island = SkylliaAPI.getIslandByIslandId(parsedId);
             } catch (IllegalArgumentException ignored) {
-                visitPlayerId = Bukkit.getPlayerUniqueId(visitPlayer);
-            }
-            if (visitPlayerId == null) {
-                ConfigLoader.language.sendMessage(player, "island.player.not-found");
-                return;
+                // 不是合法 UUID，走玩家名分支
             }
 
-            Island island = SkylliaAPI.getIslandByPlayerId(visitPlayerId);
+            if (island == null) {
+                UUID visitPlayerId = parsedId != null ? parsedId : Bukkit.getPlayerUniqueId(visitPlayer);
+                if (visitPlayerId == null) {
+                    ConfigLoader.language.sendMessage(player, "island.player.not-found");
+                    return;
+                }
+                island = SkylliaAPI.getIslandByPlayerId(visitPlayerId);
+            }
+
             if (island == null) {
                 ConfigLoader.language.sendMessage(player, "island.visit.no-island");
                 return;
             }
+            // island 上面可能被重新赋值过（岛屿 ID 分支 / 玩家分支），下面的 lambda 需要一个
+            // 实际上的最终变量才能捕获。
+            final Island targetIsland = island;
 
             boolean bypass = SkylliaAPI.getPermissionsManager().hasPermission(player, island, ISLAND_VISIT_BYPASS_PERMISSION, null, ConfigLoader.general.getDebugSettings().permission());
 
@@ -93,7 +106,7 @@ public class VisitSubCommand implements SubCommandInterface {
             player.getScheduler().execute(plugin, () -> {
                 Location loc;
                 if (warpIsland == null || warpIsland.location() == null || warpIsland.location().getWorld() == null) {
-                    loc = RegionHelper.getCenterRegion(Bukkit.getWorld(WorldUtils.getWorldConfigs().getFirst().getWorldName()), island.getRegionCoordinate().x(), island.getRegionCoordinate().z());
+                    loc = RegionHelper.getCenterRegion(Bukkit.getWorld(WorldUtils.getWorldConfigs().getFirst().getWorldName()), targetIsland.getRegionCoordinate().x(), targetIsland.getRegionCoordinate().z());
                 } else {
                     loc = warpIsland.location().clone();
                 }
@@ -106,7 +119,7 @@ public class VisitSubCommand implements SubCommandInterface {
                     ConfigLoader.language.sendMessage(player, "island.visit.success", Map.of(
                             "%player%", visitPlayer));
 
-                    Location center = RegionHelper.getCenterRegion(loc.getWorld(), island.getRegionCoordinate().x(), island.getRegionCoordinate().z());
+                    Location center = RegionHelper.getCenterRegion(loc.getWorld(), targetIsland.getRegionCoordinate().x(), targetIsland.getRegionCoordinate().z());
 
                     WorldBorder border = player.getWorldBorder();
                     if (border == null) {
@@ -114,7 +127,7 @@ public class VisitSubCommand implements SubCommandInterface {
                     }
 
                     border.setCenter(center);
-                    border.setSize(island.getSize());
+                    border.setSize(targetIsland.getSize());
                     player.setWorldBorder(border);
                 });
             }, null, 1L);
