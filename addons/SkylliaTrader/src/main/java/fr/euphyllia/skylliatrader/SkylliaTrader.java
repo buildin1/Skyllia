@@ -19,6 +19,7 @@ import fr.euphyllia.skylliatrader.merchant.MerchantService;
 import fr.euphyllia.skylliatrader.merchant.MerchantSpawner;
 import fr.euphyllia.skylliatrader.order.OrderBoardService;
 import fr.euphyllia.skylliatrader.permission.TraderPermissions;
+import fr.euphyllia.skylliatrader.shop.RecycleService;
 import fr.euphyllia.skylliatrader.shop.ShopPurchaseService;
 import fr.euphyllia.skylliatrader.task.NaturalSpawnTask;
 import fr.euphyllia.skylliatrader.task.OrderBoardRefreshTask;
@@ -61,6 +62,7 @@ public final class SkylliaTrader extends JavaPlugin {
     private MerchantService merchantService;
     private ShopPurchaseService shopPurchaseService;
     private OrderBoardService orderBoardService;
+    private RecycleService recycleService;
 
     public static SkylliaTrader getInstance() {
         return instance;
@@ -70,7 +72,7 @@ public final class SkylliaTrader extends JavaPlugin {
     public void onEnable() {
         instance = this;
         log.warn("SkylliaTrader 目前是测试版本！（T3：商店购买 + 折扣/限购 + 管理员编辑 GUI，"
-                + "T4：商队订单看板刷新 + 一键结算 + 声望，均已可用；T5 回收标签页 / "
+                + "T4：商队订单看板刷新 + 一键结算 + 声望，T5：回收 GUI + 回收事务，均已可用；"
                 + "T6 凭证等级门槛回填尚未实现）");
 
         try {
@@ -89,6 +91,7 @@ public final class SkylliaTrader extends JavaPlugin {
         this.dataService = new TraderDataService(this);
         this.shopPurchaseService = new ShopPurchaseService(this, dataService);
         this.orderBoardService = new OrderBoardService(this, dataService);
+        this.recycleService = new RecycleService(this);
 
         MerchantKeys merchantKeys = new MerchantKeys(this);
         MerchantSpawner merchantSpawner = new MerchantSpawner(merchantKeys);
@@ -164,6 +167,11 @@ public final class SkylliaTrader extends JavaPlugin {
     /** 商队订单结算事务：扣材料 + 发奖励 + 限购/声望/每日收入计数，见 {@link OrderBoardService} 类文档。 */
     public OrderBoardService getOrderBoardService() {
         return orderBoardService;
+    }
+
+    /** 回收事务：扣物品 + 发钱，见 {@link RecycleService} 类文档。 */
+    public RecycleService getRecycleService() {
+        return recycleService;
     }
 
     /** 本插件注册的岛屿角色权限点；T2 的游商交互监听器判权限时用。 */

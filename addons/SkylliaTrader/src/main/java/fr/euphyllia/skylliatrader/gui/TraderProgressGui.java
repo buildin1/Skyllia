@@ -138,6 +138,14 @@ public final class TraderProgressGui {
                         "<yellow>点击打开</yellow>")));
         holder.bind(40, e -> fr.euphyllia.skylliatrader.gui.order.TraderOrderBoardGui.open(player));
 
+        inv.setItem(38, GuiItem.of(Material.HOPPER, "<!italic><gold>♻ 回收商品",
+                List.of("<dark_gray>─────────",
+                        "<gray>把背包里游商在卖的商品换成金币（原价的 40%）</gray>",
+                        "<gray>回收和解锁进度无关，背包里有就能卖</gray>",
+                        "<dark_gray>─────────",
+                        "<yellow>点击打开</yellow>")));
+        holder.bind(38, e -> fr.euphyllia.skylliatrader.gui.shop.MerchantRecycleGui.open(player));
+
         inv.setItem(49, GuiItem.close());
         holder.bind(49, e -> player.closeInventory());
 
