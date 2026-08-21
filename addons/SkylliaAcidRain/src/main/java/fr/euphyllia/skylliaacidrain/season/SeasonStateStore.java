@@ -50,9 +50,21 @@ public final class SeasonStateStore {
         if (cfg.get(base) == null) return null;
         return new Snapshot(
                 cfg.getOrElse(base + ".active", false),
-                cfg.getOrElse(base + ".end-full-time", 0L),
-                cfg.getOrElse(base + ".last-trigger-day-index", -1L)
+                getLong(base + ".end-full-time", 0L),
+                getLong(base + ".last-trigger-day-index", -1L)
         );
+    }
+
+    /**
+     * night-config 读 TOML 整数时具体装箱成 {@code Integer} 还是 {@code Long} 并不总是
+     * 可预期的（2026-08-21 生产日志实测命中：{@code cfg.getOrElse(path, 0L)} 的泛型类型
+     * 推断在运行时撞上 {@code ClassCastException: Integer cannot be cast to Long}）。
+     * 统一走 {@code Number} 装箱再取 {@code longValue()}，不依赖具体是哪个装箱类型，
+     * 和 {@code GuiLayoutConfigManager#getOrSetDefault} 里已经验证过的做法一致。
+     */
+    private long getLong(String path, long defaultValue) {
+        Object raw = cfg.get(path);
+        return raw instanceof Number n ? n.longValue() : defaultValue;
     }
 
     /**
