@@ -132,7 +132,23 @@ public final class ScoreDetailGui {
         lore.add("<gray>单价：<white>" + fmt(entry.value()) + "</white></gray>");
         lore.add("<dark_gray>─────────");
         lore.add("<gray>贡献分数：<green>" + fmt(entry.contribution()) + "</green></gray>");
-        return GuiItem.of(entry.material(), "<!italic><light_purple>" + materialName(entry.material()), lore);
+        return GuiItem.of(displayMaterialFor(entry.material()), "<!italic><light_purple>" + materialName(entry.material()), lore);
+    }
+
+    /**
+     * 计分表里的材质是从「岛屿方块扫描结果」直接拿来的，有些方块状态没有对应的物品形态
+     * （比如灌了水/岩浆/细雪的炼药锅——只有空炼药锅 {@code CAULDRON} 才是能拿在手里的物品，
+     * 这三种"已加内容物"的方块状态直接 {@code new ItemStack(material)} 会抛
+     * {@code IllegalArgumentException}，2026-08-21 生产服日志实测命中）。计分材料表有 800
+     * 多行、大概率是批量生成的，这里不逐条审计，直接对"不是物品"的材质统一兜底成一个可展示的
+     * 替代图标——只影响这一格图标长什么样，名字/lore 仍然显示原始材质名，计分逻辑完全不碰。
+     */
+    private static Material displayMaterialFor(Material material) {
+        if (material.isItem()) return material;
+        return switch (material) {
+            case WATER_CAULDRON, LAVA_CAULDRON, POWDER_SNOW_CAULDRON -> Material.CAULDRON;
+            default -> Material.BARRIER;
+        };
     }
 
     private static String materialName(Material material) {
