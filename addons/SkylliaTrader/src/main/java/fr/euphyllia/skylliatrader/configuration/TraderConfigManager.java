@@ -42,8 +42,26 @@ public class TraderConfigManager implements IConfigurationProvider {
      * 并对停留在旧默认值 10 上的存量配置做一次迁移（见 {@link #migrateSpawnAttemptsToAuto}）。
      */
     private static final int DEFAULT_CONFIG_VERSION = 3;
-    private static final int DEFAULT_MAX_MERCHANTS_PER_ISLAND = 3;
     private static final int DEFAULT_MAX_PER_CARAVAN = 1;
+    /**
+     * 下界商队召唤权解锁等级（HANDOFF 7.1/9.3 T6 拍板："下界商队召唤权：岛屿 20 级解锁"）。
+     * 岛屿等级低于这个数字时，即使玩家手持有效的下界凭证、名额也够，也直接拒绝召唤。
+     */
+    private static final int DEFAULT_NETHER_UNLOCK_LEVEL = 20;
+    /** 末地商队召唤权解锁等级（同上，HANDOFF 9.3："末地商队召唤权：岛屿 30 级解锁"）。 */
+    private static final int DEFAULT_END_UNLOCK_LEVEL = 30;
+    /**
+     * 凭证游商"总数天花板"默认值随岛屿等级变化的档位表（HANDOFF 7.1"凭证游商名额 1→2"，
+     * 9.3 拍板为"10 级前 1 个，10 级起 2 个"）。
+     * <p>
+     * 语义是"每跨过一个门槛，默认总数天花板 +1，起始值 1"：默认 {@code [10, 30]} 表示
+     * 等级 &lt;10 → 1，10≤等级&lt;30 → 2，等级 ≥30 → 3（等于三种商队各 1 个，
+     * 和 T1 时代写死的默认值 3 效果一致）。见 {@link #defaultCredentialSlotsForLevel(long)}。
+     * 只在岛屿从未被管理员单独设置过 {@code credentialSlots} 时才会用到这张表，
+     * 单独设置过的岛屿完全不受它影响。
+     * </p>
+     */
+    private static final List<Long> DEFAULT_CREDENTIAL_TOTAL_SLOT_LEVEL_TIERS = List.of(10L, 30L);
     private static final boolean DEFAULT_RESPAWN_ON_DEATH = true;
     private static final int DEFAULT_RESPAWN_COOLDOWN_SECONDS = 300;
     private static final int DEFAULT_CLAIM_TIMEOUT_SECONDS = 30;
@@ -142,8 +160,10 @@ public class TraderConfigManager implements IConfigurationProvider {
     private volatile TrackTiers trackTiers;
 
     private volatile int configVersion = DEFAULT_CONFIG_VERSION;
-    private volatile int maxMerchantsPerIsland = DEFAULT_MAX_MERCHANTS_PER_ISLAND;
     private volatile int maxPerCaravan = DEFAULT_MAX_PER_CARAVAN;
+    private volatile int netherUnlockLevel = DEFAULT_NETHER_UNLOCK_LEVEL;
+    private volatile int endUnlockLevel = DEFAULT_END_UNLOCK_LEVEL;
+    private volatile List<Long> credentialTotalSlotLevelTiers = DEFAULT_CREDENTIAL_TOTAL_SLOT_LEVEL_TIERS;
     private volatile boolean respawnOnDeath = DEFAULT_RESPAWN_ON_DEATH;
     private volatile int respawnCooldownSeconds = DEFAULT_RESPAWN_COOLDOWN_SECONDS;
     private volatile int claimTimeoutSeconds = DEFAULT_CLAIM_TIMEOUT_SECONDS;
@@ -201,12 +221,18 @@ public class TraderConfigManager implements IConfigurationProvider {
         List<Double> spendingTiers = getOrSetDoubleList("track.spending.tiers", DEFAULT_SPENDING_TIERS);
         this.trackTiers = new TrackTiers(tradeCountTiers, islandLevelTiers, reputationTiers, spendingTiers);
 
-        // 总名额上限：三种商队加起来最多几个常驻商人。不是主判定，见下面的 max-per-caravan。
-        this.maxMerchantsPerIsland = Math.max(0, getOrSetDefault("credential.max-merchants-per-island",
-                DEFAULT_MAX_MERCHANTS_PER_ISLAND, Integer.class));
         // 主判定：每岛「每种」商队最多几个。规格是 1，做成配置项只是为了服主将来能开活动。
         this.maxPerCaravan = Math.max(0, getOrSetDefault("credential.max-per-caravan",
                 DEFAULT_MAX_PER_CARAVAN, Integer.class));
+        // T6 等级门槛回填（HANDOFF 7.1/9.3）：下界/末地商队的召唤权解锁等级，
+        // 以及"总名额天花板"默认值随等级变化的档位表。三者都只影响
+        // TraderIslandData#credentialSlots == -1（未被管理员单独设置过）的岛屿。
+        this.netherUnlockLevel = Math.max(0, getOrSetDefault("credential.level-gate.nether-unlock-level",
+                DEFAULT_NETHER_UNLOCK_LEVEL, Integer.class));
+        this.endUnlockLevel = Math.max(0, getOrSetDefault("credential.level-gate.end-unlock-level",
+                DEFAULT_END_UNLOCK_LEVEL, Integer.class));
+        this.credentialTotalSlotLevelTiers = getOrSetLongList("credential.level-gate.total-slot-level-tiers",
+                DEFAULT_CREDENTIAL_TOTAL_SLOT_LEVEL_TIERS);
         this.respawnOnDeath = getOrSetDefault("credential.respawn-on-death",
                 DEFAULT_RESPAWN_ON_DEATH, Boolean.class);
         this.respawnCooldownSeconds = Math.max(0, getOrSetDefault("credential.respawn-cooldown-seconds",
@@ -614,14 +640,61 @@ public class TraderConfigManager implements IConfigurationProvider {
         return configVersion;
     }
 
-    /** 总名额上限（三种商队加起来）。不是主判定，见 {@link #getMaxPerCaravan()}。 */
-    public int getMaxMerchantsPerIsland() {
-        return maxMerchantsPerIsland;
-    }
-
     /** 主判定：每岛「每种」商队的常驻商人上限，规格值为 1。 */
     public int getMaxPerCaravan() {
         return maxPerCaravan;
+    }
+
+    /** 下界商队召唤权解锁等级（HANDOFF 9.3 T6，默认 20）。仅用于失败提示文案，判定走 {@link #isCaravanUnlockedAtLevel}。 */
+    public int getNetherUnlockLevel() {
+        return netherUnlockLevel;
+    }
+
+    /** 末地商队召唤权解锁等级（HANDOFF 9.3 T6，默认 30）。仅用于失败提示文案，判定走 {@link #isCaravanUnlockedAtLevel}。 */
+    public int getEndUnlockLevel() {
+        return endUnlockLevel;
+    }
+
+    /**
+     * 判断某种商队的召唤权当前是否已被这座岛屿的等级解锁（HANDOFF 7.1/9.3 T6）。
+     * 主世界商队没有等级门槛，永远为 {@code true}；下界/末地各自对应一条可配置的等级门槛。
+     * <p>
+     * <b>这条判定和 {@link #defaultCredentialSlotsForLevel(long)} 是两条完全独立的判定</b>：
+     * 前者管"这种商队现在能不能召唤"，后者管"这座岛总共能留几个常驻商人"，任一条不满足都要
+     * 拒绝召唤，调用方（{@code MerchantService}）在 CAS 占位阶段和转正阶段都要把两条各查一遍。
+     * </p>
+     */
+    public boolean isCaravanUnlockedAtLevel(CaravanType caravan, long islandLevel) {
+        return switch (caravan) {
+            case OVERWORLD -> true;
+            case NETHER -> islandLevel >= netherUnlockLevel;
+            case END -> islandLevel >= endUnlockLevel;
+        };
+    }
+
+    /** 某种商队召唤权所需的最低岛屿等级，只用于拼失败提示文案；主世界没有门槛，返回 0。 */
+    public int requiredUnlockLevel(CaravanType caravan) {
+        return switch (caravan) {
+            case OVERWORLD -> 0;
+            case NETHER -> netherUnlockLevel;
+            case END -> endUnlockLevel;
+        };
+    }
+
+    /**
+     * 按岛屿等级算出"总数天花板"的默认值（HANDOFF 7.1/9.3 T6："10 级前 1 个，10 级起 2 个"，
+     * 30 级起 3 个）。<b>只应该在 {@code TraderIslandData#credentialSlots == -1}
+     * （未被管理员单独设置过）时调用</b>——已经被单独设置过的岛屿走
+     * {@code TraderIslandData#effectiveCredentialSlots(int)} 的另一条分支，这张表对它们不生效。
+     */
+    public int defaultCredentialSlotsForLevel(long islandLevel) {
+        int slots = 1;
+        for (long threshold : credentialTotalSlotLevelTiers) {
+            if (islandLevel >= threshold) {
+                slots++;
+            }
+        }
+        return slots;
     }
 
     /** CAS 占位的存活时长（秒）；超时的占位视为崩溃残留，可被新召唤顶掉。 */

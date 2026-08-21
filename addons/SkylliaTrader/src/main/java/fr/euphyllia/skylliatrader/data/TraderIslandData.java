@@ -41,9 +41,14 @@ public class TraderIslandData {
     /**
      * 本岛的游商<b>总</b>名额上限（三种商队加起来最多几个常驻商人）。
      * <p>
-     * <b>{@code -1} 表示"本岛从未被单独发放/回收过凭证"</b>，此时一律回退到 config.toml 的
-     * {@code credential.max-merchants-per-island}（见 {@link #effectiveCredentialSlots(int)}）。
-     * 之所以不用 0 当"未初始化"：T4 要做的是"按岛发放/回收凭证"，届时 0 是一个合法值
+     * <b>{@code -1} 表示"本岛从未被单独发放/回收过凭证"</b>，此时一律回退到按岛屿等级
+     * 动态算出来的默认值（{@code TraderConfigManager#defaultCredentialSlotsForLevel(long)}，
+     * 见 {@link #effectiveCredentialSlots(int)}）。T6 之前这里回退的是 config.toml 里一个
+     * 写死的静态数字（{@code credential.max-merchants-per-island}）；T6 起改成按当前岛屿
+     * 等级算（HANDOFF 7.1/9.3："10 级前 1 个，10 级起 2 个，30 级起 3 个"），
+     * {@link #effectiveCredentialSlots(int)} 本身"有单独记录就用记录值"这条分支完全不变，
+     * 变的只是调用方传进来的默认值参数从哪来。
+     * 之所以不用 0 当"未初始化"：T4 已经做了"按岛发放/回收凭证"，0 是一个合法值
      * （表示这座岛的凭证被管理员收光了），必须和"没记录过"区分开；而且如果用 0 当哨兵，
      * 所有存量岛屿反序列化后都会拿到 0，等于一次静默的全服凭证清零。
      * </p>
@@ -52,8 +57,9 @@ public class TraderIslandData {
      * config.toml 的 {@code credential.max-per-caravan}（见 {@link #occupiedSlots(long)} 的调用方
      * {@code MerchantService}）。总名额只是叠在分类型上限之上的一道额外天花板，
      * 用来支撑 HANDOFF.md 7.1 里「岛屿等级 10-20 级：凭证游商名额 1→2」这类按岛调整的玩法：
-     * 默认 3 = 三种商队各 1 个，等于不生效；调成 2 就表示这座岛只能同时留 2 个常驻商人，
-     * 至于是哪两种由玩家自己选。<b>两条上限是「与」的关系，任何一条不满足都召唤失败。</b>
+     * 等级 ≥30 级时默认值为 3 = 三种商队各 1 个，等于不生效；被管理员单独调成 2 就表示这座岛
+     * 只能同时留 2 个常驻商人，至于是哪两种由玩家自己选。
+     * <b>两条上限是「与」的关系，任何一条不满足都召唤失败。</b>
      * </p>
      */
     public int credentialSlots = -1;
@@ -133,12 +139,16 @@ public class TraderIslandData {
     public DailyOrderReputation dailyOrderReputation = new DailyOrderReputation();
 
     /**
-     * 本岛实际生效的凭证槽位数：有单独记录时用记录值，{@code -1}（未初始化）时回退到配置默认值。
+     * 本岛实际生效的凭证槽位数：有单独记录时用记录值，{@code -1}（未初始化）时回退到默认值。
      *
-     * @param configuredDefault config.toml 的 {@code credential.max-merchants-per-island}
+     * @param defaultSlots 未被管理员单独设置过时使用的默认值。T6 起调用方应该传
+     *                      {@code TraderConfigManager#defaultCredentialSlotsForLevel(long)}
+     *                      按当前岛屿等级算出来的结果，而不是 config.toml 里的静态数字——
+     *                      这个方法本身不关心默认值是怎么算出来的，只负责"有记录就用记录值"
+     *                      这一条分支。
      */
-    public int effectiveCredentialSlots(int configuredDefault) {
-        return credentialSlots < 0 ? configuredDefault : credentialSlots;
+    public int effectiveCredentialSlots(int defaultSlots) {
+        return credentialSlots < 0 ? defaultSlots : credentialSlots;
     }
 
     /**

@@ -8,10 +8,11 @@ import java.util.Locale;
  * 三种商队。每种对应一张独立的凭证，也对应一套独立的供货范围（见 HANDOFF.md 6.3）。
  * <p>
  * <b>「每岛每种商队最多 1 个」是按这个枚举计数的</b>，不是按「游商实体总数」——
- * T1 的 {@code credential.max-merchants-per-island = 3} 只是一个笼统的总数上限，
- * 和规格要求的「三种各 1 个」不是一回事：光有总数上限的话，一个玩家连用三张主世界凭证
- * 就能占满三个名额，而下界/末地商队永远召不出来。T2 起分类型上限
- * （{@code credential.max-per-caravan}）才是主判定，总数上限退化为一道额外的天花板。
+ * T1 时代靠一个笼统的总数上限（写死为 3）区分不出「三种各 1 个」，光有总数上限的话，
+ * 一个玩家连用三张主世界凭证就能占满三个名额，而下界/末地商队永远召不出来。T2 起分类型上限
+ * （{@code credential.max-per-caravan}）才是主判定，总数上限退化为一道额外的天花板；
+ * T6 起这道天花板的默认值不再是写死的静态数字，改成按岛屿等级动态计算
+ * （{@code TraderConfigManager#defaultCredentialSlotsForLevel(long)}，HANDOFF 7.1/9.3）。
  * </p>
  * <p>
  * 枚举名会被写进岛屿数据的 JSON（{@code MerchantRecord.caravan}）和实体 PDC，

@@ -5,6 +5,7 @@ import fr.euphyllia.skyllia.api.configuration.WorldConfig;
 import fr.euphyllia.skyllia.api.permissions.FlagId;
 import fr.euphyllia.skyllia.api.skyblock.Island;
 import fr.euphyllia.skylliatrader.SkylliaTrader;
+import fr.euphyllia.skylliatrader.bridge.IslandLevelBridge;
 import fr.euphyllia.skylliatrader.configuration.TraderConfigLoader;
 import fr.euphyllia.skylliatrader.configuration.TraderConfigManager;
 import fr.euphyllia.skylliatrader.configuration.model.CredentialItemSpec;
@@ -171,6 +172,8 @@ public final class MerchantService {
     private enum ClaimResult {
         /** 占位成功。 */
         OK,
+        /** 这个商队类型还没被岛屿等级解锁（HANDOFF 9.3 T6：下界 20 级 / 末地 30 级）。 */
+        CARAVAN_LOCKED,
         /** 这座岛已经有同种商队的商人（或另一名成员的占位正在进行中）。 */
         ALREADY_HAVE,
         /** 分类型上限没满，但总名额满了。 */
@@ -251,6 +254,11 @@ public final class MerchantService {
             return;
         }
 
+        // T6（HANDOFF 7.1/9.3）：岛屿等级门槛。IslandLevelBridge 是同步阻塞读取
+        // （见该类文档），必须在临界区外读好、作为快照传进 compute 的 lambda，
+        // 不能在 lambda 内部现读——临界区不允许做任何阻塞 IO。
+        long islandLevel = IslandLevelBridge.isAvailable() ? IslandLevelBridge.getIslandLevel(island) : 0L;
+
         // ── CAS 占位 ──────────────────────────────────────────────────────
         // 判定与写入在同一个 island 锁里完成，两名成员同时用凭证只有一个能拿到 OK。
         String claimId = UUID.randomUUID().toString();
@@ -269,16 +277,23 @@ public final class MerchantService {
             // 于是 JSON 里的 merchants 数组只增不减。放在这里做是因为这里已经持有 island 锁，
             // 不用为了清垃圾额外开一条读写路径。
             // ⚠️ 但这次 removeIf 只有在本次 compute 最终走 Mutation.commit（也就是占位成功）
-            // 时才落库；下面三条 readOnly 分支（ALREADY_HAVE / TOTAL_FULL / COOLDOWN）会把
-            // 整个 data 对象连同这次清理一起丢掉（load() 每次都从 PDC 重新反序列化，没有缓存）。
+            // 时才落库；下面几条 readOnly 分支会把整个 data 对象连同这次清理一起丢掉
+            // （load() 每次都从 PDC 重新反序列化，没有缓存）。
             // 这不影响正确性：过期占位在所有判定里本来就不占名额，而「确实需要靠清理才腾得出
             // 名额」的那一次召唤必然走到 OK 并 commit，垃圾就在那一次被顺手带走。
             data.merchants.removeIf(r -> r.isClaim() && r.claimExpiresAt > 0 && r.claimExpiresAt <= now);
 
+            // T6 判定一：这个商队类型有没有被岛屿等级解锁。和下面的总名额天花板是两条独立判定
+            // （HANDOFF 9.3 硬规则），谁不满足都直接拒绝，不占位、不消耗凭证。
+            if (!cfg.isCaravanUnlockedAtLevel(caravan, islandLevel)) {
+                return TraderDataService.Mutation.readOnly(ClaimResult.CARAVAN_LOCKED);
+            }
             if (data.occupiedSlotsFor(caravan.name(), now) >= cfg.getMaxPerCaravan()) {
                 return TraderDataService.Mutation.readOnly(ClaimResult.ALREADY_HAVE);
             }
-            if (data.occupiedSlots(now) >= data.effectiveCredentialSlots(cfg.getMaxMerchantsPerIsland())) {
+            // T6 判定二：总名额天花板。未被管理员单独设置过（-1）的岛屿，默认值不再是
+            // config.toml 里写死的数字，改成按 islandLevel 动态算（见方法文档）。
+            if (data.occupiedSlots(now) >= data.effectiveCredentialSlots(cfg.defaultCredentialSlotsForLevel(islandLevel))) {
                 return TraderDataService.Mutation.readOnly(ClaimResult.TOTAL_FULL);
             }
             if (cooldownMillis > 0 && data.lastMerchantDeathAt > 0
@@ -294,6 +309,12 @@ public final class MerchantService {
         });
 
         switch (result) {
+            case CARAVAN_LOCKED -> {
+                fail(player, "§e" + caravan.defaultDisplayName() + "§e需要岛屿达到 §f"
+                        + cfg.requiredUnlockLevel(caravan) + " §e级才能召唤（当前 §f" + islandLevel
+                        + " §e级），凭证没有被消耗。");
+                return;
+            }
             case ALREADY_HAVE -> {
                 fail(player, "§e你的岛上已经有一个§f" + caravan.defaultDisplayName()
                         + "§e了，凭证没有被消耗。");
@@ -389,6 +410,8 @@ public final class MerchantService {
         CLAIM_GONE,
         /** 占位还在，但已经超过 claim-timeout —— 它此刻已经不占名额，不能再转正。 */
         CLAIM_EXPIRED,
+        /** 占位期间岛屿等级掉到了这个商队类型的解锁门槛以下（T6，HANDOFF 9.3）。 */
+        CARAVAN_LOCKED,
         /** 占位超时期间名额被别人（合法地）占走了，转正会造出第二个同种商人。 */
         SLOT_TAKEN,
         /** 写库失败。 */
@@ -407,9 +430,11 @@ public final class MerchantService {
      * 「每岛每种商队最多 1 个」这条硬规格，而且残留的双商人没有任何自动清理路径。
      * </p>
      * <p>
-     * 所以这里必须在<b>同一个 island 锁的临界区</b>里复核两件事：
-     * ①这条占位此刻还占着名额（没超时）；②把自己这条排除掉之后，该商队的上限和该岛的总上限
-     * 都还有空位。任一条不满足就走回滚，<b>凭证不扣</b>——这也正是规格
+     * 所以这里必须在<b>同一个 island 锁的临界区</b>里复核三件事：
+     * ①这条占位此刻还占着名额（没超时）；②这个商队类型此刻仍然被岛屿等级解锁（T6，HANDOFF 9.3，
+     * 占位期间岛屿完全可能掉级）；③把自己这条排除掉之后，该商队的上限和该岛的总上限（总上限的
+     * 默认值同样要按<b>此刻</b>的岛屿等级重新算，不能沿用占位阶段的旧快照）都还有空位。
+     * 任一条不满足就走回滚，<b>凭证不扣</b>——这也正是规格
      * 「CAS 占位 → 生成成功 → 才消耗凭证」在失败分支上要求的行为。
      * </p>
      */
@@ -417,6 +442,10 @@ public final class MerchantService {
                                      String claimId, UUID entityId, Location spawnedAt, WanderingTrader trader) {
         TraderConfigManager cfg = TraderConfigLoader.config;
         long now = System.currentTimeMillis();
+        // T6：和占位阶段一样，等级要在临界区外读好再传进去（IslandLevelBridge 是同步阻塞读取）。
+        // 占位与转正之间隔着「加载区块 + 扫方块 + 生成实体」，理论上够长到让岛屿等级发生变化
+        // （比如恰好在这几十毫秒内掉级），所以这里必须重新读一次，不能沿用占位阶段的旧值。
+        long islandLevel = IslandLevelBridge.isAvailable() ? IslandLevelBridge.getIslandLevel(island) : 0L;
 
         PromoteResult promoted = dataService.compute(island, data -> {
             MerchantRecord record = data.findByClaimId(claimId);
@@ -442,10 +471,15 @@ public final class MerchantService {
                         island.getId(), claimId, record.caravan, caravan.name());
                 return TraderDataService.Mutation.readOnly(PromoteResult.CLAIM_GONE);
             }
+            // T6 权威复核（HANDOFF 9.3 硬规则：占位阶段查一遍，转正临界区权威复核一遍，
+            // 不信任占位阶段的结果）：占位期间岛屿等级完全可能掉到解锁线以下。
+            if (!cfg.isCaravanUnlockedAtLevel(caravan, islandLevel)) {
+                return TraderDataService.Mutation.readOnly(PromoteResult.CARAVAN_LOCKED);
+            }
             int othersSameCaravan = data.occupiedSlotsFor(caravan.name(), now) - 1;
             int othersTotal = data.occupiedSlots(now) - 1;
             if (othersSameCaravan >= cfg.getMaxPerCaravan()
-                    || othersTotal >= data.effectiveCredentialSlots(cfg.getMaxMerchantsPerIsland())) {
+                    || othersTotal >= data.effectiveCredentialSlots(cfg.defaultCredentialSlotsForLevel(islandLevel))) {
                 return TraderDataService.Mutation.readOnly(PromoteResult.SLOT_TAKEN);
             }
             record.promote(entityId, spawnedAt.getWorld().getName(),
@@ -454,7 +488,7 @@ public final class MerchantService {
         });
 
         if (promoted != PromoteResult.OK) {
-            // 四种失败的处理动作完全一样：摘掉「正在记账」登记 → 回收实体 + 删占位 → 不扣凭证。
+            // 五种失败的处理动作完全一样：摘掉「正在记账」登记 → 回收实体 + 删占位 → 不扣凭证。
             // 区别只在给玩家的那句话，所以先统一做动作，再按原因分支写提示。
             finishPending(entityId);
             rollback(island, claimId, trader);
@@ -469,6 +503,13 @@ public final class MerchantService {
                             island.getId(), claimId);
                     fail(player, "§e召唤超时：生成商人花的时间超过了名额占位的有效期（"
                             + cfg.getClaimTimeoutSeconds() + " 秒），凭证没有被消耗，请稍后重试。");
+                }
+                case CARAVAN_LOCKED -> {
+                    log.warn("岛屿 {} 的凭证游商转正失败：{} 在生成期间掉出了等级解锁线（当前 {} 级），已回收实体",
+                            island.getId(), caravan, islandLevel);
+                    fail(player, "§e召唤已取消：" + caravan.defaultDisplayName() + "§e需要岛屿达到 §f"
+                            + cfg.requiredUnlockLevel(caravan) + " §e级才能召唤，你的岛屿在生成过程中变成了 §f"
+                            + islandLevel + " §e级，没有达到要求，凭证没有被消耗。");
                 }
                 case SLOT_TAKEN -> {
                     log.warn("岛屿 {} 的凭证游商转正失败：占位 {} 超时期间名额已被其他成员占用，已回收实体",

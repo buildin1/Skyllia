@@ -7,8 +7,10 @@ import fr.euphyllia.skyllia.gui.SkylliaGuiHolder;
 import fr.euphyllia.skylliatrader.SkylliaTrader;
 import fr.euphyllia.skylliatrader.bridge.IslandLevelBridge;
 import fr.euphyllia.skylliatrader.configuration.TraderConfigLoader;
+import fr.euphyllia.skylliatrader.configuration.TraderConfigManager;
 import fr.euphyllia.skylliatrader.configuration.model.TrackTiers;
 import fr.euphyllia.skylliatrader.data.TraderIslandData;
+import fr.euphyllia.skylliatrader.merchant.CaravanType;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
@@ -16,6 +18,7 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -122,8 +125,7 @@ public final class TraderProgressGui {
         inv.setItem(20, buildLongTrackItem(Material.GOLD_INGOT, "累计交易次数", "交易次数",
                 data.tradeCount, tiers.tradeCount(), "开放基础生活物资池", true));
 
-        inv.setItem(22, buildLongTrackItem(Material.GRASS_BLOCK, "岛屿等级", "岛屿等级",
-                islandLevel, tiers.islandLevel(), "开放建材大宗商品", levelTrackAvailable));
+        inv.setItem(22, buildIslandLevelTrackItem(data, tiers, islandLevel, levelTrackAvailable));
 
         inv.setItem(24, buildLongTrackItem(Material.NETHER_STAR, "商会声望", "商会声望",
                 data.reputation, tiers.reputation(), "开放钻石/下界合金/下界之星等稀有物资", true));
@@ -182,6 +184,52 @@ public final class TraderProgressGui {
         lore.add("<dark_gray>─────────");
         lore.add("<gray>解锁内容：<white>" + unlockDesc + "</white></gray>");
         return GuiItem.of(material, "<!italic><light_purple>" + label, lore);
+    }
+
+    /**
+     * 岛屿等级轨道的展示物品：在通用的 {@link #buildLongTrackItem} 基础上追加 T6 等级门槛信息
+     * （HANDOFF 7.1/9.3）——凭证游商总名额天花板、下界/末地商队召唤权还差几级解锁。
+     * 只追加不重写，避免和其余三条轨道共用的通用 lore 逻辑分叉出两份。
+     */
+    private static ItemStack buildIslandLevelTrackItem(@NotNull TraderIslandData data, @NotNull TrackTiers tiers,
+                                                        long islandLevel, boolean trackAvailable) {
+        ItemStack item = buildLongTrackItem(Material.GRASS_BLOCK, "岛屿等级", "岛屿等级",
+                islandLevel, tiers.islandLevel(), "开放建材大宗商品", trackAvailable);
+        if (!trackAvailable) {
+            // 轨道本身都读不到（没装 SkylliaIslandLevel），再补等级门槛信息只会误导玩家。
+            return item;
+        }
+
+        TraderConfigManager cfg = TraderConfigLoader.config;
+        List<String> extra = new ArrayList<>();
+        extra.add("<dark_gray>─────────");
+        extra.add("<gray>凭证游商总名额上限：<white>"
+                + data.effectiveCredentialSlots(cfg.defaultCredentialSlotsForLevel(islandLevel)) + "</white></gray>");
+        if (data.credentialSlots >= 0) {
+            extra.add("<gray>（管理员已为本岛单独设置，不随等级变化）</gray>");
+        }
+        extra.add(cfg.isCaravanUnlockedAtLevel(CaravanType.NETHER, islandLevel)
+                ? "<green>下界商队召唤权：已解锁</green>"
+                : "<yellow>下界商队召唤权：还差 <white>"
+                        + (cfg.getNetherUnlockLevel() - islandLevel) + "</white> 级解锁</yellow>");
+        extra.add(cfg.isCaravanUnlockedAtLevel(CaravanType.END, islandLevel)
+                ? "<green>末地商队召唤权：已解锁</green>"
+                : "<yellow>末地商队召唤权：还差 <white>"
+                        + (cfg.getEndUnlockLevel() - islandLevel) + "</white> 级解锁</yellow>");
+
+        ItemMeta meta = item.getItemMeta();
+        if (meta != null) {
+            List<Component> lore = new ArrayList<>();
+            if (meta.lore() != null) {
+                lore.addAll(meta.lore());
+            }
+            for (String line : extra) {
+                lore.add(MM.deserialize(line));
+            }
+            meta.lore(lore);
+            item.setItemMeta(meta);
+        }
+        return item;
     }
 
     private static ItemStack buildSpendingTrackItem(double value, List<Double> tierList) {
