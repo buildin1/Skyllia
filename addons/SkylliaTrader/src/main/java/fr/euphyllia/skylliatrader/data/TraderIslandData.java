@@ -126,6 +126,13 @@ public class TraderIslandData {
     public DailyOrderIncome dailyOrderIncome = new DailyOrderIncome();
 
     /**
+     * 本岛"今日通过商队订单获得的声望总额"（2026-08-21 T4 审查后补，见 {@link DailyOrderReputation}
+     * 类文档）。判定与累加同样必须在 {@code TraderDataService#compute} 的同一个临界区内完成，
+     * 理由和 {@link #dailyOrderIncome} 完全一样。
+     */
+    public DailyOrderReputation dailyOrderReputation = new DailyOrderReputation();
+
+    /**
      * 本岛实际生效的凭证槽位数：有单独记录时用记录值，{@code -1}（未初始化）时回退到配置默认值。
      *
      * @param configuredDefault config.toml 的 {@code credential.max-merchants-per-island}

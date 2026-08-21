@@ -144,12 +144,17 @@ public final class OrderBoardRefreshTask {
                 slot.orderId = null;
                 slot.assignedAt = 0L;
                 slot.expiresAt = 0L;
+                slot.lastRedeemedAt = 0L;
                 continue;
             }
 
             slot.orderId = picked.id();
             slot.assignedAt = now;
             slot.expiresAt = now + refreshMillis;
+            // 换了一条新订单绑定这个槽位，之前那条订单在这个槽位上留下的冷却戳记不该延续到
+            // 新订单头上——否则玩家会遇到"这个槽位明明是刚刚才换的新订单，却提示还在冷却"
+            // 这种莫名其妙的体验（2026-08-21 T4 补每日声望上限时一并发现并修正）。
+            slot.lastRedeemedAt = 0L;
             alreadyBound.add(picked.id());
         }
     }

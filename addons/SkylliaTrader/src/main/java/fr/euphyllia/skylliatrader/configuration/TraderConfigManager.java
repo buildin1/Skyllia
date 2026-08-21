@@ -75,6 +75,21 @@ public class TraderConfigManager implements IConfigurationProvider {
     /** 订单看板巡检间隔（分钟）。判定口径是"是否已过期"，跑得比 refresh-hours 频繁得多也没问题，
      *  只要别频繁到对数据库造成不必要压力——15 分钟对一个 6 小时的刷新周期来说粒度足够细。 */
     private static final int DEFAULT_ORDER_BOARD_CHECK_INTERVAL_MINUTES = 15;
+    /**
+     * 每岛每日通过订单获得的<b>声望</b>总额上限（2026-08-21 T4 审查后补，与
+     * {@link #DEFAULT_DAILY_ORDER_INCOME_CAP} 对货币做的事对称）。200 是按审查给出的"最坏情况
+     * 理论产出"（3 槽位、每 6 小时刷新、每次都恰好抽到大额档 40 声望 ≈ 480/天）打了个折扣、
+     * 又比 HANDOFF 6.4"到 3000 声望约需 75-200 个大订单"（对应几天到几周量级）留出余量算出来的，
+     * 200/天意味着理论最快约 15 天到顶——比原设计意图略快，但不会再出现"十分钟刷穿"这种量级。
+     */
+    private static final long DEFAULT_DAILY_ORDER_REPUTATION_CAP = 200L;
+    /**
+     * 同一个订单槽位两次结算之间的最短间隔（秒，2026-08-21 T4 审查后补）。每日声望/货币上限
+     * 锁的是"总量"，这个锁的是"频率"——没有这道闸门，玩家理论上可以在触达每日上限之前的
+     * 短短几秒钟内就把当天的额度全部刷完，体验上和"没有上限"没有本质区别。30 秒足够让
+     * "点一下、看结果、再点下一次"这种正常交互不受影响，但能挡住脚本/连点式的高频刷新。
+     */
+    private static final int DEFAULT_SLOT_REDEEM_COOLDOWN_SECONDS = 30;
 
     private static final boolean DEFAULT_NATURAL_ENABLED = true;
     private static final int DEFAULT_NATURAL_CHECK_INTERVAL_SECONDS = 60;
@@ -159,6 +174,8 @@ public class TraderConfigManager implements IConfigurationProvider {
     private volatile int orderSlotsPerIsland = DEFAULT_ORDER_SLOTS_PER_ISLAND;
     private volatile int orderRefreshHours = DEFAULT_ORDER_REFRESH_HOURS;
     private volatile double dailyOrderIncomeCap = DEFAULT_DAILY_ORDER_INCOME_CAP;
+    private volatile long dailyOrderReputationCap = DEFAULT_DAILY_ORDER_REPUTATION_CAP;
+    private volatile int slotRedeemCooldownSeconds = DEFAULT_SLOT_REDEEM_COOLDOWN_SECONDS;
     private volatile int orderBoardCheckIntervalMinutes = DEFAULT_ORDER_BOARD_CHECK_INTERVAL_MINUTES;
 
     public TraderConfigManager(CommentedFileConfig config) {
@@ -249,6 +266,12 @@ public class TraderConfigManager implements IConfigurationProvider {
                 DEFAULT_ORDER_REFRESH_HOURS, Integer.class));
         this.dailyOrderIncomeCap = Math.max(0.0, getOrSetDefault("order-board.daily-order-income-cap",
                 DEFAULT_DAILY_ORDER_INCOME_CAP, Double.class));
+        this.dailyOrderReputationCap = Math.max(0L, getOrSetDefault("order-board.daily-reputation-cap",
+                DEFAULT_DAILY_ORDER_REPUTATION_CAP, Long.class));
+        // 下限夹到 0：写成负数没有意义，0 表示"完全不能重复结算同一个槽位直到它自然过期"
+        // （不是"不冷却"——不冷却应该配一个很小的正数，比如 1 秒，而不是 0）。
+        this.slotRedeemCooldownSeconds = Math.max(0, getOrSetDefault("order-board.slot-redeem-cooldown-seconds",
+                DEFAULT_SLOT_REDEEM_COOLDOWN_SECONDS, Integer.class));
         // 巡检间隔和 natural-spawn.check-interval-seconds 一样，只在【启动时】读一次就固定了，
         // /skyllia reload 改不了巡检频率，需要重启。
         this.orderBoardCheckIntervalMinutes = Math.max(1, getOrSetDefault("order-board.check-interval-minutes",
@@ -698,6 +721,16 @@ public class TraderConfigManager implements IConfigurationProvider {
     /** 每岛每日通过订单获得的货币总额上限，超过部分只给声望不给钱。 */
     public double getDailyOrderIncomeCap() {
         return dailyOrderIncomeCap;
+    }
+
+    /** 每岛每日通过订单获得的声望总额上限，超过部分订单依然算完成、材料依然被扣，只是不再加声望。 */
+    public long getDailyOrderReputationCap() {
+        return dailyOrderReputationCap;
+    }
+
+    /** 同一个订单槽位两次结算之间的最短间隔（秒），防止对着同一个未变化的槽位反复点击刷声望。 */
+    public int getSlotRedeemCooldownSeconds() {
+        return slotRedeemCooldownSeconds;
     }
 
     /** 订单看板巡检间隔（分钟）；启动时读一次就固定，reload 不生效，需要重启。 */

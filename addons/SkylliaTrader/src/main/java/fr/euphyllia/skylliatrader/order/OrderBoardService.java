@@ -10,6 +10,7 @@ import fr.euphyllia.skylliatrader.configuration.model.ItemAmount;
 import fr.euphyllia.skylliatrader.configuration.model.OrderDefinition;
 import fr.euphyllia.skylliatrader.configuration.model.OrderType;
 import fr.euphyllia.skylliatrader.data.DailyOrderIncome;
+import fr.euphyllia.skylliatrader.data.DailyOrderReputation;
 import fr.euphyllia.skylliatrader.data.OrderSlotState;
 import fr.euphyllia.skylliatrader.data.TraderDataService;
 import fr.euphyllia.skylliatrader.data.TraderIslandData;
@@ -106,13 +107,14 @@ public final class OrderBoardService {
      * 最新订单定义</b>（不是玩家点击那一刻的快照）——价格/奖励可能在这中间被管理员改过，
      * 发放奖励必须以临界区判定时刻为准。
      */
-    private record Settlement(boolean ok, String failMessage, OrderDefinition order, double moneyAwarded) {
+    private record Settlement(boolean ok, String failMessage, OrderDefinition order,
+                               double moneyAwarded, long reputationAwarded) {
         static Settlement fail(String message) {
-            return new Settlement(false, message, null, 0.0);
+            return new Settlement(false, message, null, 0.0, 0L);
         }
 
-        static Settlement ok(OrderDefinition order, double moneyAwarded) {
-            return new Settlement(true, null, order, moneyAwarded);
+        static Settlement ok(OrderDefinition order, double moneyAwarded, long reputationAwarded) {
+            return new Settlement(true, null, order, moneyAwarded, reputationAwarded);
         }
     }
 
@@ -319,6 +321,16 @@ public final class OrderBoardService {
                 && data.completionCount(liveOrder.id()) >= liveOrder.redeemLimitPerIsland()) {
             return TraderDataService.Mutation.readOnly(Settlement.fail("§c这条订单本岛的限购已经用完了，材料已退还。"));
         }
+        // 同槽位冷却（2026-08-21 T4 审查后补）：锁的是"频率"，和上面几条锁"资格/总量"的判定
+        // 是两件事——哪怕限购、每日上限都还没用完，短时间内对着同一个槽位反复点击也要被挡住，
+        // 否则玩家能在触达每日声望/货币上限之前的几秒钟内就把当天额度全部刷完。
+        int cooldownSeconds = TraderConfigLoader.config.getSlotRedeemCooldownSeconds();
+        if (cooldownSeconds > 0 && slot.lastRedeemedAt > 0
+                && now - slot.lastRedeemedAt < cooldownSeconds * 1000L) {
+            long waitSeconds = (cooldownSeconds * 1000L - (now - slot.lastRedeemedAt) + 999) / 1000;
+            return TraderDataService.Mutation.readOnly(
+                    Settlement.fail("§c这个槽位刚交付过，请等 " + waitSeconds + " 秒再试（材料已退还）。"));
+        }
 
         double moneyAwarded = 0.0;
         if (liveOrder.type() == OrderType.MONEY) {
@@ -333,10 +345,26 @@ public final class OrderBoardService {
             income.amount = ShopEconomics.round2(income.amount + moneyAwarded);
         }
 
-        data.orderCompletions.merge(liveOrder.id(), 1, Integer::sum);
-        data.reputation += liveOrder.rewardReputation();
+        long reputationAwarded = 0L;
+        if (liveOrder.rewardReputation() > 0) {
+            DailyOrderReputation repIncome = data.dailyOrderReputation;
+            if (repIncome.windowStartAt == 0L || now - repIncome.windowStartAt > DAY_MILLIS) {
+                repIncome.amount = 0L;
+                repIncome.windowStartAt = now;
+            }
+            long repCap = TraderConfigLoader.config.getDailyOrderReputationCap();
+            long remainingRepCap = Math.max(0L, repCap - repIncome.amount);
+            reputationAwarded = Math.min(liveOrder.rewardReputation(), remainingRepCap);
+            repIncome.amount += reputationAwarded;
+        }
 
-        Settlement ok = Settlement.ok(liveOrder, moneyAwarded);
+        data.orderCompletions.merge(liveOrder.id(), 1, Integer::sum);
+        data.reputation += reputationAwarded;
+        // 冷却戳记只在真正走到 commit 的这一刻写入；后面如果发放奖励失败被回滚，
+        // 这个时间戳依然保留（见 OrderSlotState#lastRedeemedAt 的类文档，理由是刻意的）。
+        slot.lastRedeemedAt = now;
+
+        Settlement ok = Settlement.ok(liveOrder, moneyAwarded, reputationAwarded);
         return TraderDataService.Mutation.commit(ok,
                 Settlement.fail("§c数据保存失败，请稍后重试或联系管理员（材料已退还）。"));
     }
@@ -385,7 +413,7 @@ public final class OrderBoardService {
 
             // player.sendMessage 是线程安全的（ShopPurchaseService 已有同样的用法），
             // 这条消息又不碰背包，不需要跳回玩家线程。
-            notifySuccessMoney(player, order, settlement.moneyAwarded());
+            notifySuccessMoney(player, order, settlement.moneyAwarded(), settlement.reputationAwarded());
             inFlight.remove(playerId);
             return;
         }
@@ -422,7 +450,7 @@ public final class OrderBoardService {
 
             if (delivered) {
                 try {
-                    notifySuccessBarter(player, order);
+                    notifySuccessBarter(player, order, settlement.reputationAwarded());
                 } catch (Throwable ex) {
                     // 奖励已经真的发出去了，这里出错只记日志，绝不能再触发退款/回滚。
                     log.error("玩家 {} 结算订单 '{}' 成功但播报结果消息时出错（不影响交易本身）",
@@ -438,7 +466,7 @@ public final class OrderBoardService {
         }
     }
 
-    private void notifySuccessMoney(Player player, OrderDefinition order, double moneyAwarded) {
+    private void notifySuccessMoney(Player player, OrderDefinition order, double moneyAwarded, long reputationAwarded) {
         StringBuilder msg = new StringBuilder("§a订单交付成功：§f" + order.displayName());
         if (moneyAwarded > 0) {
             msg.append("§a，获得 §f").append(GuiFormat.fmt(moneyAwarded)).append(" §a金币");
@@ -448,19 +476,28 @@ public final class OrderBoardService {
                     ? "§e（今日订单收入已达上限，本单只发放了部分金币）"
                     : "§e（今日订单收入已达上限，本单未发放金币）");
         }
-        if (order.rewardReputation() > 0) {
-            msg.append("§a，声望 §f+").append(order.rewardReputation());
-        }
+        appendReputationNote(msg, order, reputationAwarded);
         player.sendMessage(Component.text(msg.toString()));
     }
 
-    private void notifySuccessBarter(Player player, OrderDefinition order) {
+    private void notifySuccessBarter(Player player, OrderDefinition order, long reputationAwarded) {
         StringBuilder msg = new StringBuilder("§a订单交付成功：§f" + order.displayName()
                 + "§a，获得 §f" + GuiFormat.describeItems(order.giveItems()));
-        if (order.rewardReputation() > 0) {
-            msg.append("§a，声望 §f+").append(order.rewardReputation());
-        }
+        appendReputationNote(msg, order, reputationAwarded);
         player.sendMessage(Component.text(msg.toString()));
+    }
+
+    /** 声望播报同样要体现"是否被每日上限截断"，和金币的播报逻辑对称，不能只播报金币那一半。 */
+    private void appendReputationNote(StringBuilder msg, OrderDefinition order, long reputationAwarded) {
+        if (order.rewardReputation() <= 0) return;
+        if (reputationAwarded > 0) {
+            msg.append("§a，声望 §f+").append(reputationAwarded);
+        }
+        if (reputationAwarded < order.rewardReputation()) {
+            msg.append(reputationAwarded > 0
+                    ? "§e（今日声望获取已达上限，本单只发放了部分声望）"
+                    : "§e（今日声望获取已达上限，本单未发放声望）");
+        }
     }
 
     // ══════════════════════════════════════════════════════════════════════
@@ -490,9 +527,14 @@ public final class OrderBoardService {
                 island.getId(), player.getName(), order.id(), reasonForLog, GuiFormat.describeItems(order.takeItems()));
     }
 
-    /** 回滚临界区的记账（限购计数/声望/每日收入）+ 退还材料——用于"记账已落库但奖励没能发出去"的失败分支。 */
+    /**
+     * 回滚临界区的记账（限购计数/声望/每日声望&货币收入）+ 退还材料——用于"记账已落库但奖励
+     * 没能发出去"的失败分支。<b>不回滚 {@code slot.lastRedeemedAt}</b>（同槽位冷却戳记），
+     * 理由见 {@link OrderSlotState#lastRedeemedAt} 的类文档。
+     */
     private void rollbackAndRefund(Player player, Island island, Settlement settlement, String reasonForLog) {
-        boolean ok = dataService.mutate(island, data -> undoSettlement(data, settlement.order(), settlement.moneyAwarded()));
+        boolean ok = dataService.mutate(island, data -> undoSettlement(
+                data, settlement.order(), settlement.moneyAwarded(), settlement.reputationAwarded()));
         if (!ok) {
             log.error("岛屿 {} 的订单结算回滚写库失败（订单 '{}'），限购/声望/每日订单收入计数可能不准确，"
                     + "需要管理员手动核实", island.getId(), settlement.order().id());
@@ -500,7 +542,7 @@ public final class OrderBoardService {
         refundMaterials(player, island, settlement.order(), reasonForLog);
     }
 
-    private void undoSettlement(TraderIslandData data, OrderDefinition order, double moneyAwarded) {
+    private void undoSettlement(TraderIslandData data, OrderDefinition order, double moneyAwarded, long reputationAwarded) {
         Integer count = data.orderCompletions.get(order.id());
         if (count != null) {
             if (count <= 1) {
@@ -509,7 +551,13 @@ public final class OrderBoardService {
                 data.orderCompletions.put(order.id(), count - 1);
             }
         }
-        data.reputation = Math.max(0L, data.reputation - order.rewardReputation());
+        // 回滚"实际发放的数额"（可能已经被每日上限截断过），不是订单定义里的原始数额——
+        // 两者在触达上限那一单会不一致，回滚错了会导致 dailyOrderReputation/dailyOrderIncome
+        // 被多减，下一次判定时错误地认为"今天还有更多额度没用"。
+        data.reputation = Math.max(0L, data.reputation - reputationAwarded);
+        if (reputationAwarded > 0) {
+            data.dailyOrderReputation.amount = Math.max(0L, data.dailyOrderReputation.amount - reputationAwarded);
+        }
         if (moneyAwarded > 0) {
             data.dailyOrderIncome.amount = Math.max(0.0,
                     ShopEconomics.round2(data.dailyOrderIncome.amount - moneyAwarded));
