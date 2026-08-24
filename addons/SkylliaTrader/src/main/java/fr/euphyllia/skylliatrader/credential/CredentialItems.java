@@ -48,8 +48,9 @@ public final class CredentialItems {
         meta.displayName(MM.deserialize("<!italic>" + spec.displayName()));
         meta.lore(List.of(
                 MM.deserialize("<!italic><dark_gray>─────────"),
-                MM.deserialize("<!italic><gray>在自己的主岛上<white>右键</white>："),
+                MM.deserialize("<!italic><gray>对着主岛上的<white>实心方块右键</white>："),
                 MM.deserialize("<!italic><gray>没有商人就<white>放出</white>，已经有了就<white>收回</white>。"),
+                MM.deserialize("<!italic><gray>不能对着空气，商人会出现在方块上方 2 格。"),
                 MM.deserialize("<!italic><dark_gray>─────────"),
                 MM.deserialize("<!italic><yellow>每座岛每种商队只能有 1 个。"),
                 MM.deserialize("<!italic><gray>凭证是开关，<white>不会被消耗</white>，可以反复使用。")

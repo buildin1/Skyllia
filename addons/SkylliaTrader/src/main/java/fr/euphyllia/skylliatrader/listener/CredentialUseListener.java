@@ -98,7 +98,22 @@ public class CredentialUseListener implements Listener {
         // 取消原有的右键行为（放置 / 使用 / 打开容器）。
         event.setCancelled(true);
 
-        service.summonWithCredential(player, caravan, hand);
+        if (action != Action.RIGHT_CLICK_BLOCK || event.getClickedBlock() == null) {
+            player.sendMessage(net.kyori.adventure.text.Component.text(
+                    "§c请对着实心方块右键使用凭证，不能对着空气。"));
+            return;
+        }
+
+        org.bukkit.block.Block clicked = event.getClickedBlock();
+        if (!clicked.getType().isSolid()) {
+            player.sendMessage(net.kyori.adventure.text.Component.text(
+                    "§c请对着实心方块右键使用凭证，不能对着空气。"));
+            return;
+        }
+        org.bukkit.Location spawnAt = clicked.getLocation().add(0.5, 2.0, 0.5);
+        spawnAt.setYaw(player.getLocation().getYaw());
+        spawnAt.setPitch(0f);
+        service.summonWithCredential(player, caravan, hand, spawnAt);
     }
 
     /**

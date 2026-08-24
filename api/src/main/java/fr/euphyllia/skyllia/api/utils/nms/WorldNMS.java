@@ -152,6 +152,17 @@ public abstract class WorldNMS {
     public @Nullable WanderingTrader spawnWanderingTraderLikeEgg(
             @NotNull Location location,
             @Nullable Consumer<WanderingTrader> beforeAdd) {
+        return spawnWanderingTraderLikeEgg(location, beforeAdd, true);
+    }
+
+    /**
+     * @param tryMoveDown {@code true} 走刷怪蛋落点校正；凭证召唤传 {@code false}，
+     *                    落点必须就是调用方给的坐标（右键方块 Y+2）。
+     */
+    public @Nullable WanderingTrader spawnWanderingTraderLikeEgg(
+            @NotNull Location location,
+            @Nullable Consumer<WanderingTrader> beforeAdd,
+            boolean tryMoveDown) {
         return null;
     }
 }

@@ -108,6 +108,13 @@ public final class MerchantSpawner {
     public @Nullable WanderingTrader spawn(@NotNull Location location, @NotNull UUID islandId,
                                            @NotNull CaravanType caravan, @NotNull MerchantOrigin origin,
                                            long expireAt, @Nullable Consumer<WanderingTrader> preSpawn) {
+        return spawn(location, islandId, caravan, origin, expireAt, preSpawn, true);
+    }
+
+    public @Nullable WanderingTrader spawn(@NotNull Location location, @NotNull UUID islandId,
+                                           @NotNull CaravanType caravan, @NotNull MerchantOrigin origin,
+                                           long expireAt, @Nullable Consumer<WanderingTrader> preSpawn,
+                                           boolean tryMoveDown) {
         if (location.getWorld() == null) return null;
         Consumer<WanderingTrader> configure = trader -> {
             // 顺序有意为之：先登记再打标记。EntityAddToWorldEvent 是靠 PDC 标记
@@ -123,7 +130,7 @@ public final class MerchantSpawner {
             // 正式服「放下去原地消失」就是这条 World#spawn 路径在虚空岛上挤出碰撞、
             // 下一 tick 掉虚空的结果。
             WanderingTrader viaEgg = SkylliaAPI.getWorldNMS()
-                    .spawnWanderingTraderLikeEgg(location, configure);
+                    .spawnWanderingTraderLikeEgg(location, configure, tryMoveDown);
             if (viaEgg != null) return viaEgg;
 
             // 不回退 World#spawn：正式服「放下去原地消失」就是那条路径在虚空岛上

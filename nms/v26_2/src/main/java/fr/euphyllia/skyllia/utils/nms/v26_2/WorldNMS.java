@@ -612,6 +612,14 @@ public class WorldNMS extends fr.euphyllia.skyllia.api.utils.nms.WorldNMS {
     public @Nullable WanderingTrader spawnWanderingTraderLikeEgg(
             @org.jetbrains.annotations.NotNull Location location,
             @Nullable Consumer<WanderingTrader> beforeAdd) {
+        return spawnWanderingTraderLikeEgg(location, beforeAdd, true);
+    }
+
+    @Override
+    public @Nullable WanderingTrader spawnWanderingTraderLikeEgg(
+            @org.jetbrains.annotations.NotNull Location location,
+            @Nullable Consumer<WanderingTrader> beforeAdd,
+            boolean tryMoveDown) {
         if (location.getWorld() == null) return null;
         try {
             ServerLevel level = ((CraftWorld) location.getWorld()).getHandle();
@@ -629,7 +637,7 @@ public class WorldNMS extends fr.euphyllia.skyllia.api.utils.nms.WorldNMS {
                             processor,
                             spawnPos,
                             net.minecraft.world.entity.EntitySpawnReason.SPAWN_ITEM_USE,
-                            true,
+                            tryMoveDown,
                             false,
                             CreatureSpawnEvent.SpawnReason.SPAWNER_EGG);
             if (nms == null || nms.isRemoved()) return null;

@@ -192,9 +192,10 @@ public final class MerchantService {
      * @param player  使用凭证的玩家
      * @param caravan 凭证对应的商队
      * @param hand    凭证所在的手（识别用；召唤成功不扣凭证）
+     * @param spawnAt 右键方块中心 + Y+2，必须在玩家线程上拍好快照
      */
     public void summonWithCredential(@NotNull Player player, @NotNull CaravanType caravan,
-                                     @NotNull EquipmentSlot hand) {
+                                     @NotNull EquipmentSlot hand, @NotNull Location spawnAt) {
         UUID playerId = player.getUniqueId();
         if (summonInFlight.putIfAbsent(playerId, Boolean.TRUE) != null) {
             player.sendMessage(Component.text("§e上一次召唤还在处理中，请稍等一下。"));
@@ -206,7 +207,7 @@ public final class MerchantService {
 
         Bukkit.getAsyncScheduler().runNow(plugin, task -> {
             try {
-                summonAsyncStage(player, caravan, hand, playerLoc);
+                summonAsyncStage(player, caravan, hand, playerLoc, spawnAt);
             } catch (Throwable t) {
                 // asyncScheduler 会把异常吞成一段控制台堆栈，玩家侧「点了没反应」。
                 log.error("玩家 {} 使用 {} 凭证时发生未预期的异常", player.getName(), caravan, t);
@@ -217,7 +218,8 @@ public final class MerchantService {
     }
 
     /** 第 2 步（async）：查岛屿 / 校验位置与权限 / CAS 占位。 */
-    private void summonAsyncStage(Player player, CaravanType caravan, EquipmentSlot hand, Location playerLoc) {
+    private void summonAsyncStage(Player player, CaravanType caravan, EquipmentSlot hand,
+                                  Location playerLoc, Location spawnAt) {
         UUID playerId = player.getUniqueId();
         TraderConfigManager cfg = TraderConfigLoader.config;
 
@@ -267,11 +269,15 @@ public final class MerchantService {
             return;
         }
 
-        Location base = island.getSpawnLocation(summonWorld);
-        if (base == null || base.getWorld() == null) {
-            fail(player, "§c召唤失败：读不到你的岛屿出生点，请稍后重试。");
+        if (spawnAt.getWorld() == null || !summonWorld.getName().equals(spawnAt.getWorld().getName())) {
+            fail(player, "§c请对着主岛上的方块右键使用凭证。");
             return;
         }
+        if (!island.isInside(spawnAt)) {
+            fail(player, "§c请对着自己岛屿范围内的方块右键使用凭证。");
+            return;
+        }
+        Location base = spawnAt.clone();
 
         // T6（HANDOFF 7.1/9.3）：岛屿等级门槛。IslandLevelBridge 是同步阻塞读取
         // （见该类文档），必须在临界区外读好、作为快照传进 compute 的 lambda，
@@ -387,21 +393,16 @@ public final class MerchantService {
     }
 
     /**
-     * 第 3 步（region 线程）：找安全落点 + 生成实体。
-     *
-     * @param claimTimeoutMillis 第 2 步 CAS 占位时用的那个 claim-timeout <b>快照</b>，
-     *                           要原样传给 {@link #beginPending}；理由见类注释里的那条不变量
+     * 第 3 步（region 线程）：在右键方块的 Y+2 原样生成实体。
      */
     private void summonRegionStage(Player player, Island island, CaravanType caravan,
                                    EquipmentSlot hand, Location base, String claimId,
                                    long claimTimeoutMillis) {
-        WanderingTrader trader = spawnAt(island, base, caravan, MerchantOrigin.CREDENTIAL, 0L,
+        WanderingTrader trader = spawnExact(island, base, caravan, MerchantOrigin.CREDENTIAL, 0L,
                 claimTimeoutMillis);
         if (trader == null) {
-            // 全部尝试都失败：放弃本次召唤，回滚占位，不消耗凭证（规格 6.9）。
             Bukkit.getAsyncScheduler().runNow(plugin, t -> rollback(island, claimId, null));
-            fail(player, "§c岛屿出生点附近找不到能安放商人的空地（脚下要有实心方块、头顶要有空间），"
-                    + "凭证没有被消耗。请清理一下出生点周围再试。");
+            fail(player, "§c召唤失败：这个位置放不下商人，请换一块空地再对着方块右键。");
             return;
         }
 
@@ -784,10 +785,16 @@ public final class MerchantService {
                 cfg.getSafeScanRadiusBlocks(), cfg.getMinClearHeightBlocks(),
                 cfg.getVerticalScanRangeBlocks(), cfg.getMaxSpawnAttempts());
         if (safe == null) return null;
+        return spawnExact(island, safe, caravan, origin, expireAt, claimTimeoutMillis);
+    }
 
-        // 凭证游商要在「实体加入世界之前」登记进 pendingFinalize，否则同步触发的
-        // EntityAddToWorldEvent 会当场把这只还没转正的商人当成孤儿删掉（见 pendingFinalize）。
-        // 自然游商没有名额记录、根本不做孤儿检查，不需要登记。
+    /**
+     * 在给定坐标原样生成，不再扫安全落点。<b>必须在该坐标所属 region 线程上调用</b>。
+     * 凭证召唤用这条：落点就是玩家右键方块的 Y+2。
+     */
+    private @Nullable WanderingTrader spawnExact(Island island, Location exact, CaravanType caravan,
+                                                 MerchantOrigin origin, long expireAt,
+                                                 long claimTimeoutMillis) {
         UUID[] marked = {null};
         Consumer<WanderingTrader> preSpawn = null;
         if (origin == MerchantOrigin.CREDENTIAL) {
@@ -797,7 +804,8 @@ public final class MerchantService {
             };
         }
 
-        WanderingTrader trader = spawner.spawn(safe, island.getId(), caravan, origin, expireAt, preSpawn);
+        WanderingTrader trader = spawner.spawn(exact, island.getId(), caravan, origin, expireAt, preSpawn,
+                origin != MerchantOrigin.CREDENTIAL);
 
         // ⚠️ spawn() 返回非 null **不代表**实体真的进了世界。第三方插件（反挂机刷怪限制、
         // 区域保护的 deny-spawn……）取消 CreatureSpawnEvent(CUSTOM) 时，Paper 会先把实体
