@@ -179,9 +179,9 @@ public class InviteSubCommand implements SubCommandInterface {
     }
 
     private void acceptPlayer(Player playerWantJoin, String ownerIslandName, boolean confirmed) {
-        try {CommandCacheExecution.isAlreadyExecute(playerWantJoin.getUniqueId(), "create")
-                    || CacheExecution.isAlreadyExecute(playerWantJoin.getUniqueId(), "create")
-                    || fr.euphyllia.skyllia.cache.commands.CommandCacheExecution.isAlreadyExecute(playerWantJoin.getUniqueId(), "delete")) {
+        try {
+            if (CommandCacheExecution.isAlreadyExecute(playerWantJoin.getUniqueId(), "create")
+                    || CommandCacheExecution.isAlreadyExecute(playerWantJoin.getUniqueId(), "delete")) {
                 ConfigLoader.language.sendMessage(playerWantJoin, "island.generic.command-in-progress");
                 return;
             }
