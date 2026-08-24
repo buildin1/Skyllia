@@ -77,8 +77,7 @@ public class JoinSubCommand implements SubCommandInterface {
         ConfigLoader.language.sendMessage(owner, "island.join.list-header",
                 Map.of("%count%", String.valueOf(pending.size())));
         for (JoinRequestStore.Request request : pending) {
-            ConfigLoader.language.sendMessage(owner, "island.join.list-entry",
-                    Map.of("%player%", request.applicantName()));
+            JoinRequestService.sendOwnerDecisionButtons(owner, request.applicantName());
         }
     }
 

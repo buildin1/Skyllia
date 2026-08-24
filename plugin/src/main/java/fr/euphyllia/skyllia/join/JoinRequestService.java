@@ -1,16 +1,25 @@
 package fr.euphyllia.skyllia.join;
 
+import fr.euphyllia.skyllia.Skyllia;
 import fr.euphyllia.skyllia.api.SkylliaAPI;
 import fr.euphyllia.skyllia.api.skyblock.Island;
 import fr.euphyllia.skyllia.api.skyblock.Players;
 import fr.euphyllia.skyllia.api.skyblock.model.RoleType;
 import fr.euphyllia.skyllia.cache.commands.CommandCacheExecution;
 import fr.euphyllia.skyllia.cache.commands.InviteCacheExecution;
+import fr.euphyllia.skyllia.commands.common.subcommands.InviteSubCommand;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickCallback;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -77,8 +86,7 @@ public final class JoinRequestService {
         UUID ownerId = owner != null ? owner.getMojangId() : targetId;
         Player ownerOnline = Bukkit.getPlayer(ownerId);
         if (ownerOnline != null && ownerOnline.isOnline()) {
-            ConfigLoader.language.sendMessage(ownerOnline, "island.join.applied-notify-owner",
-                    Map.of("%player%", applicant.getName()));
+            sendOwnerDecisionButtons(ownerOnline, applicant.getName());
         }
     }
 
@@ -115,8 +123,7 @@ public final class JoinRequestService {
 
         Player applicant = Bukkit.getPlayer(applicantId);
         if (applicant != null && applicant.isOnline()) {
-            ConfigLoader.language.sendMessage(applicant, "island.join.accepted-notify-applicant",
-                    Map.of("%player%", owner.getName()));
+            sendApplicantJoinButton(applicant, owner.getName());
         }
     }
 
@@ -165,11 +172,64 @@ public final class JoinRequestService {
         List<JoinRequestStore.Request> pending = JoinRequestStore.list(island);
         if (pending.isEmpty()) return;
 
-        String names = pending.stream()
-                .map(JoinRequestStore.Request::applicantName)
-                .reduce((a, b) -> a + "、" + b)
-                .orElse("");
         ConfigLoader.language.sendMessage(owner, "island.join.pending-on-login",
-                Map.of("%count%", String.valueOf(pending.size()), "%players%", names));
+                Map.of("%count%", String.valueOf(pending.size())));
+        for (JoinRequestStore.Request request : pending) {
+            sendOwnerDecisionButtons(owner, request.applicantName());
+        }
+    }
+
+    /**
+     * 聊天栏可点的「同意 / 拒绝」。走 Paper 的 {@link ClickEvent#callback}，
+     * 点一下就处理，不用再打命令。
+     */
+    public static void sendOwnerDecisionButtons(@NotNull Player owner, @NotNull String applicantName) {
+        Component text = ConfigLoader.language.translate(owner, "island.join.applied-notify-owner",
+                Map.of("%player%", applicantName));
+        ClickCallback.Options options = ClickCallback.Options.builder()
+                .uses(1)
+                .lifetime(Duration.ofDays(7))
+                .build();
+
+        Component accept = Component.text("[同意]", NamedTextColor.GREEN)
+                .decorate(TextDecoration.BOLD)
+                .hoverEvent(HoverEvent.showText(Component.text("点击同意 " + applicantName + " 的加入申请")))
+                .clickEvent(ClickEvent.callback(audience -> {
+                    if (!(audience instanceof Player clicker)) return;
+                    Bukkit.getAsyncScheduler().runNow(Skyllia.getInstance(),
+                            t -> accept(clicker, applicantName));
+                }, options));
+
+        Component deny = Component.text("[拒绝]", NamedTextColor.RED)
+                .decorate(TextDecoration.BOLD)
+                .hoverEvent(HoverEvent.showText(Component.text("点击拒绝 " + applicantName + " 的加入申请")))
+                .clickEvent(ClickEvent.callback(audience -> {
+                    if (!(audience instanceof Player clicker)) return;
+                    Bukkit.getAsyncScheduler().runNow(Skyllia.getInstance(),
+                            t -> deny(clicker, applicantName));
+                }, options));
+
+        owner.sendMessage(text
+                .append(Component.space())
+                .append(accept)
+                .append(Component.space())
+                .append(deny));
+    }
+
+    /** 岛主同意后，申请人聊天栏出现可点的「加入」。 */
+    public static void sendApplicantJoinButton(@NotNull Player applicant, @NotNull String ownerName) {
+        Component text = ConfigLoader.language.translate(applicant, "island.join.accepted-notify-applicant",
+                Map.of("%player%", ownerName));
+        Component join = Component.text("[加入空岛]", NamedTextColor.GREEN)
+                .decorate(TextDecoration.BOLD)
+                .hoverEvent(HoverEvent.showText(Component.text("点击加入 " + ownerName + " 的空岛")))
+                .clickEvent(ClickEvent.callback(audience -> {
+                    if (!(audience instanceof Player clicker)) return;
+                    Bukkit.getAsyncScheduler().runNow(Skyllia.getInstance(), t ->
+                            new InviteSubCommand().onExecute(Skyllia.getInstance(), clicker,
+                                    new String[]{"accept", ownerName}));
+                }, ClickCallback.Options.builder().uses(1).lifetime(Duration.ofDays(7)).build()));
+
+        applicant.sendMessage(text.append(Component.space()).append(join));
     }
 }
