@@ -8,6 +8,7 @@ import fr.euphyllia.skylliachallenge.SkylliaChallenge;
 import fr.euphyllia.skylliachallenge.api.requirement.ChallengeRequirement;
 import fr.euphyllia.skylliachallenge.challenge.Challenge;
 import fr.euphyllia.skylliachallenge.managers.ChallengeManagers;
+import fr.euphyllia.skylliachallenge.requirement.AcidSeasonSurviveRequirement;
 import fr.euphyllia.skylliachallenge.requirement.BankRequirement;
 import fr.euphyllia.skylliachallenge.requirement.BlockBreakRequirement;
 import fr.euphyllia.skylliachallenge.requirement.CraftRequirement;
@@ -258,6 +259,8 @@ public class ChallengeGui {
     private void applyFullGuiItem(Inventory gui, SkylliaGuiHolder holder, int slot, Player player, Island island,
                                   Challenge c, int level, int subPage,
                                   int times, boolean fullyCompleted, boolean can) {
+        long remaining = manager.getRemainingCooldownMillis(island, c);
+
         ItemStack base = c.getGuiItem().clone();
         List<Component> lore = new ArrayList<>(c.getLore());
         lore.add(miniMessage.deserialize("<gray>--------------------</gray>"));
@@ -270,7 +273,16 @@ public class ChallengeGui {
                             "%max_times%", c.getMaxTimes() >= 0 ? String.valueOf(c.getMaxTimes()) : "∞"
                     ), false));
             if (times >= 1) {
-                lore.add(ConfigLoader.language.translate(player.locale(), "addons.challenge.display.completed-repeatable", Map.of(), false));
+                // 只有真的能马上再领时才说“可再次领取”，否则说清卡在冷却还是要求没达成
+                String stateKey;
+                if (can) {
+                    stateKey = "addons.challenge.display.completed-repeatable";
+                } else if (remaining > 0) {
+                    stateKey = "addons.challenge.display.completed-repeatable-cooldown";
+                } else {
+                    stateKey = "addons.challenge.display.completed-repeatable-requirements";
+                }
+                lore.add(ConfigLoader.language.translate(player.locale(), stateKey, Map.of(), false));
             }
         }
 
@@ -286,6 +298,12 @@ public class ChallengeGui {
                         boolean met = collected >= ir.count();
                         lore.add(requirementLine(player.locale(), ir.getDisplay(player.locale()),
                                 met ? RequirementState.MET : RequirementState.NOT_MET, collected, ir.count()));
+                    }
+                    case AcidSeasonSurviveRequirement asr -> {
+                        long collected = ProgressStoragePartial.getPartial(island.getId(), c.getId(), asr.requirementId());
+                        boolean met = collected >= asr.count();
+                        lore.add(requirementLine(player.locale(), asr.getDisplay(player.locale()),
+                                met ? RequirementState.MET : RequirementState.NOT_MET, collected, asr.count()));
                     }
                     case CraftRequirement cr -> {
                         long collected = ProgressStoragePartial.getPartial(island.getId(), c.getId(), cr.requirementId());
@@ -351,16 +369,18 @@ public class ChallengeGui {
         }
 
         if (!fullyCompleted) {
-            lore.add(can
-                    ? ConfigLoader.language.translate(player.locale(), "addons.challenge.display.can-validate", Map.of(), false)
-                    : ConfigLoader.language.translate(player.locale(), "addons.challenge.display.cannot-validate", Map.of(), false));
-            long remaining = manager.getRemainingCooldownMillis(island, c);
+            // 冷却中就只报冷却：要求可能是满的，不该再说“你不满足要求”
             if (remaining > 0) {
                 lore.add(Component.text("").append(
                         ConfigLoader.language.translate(player.locale(), "addons.challenge.display.cooldown",
                                 Map.of("%time_left%", ChallengeManagers.formatDurationShort(remaining)), false)));
+            } else {
+                lore.add(can
+                        ? ConfigLoader.language.translate(player.locale(), "addons.challenge.display.can-validate", Map.of(), false)
+                        : ConfigLoader.language.translate(player.locale(), "addons.challenge.display.cannot-validate", Map.of(), false));
             }
         }
+        if (c.getGuiLore() != null) lore.addAll(c.getGuiLore());
 
         // 统一去除斜体
         List<Component> finalLore = lore.stream()
