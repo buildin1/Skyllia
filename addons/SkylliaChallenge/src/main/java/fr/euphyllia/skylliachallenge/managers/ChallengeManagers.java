@@ -356,6 +356,27 @@ public class ChallengeManagers {
         return true;
     }
 
+    /**
+     * 管理员强制完成：跳过次数上限、冷却和需求检查，不消耗物品，直接发奖并记一次完成。
+     */
+    public boolean forceComplete(Island island, Challenge challenge, Player actor) {
+        ProgressStoragePartial.resetPartial(island.getId(), challenge.getId());
+        ProgressStorage.updateCompletion(island.getId(), challenge.getId(), System.currentTimeMillis());
+
+        if (challenge.getRewards() != null) {
+            for (ChallengeReward reward : challenge.getRewards()) {
+                reward.apply(actor, island, challenge);
+            }
+        }
+
+        ChallengeLevelManagers levelManager = skylliaChallenge.getChallengeLevelManager();
+        if (levelManager != null) {
+            levelManager.evaluate(island, actor);
+        }
+        checkAndGrantLevelUpReward(island, actor, challenge.getLevel());
+        return true;
+    }
+
     public long getRemainingCooldownMillis(Island island, Challenge challenge) {
         long cd = challenge.getCooldownMillis();
         if (cd <= 0) return 0L;

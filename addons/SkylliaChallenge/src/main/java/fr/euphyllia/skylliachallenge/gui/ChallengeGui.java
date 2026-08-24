@@ -174,9 +174,8 @@ public class ChallengeGui {
                 int slot = entry.getKey();
                 Challenge c = entry.getValue();
                 int times = ProgressStorage.getTimesCompleted(island.getId(), c.getId());
-                boolean fully = c.getMaxTimes() >= 0 && times >= c.getMaxTimes();
-                if (fully) {
-                    // 已完成，跳过更新（或简单设置为发光但保持未知需求）
+                boolean capped = c.getMaxTimes() >= 0 && times >= c.getMaxTimes();
+                if (capped) {
                     player.getScheduler().run(plugin, _ -> applyFullGuiItem(gui, holder, slot, player, island, c, finalLevel1, finalSubPage, times, true, false), null);
                 } else {
                     boolean can = manager.canComplete(island, c, player);
@@ -262,16 +261,17 @@ public class ChallengeGui {
         ItemStack base = c.getGuiItem().clone();
         List<Component> lore = new ArrayList<>(c.getLore());
         lore.add(miniMessage.deserialize("<gray>--------------------</gray>"));
-        if(fullyCompleted) {
-            lore.add(Component.text("挑战已完成", NamedTextColor.BLUE)
-                    .decoration(TextDecoration.ITALIC, false));
-        }
-        else {
+        if (fullyCompleted) {
+            lore.add(ConfigLoader.language.translate(player.locale(), "addons.challenge.display.completed", Map.of(), false));
+        } else {
             lore.add(ConfigLoader.language.translate(player.locale(), "addons.challenge.display.progression",
                     Map.of(
                             "%progression%", String.valueOf(times),
                             "%max_times%", c.getMaxTimes() >= 0 ? String.valueOf(c.getMaxTimes()) : "∞"
                     ), false));
+            if (times >= 1) {
+                lore.add(ConfigLoader.language.translate(player.locale(), "addons.challenge.display.completed-repeatable", Map.of(), false));
+            }
         }
 
         if (c.getRequirements() != null && !c.getRequirements().isEmpty()) {
@@ -371,7 +371,7 @@ public class ChallengeGui {
         if (meta != null) {
             meta.displayName(miniMessage.deserialize(c.getName()).decoration(TextDecoration.ITALIC, false));
             meta.lore(finalLore);
-            if (fullyCompleted) {
+            if (fullyCompleted || times >= 1) {
                 meta.setEnchantmentGlintOverride(true);
             }
             item.setItemMeta(meta);

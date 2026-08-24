@@ -372,8 +372,13 @@ generator = "<yellow>Ore: </yellow><white>%ore%</white>"
 
 [addons.challenge.admin]
 no-permission = "<red>You do not have permission to use this command."
-unknown-command = "<red>Unknown command. Use /skylliadmin challenge reload"
+unknown-command = "<red>Unknown command. Use /skylliadmin challenge <reload|gui|complete>"
 reload-success = "<green>The challenges have been reloaded."
+complete-usage = "<red>Usage: /skylliadmin challenge complete <player> <challengeId>"
+player-offline = "<red>Player %player% is not online."
+no-island = "<red>Player %player% does not have an island."
+challenge-not-found = "<red>Challenge not found: %challenge%"
+complete-success = "<green>Forced %player% to complete %challenge% (%before% → %after%)."
 
 [addons.challenge.player]
 player-only = "<red>This command can only be used by a player."
@@ -384,6 +389,8 @@ notify-complete = "<green>Congratulations! %player_name% has completed the chall
 [addons.challenge.display]
 title = "<gold>=== Island Challenges ===</gold>"
 progression = "<gray>Progress: <white>%progression%/%max_times%</white>"
+completed = "<blue>Challenge completed"
+completed-repeatable = "<aqua>Already completed, can be claimed again"
 requirements = "<gray>Requirements:</gray>"
 can-validate = "<green>Click to validate</green>"
 cannot-validate = "<red>You do not meet the requirements to validate this challenge.</red>"

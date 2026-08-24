@@ -372,8 +372,13 @@ generator = "<yellow>矿石：</yellow><white>%ore%</white>"
 
 [addons.challenge.admin]
 no-permission = "<red>你没有权限使用此命令。"
-unknown-command = "<red>未知命令。用法 /skylliadmin challenge reload"
+unknown-command = "<red>未知命令。用法 /skylliadmin challenge <reload|gui|complete>"
 reload-success = "<green>挑战已重载。"
+complete-usage = "<red>用法：/skylliadmin challenge complete <玩家> <挑战ID>"
+player-offline = "<red>玩家 %player% 不在线。"
+no-island = "<red>玩家 %player% 没有空岛。"
+challenge-not-found = "<red>找不到挑战：%challenge%"
+complete-success = "<green>已强制玩家 %player% 完成挑战 %challenge%（%before% → %after%）。"
 
 [addons.challenge.player]
 player-only = "<red>此命令只能由玩家使用。"
@@ -384,6 +389,8 @@ notify-complete = "<green>恭喜！%player_name% 已为他的空岛完成挑战�
 [addons.challenge.display]
 title = "<gold>=== 空岛挑战 ===</gold>"
 progression = "<gray>进度：<white>%progression%/%max_times%</white>"
+completed = "<blue>挑战已完成"
+completed-repeatable = "<aqua>已完成过，可再次领取"
 requirements = "<gray>要求：</gray>"
 can-validate = "<green>点击验证</green>"
 cannot-validate = "<red>你不满足验证此挑战的要求。</red>"

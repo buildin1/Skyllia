@@ -378,8 +378,13 @@ generator = "<yellow>Générateur : </yellow><white>%ore%</white>"
 
 [addons.challenge.admin]
 no-permission = "<red>Vous n'avez pas la permission d'utiliser cette commande."
-unknown-command = "<red>Commande inconnue. Utilisez /skylliadmin challenge reload"
+unknown-command = "<red>Commande inconnue. Utilisez /skylliadmin challenge <reload|gui|complete>"
 reload-success = "<green>Les missions ont été rechargées."
+complete-usage = "<red>Usage : /skylliadmin challenge complete <joueur> <challengeId>"
+player-offline = "<red>Le joueur %player% n'est pas en ligne."
+no-island = "<red>Le joueur %player% n'a pas d'île."
+challenge-not-found = "<red>Défi introuvable : %challenge%"
+complete-success = "<green>Le joueur %player% a été forcé de terminer %challenge% (%before% → %after%)."
 
 [addons.challenge.player]
 player-only = "<red>Cette commande ne peut être utilisée que par un joueur."
@@ -390,6 +395,8 @@ notify-complete = "<green>Félicitation ! %player_name% a complété son défi: 
 [addons.challenge.display]
 title = "<gold>=== Challenges d'île ===</gold>"
 progression = "<!italic><gray>Progression : <white>%progression%/%max_times%</white>"
+completed = "<!italic><blue>Défi terminé"
+completed-repeatable = "<!italic><aqua>Déjà terminé, peut être revendiqué"
 requirements = "<!italic><gray>Objectifs :</gray>"
 can-validate = "<!italic><green>Cliquer pour valider</green>"
 cannot-validate = "<!italic><red>Vous n'avez pas encore tous les prérequis pour terminer ce défi.</red>"
