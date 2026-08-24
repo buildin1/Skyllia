@@ -82,6 +82,30 @@ public abstract class IslandCustomDataQuery {
             @NotNull Island island
     );
 
+    /** 插件级 KV 在自定义数据表里用的哨兵 island_id，不对应任何真实岛屿。 */
+    public static final String PLUGIN_SCOPE_ID = "__plugin__";
+
+    /**
+     * 插件级 KV（不绑岛屿）。入岛申请、酸雨季世界状态这类跨岛/跨世界数据走这里。
+     * 默认空实现，由各数据库实现覆盖。
+     */
+    public boolean setPluginData(@NotNull NamespacedKey namespace, @NotNull String dataKey,
+                                 @NotNull String value) {
+        return false;
+    }
+
+    public @Nullable String getPluginData(@NotNull NamespacedKey namespace, @NotNull String dataKey) {
+        return null;
+    }
+
+    public boolean removePluginData(@NotNull NamespacedKey namespace, @NotNull String dataKey) {
+        return false;
+    }
+
+    public @NotNull Set<String> getPluginDataKeys(@NotNull NamespacedKey namespace) {
+        return Set.of();
+    }
+
     public byte[] serializePrimitive(Object primitive) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(baos);

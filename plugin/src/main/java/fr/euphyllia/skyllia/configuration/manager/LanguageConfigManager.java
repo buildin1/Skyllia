@@ -118,14 +118,22 @@ public class LanguageConfigManager implements IConfigurationProvider, LanguagePr
             }
         }
         String message;
-        if (langMessages.containsKey(key)) {
-            message = langMessages.get(key);
+        String existing = langMessages.get(key);
+        // 生产服一旦把 "Missing translation: xxx" 写进语言文件，containsKey 就永远为真，
+        // jar 里后来补的译文再也回不去。把占位句当成缺失，重新走 jar 回退。
+        boolean missing = existing == null || existing.isBlank()
+                || existing.contains("Missing translation:");
+        if (!missing) {
+            message = existing;
         } else {
             String localeFileName = locale.toLanguageTag().replace("-", "_") + ".toml";
             String fallbackMessage = findFallbackTranslationFromResource(localeFileName, key);
+            if (fallbackMessage == null && !locale.equals(defaultLocale)) {
+                fallbackMessage = findFallbackTranslationFromResource(
+                        defaultLocale.toLanguageTag().replace("-", "_") + ".toml", key);
+            }
 
             if (fallbackMessage != null) {
-                // Ajout automatique dans le fichier local
                 if (localeFiles.containsKey(locale)) {
                     CommentedFileConfig fileConfig = localeFiles.get(locale);
                     fileConfig.set(key, fallbackMessage);
@@ -134,21 +142,11 @@ public class LanguageConfigManager implements IConfigurationProvider, LanguagePr
                     tomlWriter.write(fileConfig, fileConfig.getFile(), WritingMode.REPLACE);
                     langMessages.put(key, fallbackMessage);
                     log.info("Loaded fallback key '{}' from internal resource into '{}'", key, localeFileName);
-                    message = fallbackMessage;
-                } else {
-                    message = fallbackMessage;
                 }
+                message = fallbackMessage;
             } else {
                 message = "<red>Missing translation: " + key;
-                if (localeFiles.containsKey(locale)) {
-                    CommentedFileConfig fileConfig = localeFiles.get(locale);
-                    fileConfig.set(key, message);
-                    TomlWriter tomlWriter = new TomlWriter();
-                    tomlWriter.setIndent(IndentStyle.NONE);
-                    tomlWriter.write(fileConfig, fileConfig.getFile(), WritingMode.REPLACE);
-                    langMessages.put(key, message);
-                    log.warn("Added missing translation key '{}' in language file '{}'", key, localeFileName);
-                }
+                log.warn("Missing translation key '{}' for locale '{}' (not written to disk)", key, localeFileName);
             }
         }
 

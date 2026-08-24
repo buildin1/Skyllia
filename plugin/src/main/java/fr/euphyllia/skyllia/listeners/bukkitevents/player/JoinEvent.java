@@ -48,6 +48,14 @@ public class JoinEvent implements Listener {
         player.getScheduler().execute(api.getPlugin(),
                 () -> UpdateCheckerTask.notifyIfUpdateAvailable(player),
                 null, 40L);
+
+        Bukkit.getAsyncScheduler().runDelayed(api.getPlugin(), task -> {
+            try {
+                fr.euphyllia.skyllia.join.JoinRequestService.notifyOwnerOnJoin(player);
+            } catch (Throwable ignored) {
+                // 申请提醒失败不能挡住登录
+            }
+        }, 3L, java.util.concurrent.TimeUnit.SECONDS);
     }
 
     @EventHandler(priority = EventPriority.LOW)

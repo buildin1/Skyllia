@@ -10,6 +10,7 @@ import fr.euphyllia.skyllia.api.skyblock.Players;
 import fr.euphyllia.skyllia.managers.skyblock.SkyblockManager;
 import fr.euphyllia.skyllia.api.skyblock.model.RoleType;
 import fr.euphyllia.skyllia.api.skyblock.model.WarpIsland;
+import fr.euphyllia.skyllia.cache.commands.CommandCacheExecution;
 import fr.euphyllia.skyllia.cache.commands.InviteCacheExecution;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
 import fr.euphyllia.skyllia.utils.PlayerUtils;
@@ -178,7 +179,13 @@ public class InviteSubCommand implements SubCommandInterface {
     }
 
     private void acceptPlayer(Player playerWantJoin, String ownerIslandName, boolean confirmed) {
-        try {
+        try {CommandCacheExecution.isAlreadyExecute(playerWantJoin.getUniqueId(), "create")
+                    || CacheExecution.isAlreadyExecute(playerWantJoin.getUniqueId(), "create")
+                    || fr.euphyllia.skyllia.cache.commands.CommandCacheExecution.isAlreadyExecute(playerWantJoin.getUniqueId(), "delete")) {
+                ConfigLoader.language.sendMessage(playerWantJoin, "island.generic.command-in-progress");
+                return;
+            }
+
             // 玩家已有岛屿时不再直接拒绝。
             //
             // 删岛流程改成「删完立刻重建新岛」之后，玩家永远处于「有岛」状态，
@@ -223,7 +230,10 @@ public class InviteSubCommand implements SubCommandInterface {
                 return;
             }
 
-            if (!InviteCacheExecution.isInvitedCache(islandOwner.getId(), playerWantJoin.getUniqueId())) {
+            boolean invited = InviteCacheExecution.isInvitedCache(islandOwner.getId(), playerWantJoin.getUniqueId())
+                    || fr.euphyllia.skyllia.join.JoinRequestStore.hasApprovedInvite(
+                            islandOwner.getId(), playerWantJoin.getUniqueId());
+            if (!invited) {
                 ConfigLoader.language.sendMessage(playerWantJoin, "island.invite.invite-not-found");
                 return;
             }
@@ -253,6 +263,8 @@ public class InviteSubCommand implements SubCommandInterface {
                 }
 
                 InviteCacheExecution.removeInviteCache(islandOwner.getId(), playerWantJoin.getUniqueId());
+                fr.euphyllia.skyllia.join.JoinRequestStore.clearApprovedInvite(
+                        islandOwner.getId(), playerWantJoin.getUniqueId());
 
                 Players newPlayer = new Players(
                         playerWantJoin.getUniqueId(),
@@ -313,12 +325,17 @@ public class InviteSubCommand implements SubCommandInterface {
                 return;
             }
 
-            if (!InviteCacheExecution.isInvitedCache(islandOwner.getId(), playerWantDecline.getUniqueId())) {
+            boolean invited = InviteCacheExecution.isInvitedCache(islandOwner.getId(), playerWantDecline.getUniqueId())
+                    || fr.euphyllia.skyllia.join.JoinRequestStore.hasApprovedInvite(
+                            islandOwner.getId(), playerWantDecline.getUniqueId());
+            if (!invited) {
                 ConfigLoader.language.sendMessage(playerWantDecline, "island.invite.invite-not-found");
                 return;
             }
 
             InviteCacheExecution.removeInviteCache(islandOwner.getId(), playerWantDecline.getUniqueId());
+            fr.euphyllia.skyllia.join.JoinRequestStore.clearApprovedInvite(
+                    islandOwner.getId(), playerWantDecline.getUniqueId());
             ConfigLoader.language.sendMessage(playerWantDecline, "island.invite.decline-success",
                     Map.of("%player_invite%", ownerIslandName));
 

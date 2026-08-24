@@ -9,6 +9,7 @@ import fr.euphyllia.skyllia.api.skyblock.Players;
 import fr.euphyllia.skyllia.api.skyblock.enums.RemovalCause;
 import fr.euphyllia.skyllia.api.skyblock.model.RoleType;
 import fr.euphyllia.skyllia.api.utils.RegionUtils;
+import fr.euphyllia.skyllia.cache.commands.CommandCacheExecution;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
 import fr.euphyllia.skyllia.managers.skyblock.SkyblockManager;
 import fr.euphyllia.skyllia.utils.PlayerUtils;
@@ -154,9 +155,18 @@ public class DeleteSubCommand implements SubCommandInterface {
                 return;
             }
 
+            // 解散旧岛到新岛建好之间，玩家在库里是 VISITOR，getIslandByPlayerId 会当成没岛。
+            // 这段窗口里 /is invite accept 会跳过二次确认直接加入别人岛。
+            // 用 delete 锁把邀请/申请挡住，直到重建结束。
+            if (!CommandCacheExecution.tryAcquire(player.getUniqueId(), "delete")) {
+                ConfigLoader.language.sendMessage(player, "island.generic.command-in-progress");
+                return;
+            }
+
             // 解散旧岛。执行者本人不会在这里被清背包 / 传送 spawn——
             // 他马上就要拿到新岛，见下方 runCreateIsland 的回调。
             if (!freeIslandForOwner(player, island, skyblockManager)) {
+                CommandCacheExecution.removeCommandExec(player.getUniqueId(), "delete");
                 ConfigLoader.language.sendMessage(player, "island.generic.unexpected-error");
                 return;
             }
@@ -182,6 +192,7 @@ public class DeleteSubCommand implements SubCommandInterface {
                         // 否则旧岛会永远占着那块 region。
                         this.resetPlayerAfterDelete(player);
                         deleteOldIslandChunks(skyblockManager, island, player);
+                        CommandCacheExecution.removeCommandExec(player.getUniqueId(), "delete");
                     });
         } catch (Exception e) {
             logger.log(Level.FATAL, e.getMessage(), e);

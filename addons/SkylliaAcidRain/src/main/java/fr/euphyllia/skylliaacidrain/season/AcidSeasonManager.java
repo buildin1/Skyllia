@@ -56,7 +56,7 @@ public class AcidSeasonManager implements Listener {
 
     public AcidSeasonManager(SkylliaAcidRain plugin) {
         this.plugin = plugin;
-        this.store = new SeasonStateStore(plugin.getDataFolder());
+        this.store = new SeasonStateStore();
     }
 
     /**

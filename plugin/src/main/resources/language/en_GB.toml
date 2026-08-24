@@ -147,6 +147,26 @@ accept-notify-owner = "Player %player_accept% has accepted your island invitatio
 decline-notify-owner = "Player %player_decline% has declined your island invitation."
 home-not-found = "The island home was not found."
 
+[island.join]
+args-missing = "Usage: /is join <player>  or  /is join accept|deny|list"
+accept-args-missing = "Specify the applicant: /is join accept <player>"
+deny-args-missing = "Specify the applicant: /is join deny <player>"
+apply-yourself = "You cannot apply to join your own island."
+target-no-island = "Player %player% has no island."
+already-member = "You are already a member of this island."
+already-applied = "You already have a pending application for this island."
+applied = "Join request sent to %player%'s island. The owner will be notified on next login."
+applied-notify-owner = "%player% wants to join your island. Accept: /is join accept %player%  Deny: /is join deny %player%"
+no-request = "No join request from %player%."
+accepted = "Accepted %player%'s join request. They can now use /is invite accept <your name>."
+accepted-notify-applicant = "%player% accepted your join request. Type /is invite accept %player% to join."
+denied = "Denied %player%'s join request."
+denied-notify-applicant = "%player% denied your join request."
+list-empty = "No pending join requests."
+list-header = "Pending join requests (%count%):"
+list-entry = "· %player%  —  /is join accept %player%  or  /is join deny %player%"
+pending-on-login = "You have %count% pending join request(s): %players%. Use /is join list."
+
 [island.info]
 no-owner = "The island has no owner."
 no-permission = "You do not have permission to view this island's information."

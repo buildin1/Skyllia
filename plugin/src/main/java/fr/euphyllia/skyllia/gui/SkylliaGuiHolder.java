@@ -36,7 +36,8 @@ public final class SkylliaGuiHolder implements org.bukkit.inventory.InventoryHol
         FLAG_ROOT,
         FLAG_CATEGORY,
         FLAG_LIST,
-        EXTENSION
+        EXTENSION,
+        JOIN_REQUEST
     }
 
     private final GuiType type;

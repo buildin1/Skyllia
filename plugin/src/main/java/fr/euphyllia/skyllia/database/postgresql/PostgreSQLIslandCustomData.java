@@ -224,4 +224,78 @@ public class PostgreSQLIslandCustomData extends IslandCustomDataQuery {
     public boolean isEmpty(@NotNull NamespacedKey namespace, @NotNull Island island) {
         return size(namespace, island) == 0;
     }
+
+    @Override
+    public boolean setPluginData(@NotNull NamespacedKey namespace, @NotNull String dataKey, @NotNull String value) {
+        if (!ensureTableExists(namespace)) return false;
+        String tableName = getTableName(namespace);
+        String sql = String.format("""
+                INSERT INTO %s (island_id, data_key, data_value)
+                VALUES (?, ?, ?)
+                ON CONFLICT (island_id, data_key) DO UPDATE SET
+                    data_value = EXCLUDED.data_value,
+                    updated_at = CURRENT_TIMESTAMP
+                """, tableName);
+        try {
+            byte[] serialized = serializePrimitive(value);
+            int affected = SQLExecute.update(databaseLoader, sql, List.of(PLUGIN_SCOPE_ID, dataKey, serialized));
+            return affected > 0;
+        } catch (Exception e) {
+            log.error("Failed to store plugin data for key: {}", dataKey, e);
+            return false;
+        }
+    }
+
+    @Override
+    public @Nullable String getPluginData(@NotNull NamespacedKey namespace, @NotNull String dataKey) {
+        if (!ensureTableExists(namespace)) return null;
+        String tableName = getTableName(namespace);
+        String sql = String.format("""
+                SELECT data_value FROM %s
+                WHERE island_id = ? AND data_key = ?
+                """, tableName);
+        return SQLExecute.queryMap(databaseLoader, sql, List.of(PLUGIN_SCOPE_ID, dataKey), rs -> {
+            try {
+                if (rs.next()) {
+                    return deserializePrimitive(rs.getBytes("data_value"), String.class);
+                }
+            } catch (Exception e) {
+                log.error("Failed to retrieve plugin data for key: {}", dataKey, e);
+            }
+            return null;
+        });
+    }
+
+    @Override
+    public boolean removePluginData(@NotNull NamespacedKey namespace, @NotNull String dataKey) {
+        if (!ensureTableExists(namespace)) return false;
+        String tableName = getTableName(namespace);
+        String sql = String.format("""
+                DELETE FROM %s
+                WHERE island_id = ? AND data_key = ?
+                """, tableName);
+        return SQLExecute.update(databaseLoader, sql, List.of(PLUGIN_SCOPE_ID, dataKey)) >= 0;
+    }
+
+    @Override
+    public @NotNull Set<String> getPluginDataKeys(@NotNull NamespacedKey namespace) {
+        if (!ensureTableExists(namespace)) return new HashSet<>();
+        String tableName = getTableName(namespace);
+        String sql = String.format("""
+                SELECT data_key FROM %s
+                WHERE island_id = ?
+                """, tableName);
+        Set<String> keys = SQLExecute.queryMap(databaseLoader, sql, List.of(PLUGIN_SCOPE_ID), rs -> {
+            Set<String> result = new HashSet<>();
+            try {
+                while (rs.next()) {
+                    result.add(rs.getString("data_key"));
+                }
+            } catch (SQLException e) {
+                log.error("Failed to retrieve plugin data keys", e);
+            }
+            return result;
+        });
+        return keys != null ? keys : new HashSet<>();
+    }
 }

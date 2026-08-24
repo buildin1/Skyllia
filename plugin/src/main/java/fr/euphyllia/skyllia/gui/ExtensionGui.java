@@ -92,26 +92,15 @@ public final class ExtensionGui {
             holder.bind(GuiPageLayout.SLOT_NEXT_PAGE, e -> open(player, clampedPage + 1));
         }
 
-        // 固定按钮：加入其他岛屿
+        // 固定按钮：申请加入其他岛屿（不是参观，参观走主菜单「访问其他空岛」）
         inv.setItem(SLOT_JOIN_ISLAND, GuiItem.of(Material.OAK_DOOR,
-                "<!italic><light_purple>🌐 加入其他岛屿",
+                "<!italic><light_purple>🌐 申请加入其他岛屿",
                 List.of("<dark_gray>─────────",
-                        "<gray>输入岛屿 ID 或玩家名，前往其空岛</gray>",
+                        "<gray>向在线岛主提出加入申请</gray>",
+                        "<gray>岛主不在线会在下次上线时收到提醒</gray>",
                         "<dark_gray>─────────",
-                        "<yellow>点击输入</yellow>")));
-        holder.bind(SLOT_JOIN_ISLAND, e -> GuiTextInput.promptText(Skyllia.getInstance(), player,
-                "<light_purple>请在聊天栏输入要访问的岛屿 ID 或玩家名：",
-                input -> {
-                    String trimmed = input.trim();
-                    if (trimmed.isEmpty()) {
-                        player.sendMessage(Component.text("§c输入不能为空。"));
-                        open(player, clampedPage);
-                        return;
-                    }
-                    // 已经在玩家自己的 region 调度线程上（GuiTextInput 回调保证），可直接执行命令。
-                    player.performCommand("is visit " + trimmed);
-                },
-                () -> open(player, clampedPage)));
+                        "<yellow>点击打开列表</yellow>")));
+        holder.bind(SLOT_JOIN_ISLAND, e -> JoinRequestGui.open(player));
 
         // 固定按钮：群系修改（选区工具）
         inv.setItem(SLOT_BIOME_TOOL, GuiItem.of(Material.WOODEN_HOE,
