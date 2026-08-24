@@ -369,12 +369,12 @@ public final class RecycleService {
                     + " §e金币），物品已退还。换别的商品还能继续卖。");
             return;
         }
-        int leftover = quantity - acceptedQty[0];
+        int soldQty = acceptedQty[0];
+        int leftover = quantity - soldQty;
         if (leftover > 0) {
             refundItems(player, material, leftover, "超出今日额度退还");
         }
         double totalPrice = accepted;
-        quantity = acceptedQty[0];
 
         try {
             EconomyResponse response = econ.depositPlayer(player, totalPrice);
@@ -383,7 +383,7 @@ public final class RecycleService {
                 log.error("玩家 {} 回收商品 '{}' 发钱失败：{}，已退还物品并回滚每日额度",
                         player.getName(), normalizedId, reason);
                 rollbackDailyIncome(island, normalizedId, totalPrice);
-                refundItems(player, material, quantity, "发钱失败");
+                refundItems(player, material, soldQty, "发钱失败");
                 fail(player, "§c回收失败：发钱异常，物品已退还，请稍后重试或联系管理员。");
                 return;
             }
@@ -393,15 +393,16 @@ public final class RecycleService {
             log.error("玩家 {} 回收商品 '{}' 发钱阶段抛出异常，已退还物品并回滚每日额度",
                     player.getName(), normalizedId, t);
             rollbackDailyIncome(island, normalizedId, totalPrice);
-            refundItems(player, material, quantity, "发钱异常");
+            refundItems(player, material, soldQty, "发钱异常");
             fail(player, "§c回收失败：经济插件出错，物品已退还，请稍后重试或联系管理员。");
             return;
         }
 
         // player.sendMessage 是线程安全的（ShopPurchaseService/OrderBoardService 已有同样的用法），
         // 不需要跳回玩家线程。
-        player.sendMessage(Component.text("§a回收成功：§f" + GuiFormat.legacyName(displayName) + " §fx" + quantity
-                + " §a，获得 §f" + GuiFormat.fmt(totalPrice) + " §a金币"));
+        String extra = leftover > 0 ? "§e（超出额度的 " + leftover + " 个已退还）" : "";
+        player.sendMessage(Component.text("§a回收成功：§f" + GuiFormat.legacyName(displayName) + " §fx" + soldQty
+                + " §a，获得 §f" + GuiFormat.fmt(totalPrice) + " §a金币" + extra));
         inFlight.remove(playerId);
     }
 
