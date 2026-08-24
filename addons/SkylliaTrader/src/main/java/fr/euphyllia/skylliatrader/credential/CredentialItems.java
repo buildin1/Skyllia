@@ -48,11 +48,11 @@ public final class CredentialItems {
         meta.displayName(MM.deserialize("<!italic>" + spec.displayName()));
         meta.lore(List.of(
                 MM.deserialize("<!italic><dark_gray>─────────"),
-                MM.deserialize("<!italic><gray>在自己的主岛上<white>右键</white>使用，"),
-                MM.deserialize("<!italic><gray>召唤一个<white>永久常驻</white>的" + caravan.defaultDisplayName() + "。"),
+                MM.deserialize("<!italic><gray>在自己的主岛上<white>右键</white>："),
+                MM.deserialize("<!italic><gray>没有商人就<white>放出</white>，已经有了就<white>收回</white>。"),
                 MM.deserialize("<!italic><dark_gray>─────────"),
                 MM.deserialize("<!italic><yellow>每座岛每种商队只能有 1 个。"),
-                MM.deserialize("<!italic><gray>已经有了再使用会失败，<white>凭证不会被消耗</white>。")
+                MM.deserialize("<!italic><gray>凭证是开关，<white>不会被消耗</white>，可以反复使用。")
         ));
         // CustomModelData 是识别凭证的唯一依据，必须设。
         meta.setCustomModelData(spec.customModelData());

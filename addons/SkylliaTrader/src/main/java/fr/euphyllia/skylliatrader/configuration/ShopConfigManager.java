@@ -97,6 +97,8 @@ public class ShopConfigManager implements IConfigurationProvider {
             log.error("shop.toml 顶层 'shop-item' 不是数组，全部商品已忽略");
         }
 
+        ensureFrogspawn(loaded, seenIds);
+
         this.items = List.copyOf(loaded);
         Map<String, ShopItemDefinition> byId = new HashMap<>();
         for (ShopItemDefinition item : loaded) {
@@ -104,6 +106,28 @@ public class ShopConfigManager implements IConfigurationProvider {
         }
         this.itemsById = Map.copyOf(byId);
         log.info("已加载 {} 条商店商品。", items.size());
+    }
+
+    /**
+     * 存量 shop.toml 不会随 jar 更新。青蛙卵是主世界基础池断链材料，缺了全服卡进度。
+     * 只补进内存，不回写文件——回写会把 shop.toml 的注释冲掉。
+     */
+    private void ensureFrogspawn(List<ShopItemDefinition> loaded, Set<String> seenIds) {
+        if (seenIds.contains("frogspawn")) return;
+        loaded.add(new ShopItemDefinition(
+                "frogspawn",
+                Material.FROGSPAWN,
+                "<white>青蛙卵",
+                4.0,
+                ShopUnlockTrack.TRADE_COUNT,
+                0L,
+                true,
+                ShopPurchaseLimitPeriod.NONE,
+                0,
+                ShopExtraGate.NONE,
+                false));
+        seenIds.add("frogspawn");
+        log.warn("shop.toml 缺少青蛙卵，已在内存里补进主世界基础池。请在配置里加一条 id=frogspawn，否则下次手改文件后会再丢");
     }
 
     private ShopItemDefinition parseItem(Config table) {

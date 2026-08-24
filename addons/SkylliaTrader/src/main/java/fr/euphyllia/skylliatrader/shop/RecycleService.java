@@ -308,8 +308,9 @@ public final class RecycleService {
         double unitPrice = recyclePriceFor(liveItem);
         double rawPrice = ShopEconomics.round2(unitPrice * quantity);
 
-        // 每日回收收入上限：这是<b>整座岛屿共享</b>的状态，必须在岛屿维度的互斥临界区里
-        // 判定 + 记账，否则两名成员同时回收就能各自读到同一个"剩余额度"把上限刷穿。
+        // 每种商品各自的每日回收收入上限：仍是<b>整座岛屿共享</b>的状态（5 人岛不能 ×5），
+        // 必须在岛屿维度的互斥临界区里判定 + 记账。两名成员同时回收同一种商品时，
+        // 否则会各自读到同一个"剩余额度"把该商品的上限刷穿。
         // 本类原先刻意没有临界区（类文档里写过"回收不碰任何共享状态"），加上每日上限之后
         // 那个前提不再成立，这里补上——语义和 OrderBoardService 的每日货币上限完全一致：
         // 超出上限的部分<b>不发钱</b>，但物品已经扣了，所以要把超出的部分按"少发多少钱"
@@ -325,7 +326,8 @@ public final class RecycleService {
         double cap = TraderConfigLoader.config.getDailyRecycleIncomeCap();
         Double accepted = plugin.getDataService().compute(island, data -> {
             long now = System.currentTimeMillis();
-            DailyRecycleIncome income = data.dailyRecycleIncome;
+            DailyRecycleIncome income = data.recycleIncomeByItem
+                    .computeIfAbsent(normalizedId, k -> new DailyRecycleIncome());
             if (income.windowStartAt == 0L || now - income.windowStartAt > DAY_MILLIS) {
                 income.amount = 0.0;
                 income.windowStartAt = now;
@@ -339,8 +341,8 @@ public final class RecycleService {
         });
         if (accepted == null) {
             refundItems(player, material, quantity, "今日回收额度不足");
-            fail(player, "§e今天的回收额度已经用完了（每日上限 §f" + GuiFormat.fmt(cap)
-                    + " §e金币），物品已退还，明天再来吧。");
+            fail(player, "§e今天这种商品的回收额度已经用完了（每种每日上限 §f" + GuiFormat.fmt(cap)
+                    + " §e金币），物品已退还。换别的商品还能继续卖。");
             return;
         }
         double totalPrice = accepted;
@@ -351,7 +353,7 @@ public final class RecycleService {
                 String reason = response == null ? "经济插件未返回结果" : response.errorMessage;
                 log.error("玩家 {} 回收商品 '{}' 发钱失败：{}，已退还物品并回滚每日额度",
                         player.getName(), normalizedId, reason);
-                rollbackDailyIncome(island, totalPrice);
+                rollbackDailyIncome(island, normalizedId, totalPrice);
                 refundItems(player, material, quantity, "发钱失败");
                 fail(player, "§c回收失败：发钱异常，物品已退还，请稍后重试或联系管理员。");
                 return;
@@ -361,7 +363,7 @@ public final class RecycleService {
             // 不会直接抛异常（理由同 ShopPurchaseService#chargeStage）。
             log.error("玩家 {} 回收商品 '{}' 发钱阶段抛出异常，已退还物品并回滚每日额度",
                     player.getName(), normalizedId, t);
-            rollbackDailyIncome(island, totalPrice);
+            rollbackDailyIncome(island, normalizedId, totalPrice);
             refundItems(player, material, quantity, "发钱异常");
             fail(player, "§c回收失败：经济插件出错，物品已退还，请稍后重试或联系管理员。");
             return;
@@ -388,17 +390,20 @@ public final class RecycleService {
      * 把已经记进"今日回收收入"的额度扣回去。用于"额度扣了、物品扣了，但钱没发出去"的分支——
      * 不回滚的话玩家会白白损失一次额度（物品退回来了，额度却没了）。
      */
-    private void rollbackDailyIncome(Island island, double amount) {
+    private void rollbackDailyIncome(Island island, String shopItemId, double amount) {
         if (amount <= 0) return;
         try {
             plugin.getDataService().compute(island, data -> {
-                DailyRecycleIncome income = data.dailyRecycleIncome;
+                DailyRecycleIncome income = data.recycleIncomeByItem.get(shopItemId);
+                if (income == null) {
+                    return TraderDataService.Mutation.readOnly(Boolean.TRUE);
+                }
                 income.amount = Math.max(0.0, ShopEconomics.round2(income.amount - amount));
                 return TraderDataService.Mutation.commit(Boolean.TRUE, Boolean.FALSE);
             });
         } catch (Throwable t) {
             // 回滚失败只影响这座岛今天的额度多扣了一点，绝不能让它把"退还物品"那一步顶掉。
-            log.error("回滚岛屿 {} 的每日回收额度（{}）失败", island.getId(), amount, t);
+            log.error("回滚岛屿 {} 商品 {} 的每日回收额度（{}）失败", island.getId(), shopItemId, amount, t);
         }
     }
 

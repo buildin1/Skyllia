@@ -30,8 +30,7 @@ import org.bukkit.inventory.PlayerInventory;
  *   <li><b>两次事件，两条互不重叠的匹配规则</b>：一次右键最多会为主手和副手各触发一次
  *       {@code PlayerInteractEvent}。这里<b>两次都处理</b>，但每一次<b>只认它自己那只手</b>上
  *       的物品：主手事件只匹配主手，副手事件只匹配副手。这样既不会一次右键跑两遍召唤，
- *       也不会「拿错手扣错物品」——{@code MerchantService#consumeCredential} 是按传下去的
- *       那只手扣的。</li>
+ *       也不会「拿错手处理错物品」。</li>
  *   <li><b>为什么副手那一次事件必须单独处理</b>：曾经的写法是「副手事件直接 return，
  *       改在主手事件里顺便看一眼副手」，代价是<b>「主手空 + 副手拿凭证 + 右键空气」完全没反应</b>。
  *       原因在服务端 {@code ServerGamePacketListenerImpl#handleUseItem} 的第一行判定

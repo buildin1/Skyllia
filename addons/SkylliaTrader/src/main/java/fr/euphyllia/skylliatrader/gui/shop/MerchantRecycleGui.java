@@ -178,6 +178,7 @@ public final class MerchantRecycleGui {
                 List.of("<dark_gray>─────────",
                         "<gray>只回收游商自己有卖的商品（价格 = 原价的 40%）</gray>",
                         "<gray>回收和解锁进度无关，背包里有就能卖</gray>",
+                        "<gray>每种商品每天各有独立额度，卖沙子不影响卖烈焰棒</gray>",
                         "<dark_gray>─────────",
                         "<yellow>左键</yellow><gray> 回收 x1</gray>",
                         "<yellow>Shift+左键</yellow><gray> 回收 x5（不足 5 个就卖背包里实际的数量）</gray>",

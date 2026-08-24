@@ -91,9 +91,13 @@ public class TraderConfigManager implements IConfigurationProvider {
     /** 每岛每日通过订单获得的货币总额上限，对齐 HANDOFF 9.3（日均产出约 100 的新锚点，原 400 的十分之一）。 */
     private static final double DEFAULT_DAILY_ORDER_INCOME_CAP = 40.0;
     /**
-     * 每岛每日回收收入上限（金币）。回收系统通胀防线的<b>第二道</b>，第一道是 shop.toml 的
+     * 每种商品每日回收收入上限（金币）。回收系统通胀防线的<b>第二道</b>，第一道是 shop.toml 的
      * {@code recyclable = false}（见 {@code DailyRecycleIncome} 类文档）。
      * 取 40 和订单上限同一个量级：两者都是"辅助收入"，不该盖过 PlayerTask 的日均 100 主线。
+     * <p>
+     * 2026-08-24 起这个数字是<b>按单个物品</b>计，不是全岛所有商品加总。沙子卖满 40 金币
+     * 不影响今天还能回收烈焰棒。
+     * </p>
      */
     private static final double DEFAULT_DAILY_RECYCLE_INCOME_CAP = 40.0;
     /** 订单看板巡检间隔（分钟）。判定口径是"是否已过期"，跑得比 refresh-hours 频繁得多也没问题，
@@ -133,9 +137,9 @@ public class TraderConfigManager implements IConfigurationProvider {
     /** 成书的页数上限（原版限制）。超出的页在 {@code CraftMetaBook#addPages} 里被静默丢弃。 */
     private static final int MAX_BOOK_PAGES = 100;
     private static final List<String> DEFAULT_GUIDEBOOK_PAGES = List.of(
-            "<b>游商指南</b>\n\n路过的游商只带基础货：沙子、甘蔗、烈焰棒、下界疣、种子和树苗。\n\n想买到建材、钻石、下界合金？往后翻。",
+            "<b>游商指南</b>\n\n路过的游商只带基础货：沙子、甘蔗、烈焰棒、下界疣、青蛙卵、种子和树苗。\n\n想买到建材、钻石、下界合金？往后翻。",
             "<b>一、常驻商队</b>\n\n完成挑战任务可以拿到<b>商队凭证</b>，一共三种：主世界、下界、末地。\n\n拿着凭证在自己岛上<b>右键</b>，就能召唤一个<b>永久常驻</b>的商队商人。",
-            "<b>凭证的规矩</b>\n\n· 每座岛<b>每种商队各 1 个</b>\n· 已经有了再用凭证会失败，<b>凭证不会被扣掉</b>\n· 商人可以被打死，之后能用新凭证重召\n· 岛上所有成员共用这些商人",
+            "<b>凭证的规矩</b>\n\n· 每座岛<b>每种商队各 1 个</b>\n· 凭证是<b>开关</b>：岛上没有这种商人时右键放出，已经有了再右键就是收回\n· <b>凭证不会被消耗</b>，可以反复使用\n· 岛上所有成员共用这些商人",
             "<b>二、四条轨道</b>\n\n商人卖什么，由四条互不替代的轨道决定：\n\n1. 交易次数\n2. 岛屿等级\n3. 商会声望\n4. 累计消费",
             "<b>1. 交易次数</b>\n开基础生活物资：树苗、染料、花草、珊瑚、苔藓……买得越多开得越全。\n\n<b>2. 岛屿等级</b>\n开建材大宗：下界岩、凝灰岩、滴水石锥、朱砂族、硫磺族……量大价低。",
             "<b>3. 商会声望</b>\n开稀有物资：钻石、远古残骸、下界之星、鞘翅。\n\n声望<b>只能</b>靠完成商队订单获得，钱和等级都换不来。\n\n<b>4. 累计消费</b>\n只给折扣和限购加成，不解锁新商品。",
@@ -299,7 +303,16 @@ public class TraderConfigManager implements IConfigurationProvider {
                 DEFAULT_ORDER_REFRESH_HOURS, Integer.class));
         this.dailyOrderIncomeCap = Math.max(0.0, getOrSetDefault("order-board.daily-order-income-cap",
                 DEFAULT_DAILY_ORDER_INCOME_CAP, Double.class));
-        this.dailyRecycleIncomeCap = Math.max(0.0, getOrSetDefault("recycle.daily-income-cap",
+        // 旧键 recycle.daily-income-cap 是「全岛所有商品加总」；2026-08-24 改成按单个物品计。
+        // 存量配置如果还没新键，把旧值搬过去，避免 reload 时静默掉回默认 40。
+        if (config.get("recycle.daily-income-cap-per-item") == null) {
+            Object legacy = config.get("recycle.daily-income-cap");
+            if (legacy instanceof Number number) {
+                config.set("recycle.daily-income-cap-per-item", number.doubleValue());
+                changed = true;
+            }
+        }
+        this.dailyRecycleIncomeCap = Math.max(0.0, getOrSetDefault("recycle.daily-income-cap-per-item",
                 DEFAULT_DAILY_RECYCLE_INCOME_CAP, Double.class));
         this.dailyOrderReputationCap = Math.max(0L, getOrSetDefault("order-board.daily-reputation-cap",
                 DEFAULT_DAILY_ORDER_REPUTATION_CAP, Long.class));
@@ -805,7 +818,7 @@ public class TraderConfigManager implements IConfigurationProvider {
         return dailyOrderIncomeCap;
     }
 
-    /** 每岛每日回收收入上限（金币）；0 表示完全禁止回收换钱。 */
+    /** 每种商品每日回收收入上限（金币）；0 表示完全禁止回收换钱。 */
     public double getDailyRecycleIncomeCap() {
         return dailyRecycleIncomeCap;
     }

@@ -11,6 +11,7 @@ import fr.euphyllia.skylliatrader.configuration.TraderConfigManager;
 import fr.euphyllia.skylliatrader.configuration.model.TrackTiers;
 import fr.euphyllia.skylliatrader.data.TraderIslandData;
 import fr.euphyllia.skylliatrader.merchant.CaravanType;
+import fr.euphyllia.skylliatrader.merchant.MerchantService;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
@@ -101,7 +102,7 @@ public final class TraderProgressGui {
 
                 // 第二步：回玩家线程建界面 + openInventory。
                 player.getScheduler().run(plugin,
-                        t -> render(player, data, tiers, islandLevel, levelTrackAvailable),
+                        t -> render(player, island, data, tiers, islandLevel, levelTrackAvailable),
                         null);
             } catch (Throwable t) {
                 // 堆栈进控制台给管理员排查，玩家侧给一句人话——「点了没反应」是最难收到有效反馈的故障。
@@ -113,7 +114,7 @@ public final class TraderProgressGui {
         });
     }
 
-    private static void render(@NotNull Player player, @NotNull TraderIslandData data,
+    private static void render(@NotNull Player player, @NotNull Island island, @NotNull TraderIslandData data,
                                @NotNull TrackTiers tiers, long islandLevel, boolean levelTrackAvailable) {
         SkylliaGuiHolder holder = new SkylliaGuiHolder(SkylliaGuiHolder.GuiType.EXTENSION);
         Inventory inv = Bukkit.createInventory(holder, 54, MM.deserialize("<light_purple>🛒 游商进度指南"));
@@ -143,10 +144,32 @@ public final class TraderProgressGui {
         inv.setItem(38, GuiItem.of(Material.HOPPER, "<!italic><gold>♻ 回收商品",
                 List.of("<dark_gray>─────────",
                         "<gray>把背包里游商在卖的商品换成金币（原价的 40%）</gray>",
-                        "<gray>回收和解锁进度无关，背包里有就能卖</gray>",
+                        "<gray>每种商品每天各有独立额度</gray>",
                         "<dark_gray>─────────",
                         "<yellow>点击打开</yellow>")));
         holder.bind(38, e -> fr.euphyllia.skylliatrader.gui.shop.MerchantRecycleGui.open(player));
+
+        inv.setItem(42, GuiItem.of(Material.BARRIER, "<!italic><red>强制撤离常驻商队",
+                List.of("<dark_gray>─────────",
+                        "<gray>商人卡住、找不到、杀不掉时用这个</gray>",
+                        "<gray>会把本岛三种商队全部收回并释放名额</gray>",
+                        "<gray>凭证不会被消耗，再右键就能重新放出</gray>",
+                        "<dark_gray>─────────",
+                        "<yellow>点击撤离</yellow>")));
+        holder.bind(42, e -> {
+            player.closeInventory();
+            SkylliaTrader plugin = SkylliaTrader.getInstance();
+            if (plugin == null) return;
+            MerchantService service = plugin.getMerchantService();
+            Bukkit.getAsyncScheduler().runNow(plugin, task -> {
+                try {
+                    service.recallAllCaravans(player, island);
+                } catch (Throwable t) {
+                    log.error("玩家 {} 强制撤离商队失败", player.getName(), t);
+                    player.sendMessage(Component.text("§c撤离失败：服务器内部错误，请联系管理员。"));
+                }
+            });
+        });
 
         inv.setItem(49, GuiItem.close());
         holder.bind(49, e -> player.closeInventory());

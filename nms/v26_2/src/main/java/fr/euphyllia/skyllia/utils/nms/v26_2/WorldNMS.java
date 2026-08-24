@@ -60,6 +60,8 @@ import org.bukkit.craftbukkit.generator.CraftWorldInfo;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.WanderingTrader;
+import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.generator.BiomeProvider;
 import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.generator.WorldInfo;
@@ -76,6 +78,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 import static net.minecraft.server.MinecraftServer.getServer;
@@ -598,6 +601,45 @@ public class WorldNMS extends fr.euphyllia.skyllia.api.utils.nms.WorldNMS {
                     targetX, endSpawnY, targetZ, player.getName(), targetY, targetY + 1);
         } catch (Exception e) {
             log.error("[Skyllia-末地门] 改 END_SPAWN_POINT 失败", e);
+        }
+    }
+
+    /**
+     * 走原版刷怪蛋那条 {@code EntityType.spawn(..., SPAWN_ITEM_USE, tryMoveDown)}。
+     * 取消时返回 {@code null}，不会像 {@code World#spawn} 那样交回一只已 discard 的实体。
+     */
+    @Override
+    public @Nullable WanderingTrader spawnWanderingTraderLikeEgg(
+            @org.jetbrains.annotations.NotNull Location location,
+            @Nullable Consumer<WanderingTrader> beforeAdd) {
+        if (location.getWorld() == null) return null;
+        try {
+            ServerLevel level = ((CraftWorld) location.getWorld()).getHandle();
+            BlockPos spawnPos = BlockPos.containing(location.getX(), location.getY(), location.getZ());
+            net.minecraft.world.entity.PostSpawnProcessor<net.minecraft.world.entity.npc.wanderingtrader.WanderingTrader> processor =
+                    entity -> {
+                        if (beforeAdd == null) return;
+                        if (entity.getBukkitEntity() instanceof WanderingTrader bukkit) {
+                            beforeAdd.accept(bukkit);
+                        }
+                    };
+            net.minecraft.world.entity.npc.wanderingtrader.WanderingTrader nms =
+                    net.minecraft.world.entity.EntityTypes.WANDERING_TRADER.spawn(
+                            level,
+                            processor,
+                            spawnPos,
+                            net.minecraft.world.entity.EntitySpawnReason.SPAWN_ITEM_USE,
+                            true,
+                            false,
+                            CreatureSpawnEvent.SpawnReason.SPAWNER_EGG);
+            if (nms == null || nms.isRemoved()) return null;
+            if (nms.getBukkitEntity() instanceof WanderingTrader trader && trader.isValid()) {
+                return trader;
+            }
+            return null;
+        } catch (Exception e) {
+            log.error("刷怪蛋路径生成游商失败：{}", location, e);
+            return null;
         }
     }
 }

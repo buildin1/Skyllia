@@ -3,6 +3,7 @@ package fr.euphyllia.skylliaacidrain.season;
 import fr.euphyllia.skyllia.api.SkylliaAPI;
 import fr.euphyllia.skyllia.api.addons.skylliaacidrain.event.AcidSeasonEndEvent;
 import fr.euphyllia.skyllia.api.addons.skylliaacidrain.event.AcidSeasonPlayerSurvivedEvent;
+import fr.euphyllia.skyllia.api.addons.skylliaacidrain.event.AcidSeasonPlayerSurvivedOfflineEvent;
 import fr.euphyllia.skyllia.api.addons.skylliaacidrain.event.AcidSeasonStartEvent;
 import fr.euphyllia.skyllia.api.configuration.WorldConfig;
 import fr.euphyllia.skylliaacidrain.SkylliaAcidRain;
@@ -37,6 +38,13 @@ import java.util.concurrent.ConcurrentHashMap;
 public class AcidSeasonManager implements Listener {
 
     private static final Logger log = LoggerFactory.getLogger(AcidSeasonManager.class);
+
+    /**
+     * 判定「熬过这一季」所需的最低在场比例。
+     * 0.5 = 整季一半时间在场即可——既不像旧实现那样苛刻到"开始那一 tick 必须在场"，
+     * 也不至于让人卡在最后一秒进来白拿。
+     */
+    private static final double SURVIVE_RATIO = 0.5D;
     private static final long TICKS_PER_DAY = 24000L;
     private static final long MOON_PHASE_COUNT = 8L;
 
@@ -94,6 +102,13 @@ public class AcidSeasonManager implements Listener {
             long fullTime = world.getFullTime();
 
             if (state.active) {
+                // 每轮巡检累计一次「在场时长」。
+                // 旧实现只在 startSeason 那一瞬间对世界里的玩家拍一次快照，之后再没有任何
+                // 地方往 trackedPlayers 里加人——玩家只要晚进服哪怕 30 秒，就永远算不上
+                // 「熬过这一季」，不管之后待多久（2026-08-24 服主反馈：熬了好几次都没计数）。
+                // 改成按在场时长累计：中途进来也算，但必须待够 SURVIVE_RATIO 的比例才算数，
+                // 免得有人卡在最后一秒进来白拿。死亡过的玩家进了 disqualified，不再累计。
+                accumulatePresence(world, state);
                 if (fullTime >= state.seasonEndFullTime) {
                     endSeason(world, state);
                 }
@@ -163,11 +178,14 @@ public class AcidSeasonManager implements Listener {
 
         if (world.getFullTime() < snapshot.endFullTime()) {
             // 停机期间季节尚未走完 —— 恢复为进行中。
-            // trackedPlayers 刻意保持为空：跨越重启的这一轮不发放「全程存活」奖励，
-            // 因为所有人都被强制下线过，无法认定其全程在场。
+            // presenceTicks 从零开始：重启把所有人强制下线过，重启前的在场时长不算。
+            // 判定比例按「剩余时长」算，否则原 duration 没落盘、required 会变成 1 tick，
+            // 重启后巡检一次就人人过关。
+            long remaining = snapshot.endFullTime() - world.getFullTime();
             state.active = true;
+            state.seasonDurationTicks = Math.max(1L, remaining);
             log.info("世界 {} 的酸雨季在重启后恢复，剩余 {} tick",
-                    world.getName(), snapshot.endFullTime() - world.getFullTime());
+                    world.getName(), remaining);
         } else {
             // 停机期间季节已自然走完 —— 静默标记结束。
             // 这里刻意不广播、不触发结束事件：向从未见过季节开始的玩家播报「酸雨季结束」只会让人困惑。
@@ -184,6 +202,9 @@ public class AcidSeasonManager implements Listener {
         state.active = true;
         state.seasonEndFullTime = world.getFullTime() + duration;
         state.trackedPlayers.clear();
+        state.presenceTicks.clear();
+        state.disqualified.clear();
+        state.seasonDurationTicks = duration;
         for (Player player : world.getPlayers()) {
             state.trackedPlayers.add(player.getUniqueId());
         }
@@ -205,27 +226,40 @@ public class AcidSeasonManager implements Listener {
         state.active = false;
         store.save(world.getUID(), false, state.seasonEndFullTime, state.lastTriggerDayIndex);
 
+        // 结算：①没有在本季死过、②累计在场时长达到整季的 SURVIVE_RATIO。
+        // 结束那一 tick 不必还在线——中途进服熬够时长、结算时刚好下线/换世界，也该计数。
+        long required = (long) Math.ceil(Math.max(1L, state.seasonDurationTicks) * SURVIVE_RATIO);
         Set<UUID> survivors = new HashSet<>();
-        for (UUID uuid : state.trackedPlayers) {
-            Player player = Bukkit.getPlayer(uuid);
-            if (player != null && player.isOnline() && world.getUID().equals(player.getWorld().getUID())) {
-                survivors.add(uuid);
-            }
+        for (UUID uuid : state.presenceTicks.keySet()) {
+            if (state.disqualified.contains(uuid)) continue;
+            if (state.presenceTicks.getOrDefault(uuid, 0L) < required) continue;
+            survivors.add(uuid);
         }
         state.trackedPlayers.clear();
+        state.presenceTicks.clear();
+        state.disqualified.clear();
 
-        log.info("酸雨季在世界 {} 结束，存活并全程在场的玩家数：{}", world.getName(), survivors.size());
+        log.info("酸雨季在世界 {} 结束，在场过半且未死亡的玩家数：{}", world.getName(), survivors.size());
 
         new AcidSeasonEndEvent(world).callEvent();
 
         for (UUID uuid : survivors) {
             Player player = Bukkit.getPlayer(uuid);
-            if (player == null) continue;
-            player.getScheduler().run(plugin, task -> {
-                if (player.isOnline()) {
-                    new AcidSeasonPlayerSurvivedEvent(player, world).callEvent();
+            if (player != null && player.isOnline()) {
+                var scheduled = player.getScheduler().run(plugin, task -> {
+                    if (player.isOnline()) {
+                        new AcidSeasonPlayerSurvivedEvent(player, world).callEvent();
+                    } else {
+                        new AcidSeasonPlayerSurvivedOfflineEvent(uuid, world).callEvent();
+                    }
+                }, () -> new AcidSeasonPlayerSurvivedOfflineEvent(uuid, world).callEvent());
+                if (scheduled == null) {
+                    new AcidSeasonPlayerSurvivedOfflineEvent(uuid, world).callEvent();
                 }
-            }, null);
+            } else {
+                // 结算时不在线：挑战进度按岛屿记，不依赖玩家实体。
+                new AcidSeasonPlayerSurvivedOfflineEvent(uuid, world).callEvent();
+            }
         }
 
         if (AcidConfigLoader.config.isSeasonBroadcastEnabled()) {
@@ -252,6 +286,27 @@ public class AcidSeasonManager implements Listener {
         UUID uuid = event.getEntity().getUniqueId();
         for (SeasonState state : seasonStates.values()) {
             state.trackedPlayers.remove(uuid);
+            // 光从 trackedPlayers 里删不够——判定已经改成看 presenceTicks 了，
+            // 必须显式记进「本季已失格」，否则死完接着待着照样能攒够时长。
+            state.disqualified.add(uuid);
+        }
+    }
+
+    /**
+     * 把玩家在本轮巡检时的在场情况累加进 {@code presenceTicks}。
+     * <p>
+     * 用巡检间隔（{@code season.check-interval-tick}）作为每次累加的粒度：巡检本身就是按这个
+     * 间隔跑的，两次巡检之间玩家一直在世界里，就按一个完整间隔计。粒度粗一点没关系——
+     * 判定用的是"占整季的比例"，不是精确秒数。
+     * </p>
+     */
+    private void accumulatePresence(World world, SeasonState state) {
+        long step = Math.max(1L, AcidConfigLoader.config.getSeasonCheckIntervalTick());
+        for (Player player : world.getPlayers()) {
+            UUID uuid = player.getUniqueId();
+            if (state.disqualified.contains(uuid)) continue;
+            state.trackedPlayers.add(uuid);
+            state.presenceTicks.merge(uuid, step, Long::sum);
         }
     }
 
@@ -259,6 +314,11 @@ public class AcidSeasonManager implements Listener {
         volatile boolean active = false;
         volatile long seasonEndFullTime = 0L;
         volatile long lastTriggerDayIndex = -1L;
+        volatile long seasonDurationTicks = 0L;
         final Set<UUID> trackedPlayers = ConcurrentHashMap.newKeySet();
+        /** 本季每名玩家累计的在场 tick 数。 */
+        final Map<UUID, Long> presenceTicks = new ConcurrentHashMap<>();
+        /** 本季死过、已失去资格的玩家。 */
+        final Set<UUID> disqualified = ConcurrentHashMap.newKeySet();
     }
 }

@@ -138,7 +138,7 @@ final class RequirementTypeGui {
         }
         if (Bukkit.getPluginManager().getPlugin("SkylliaAcidRain") != null) {
             list.add(new TypeDef(Material.LIME_DYE, "熬过酸雨季节 (ACIDSEASON)",
-                    lore("玩家需累计熬过指定数量的酸雨季节。", "需在整个季节全程在场且未死亡才计数。"),
+                    lore("玩家需累计熬过指定数量的酸雨季节。", "本季在场过半且未死亡即计数，中途进服也算。"),
                     "ACIDSEASON:", "3", "<gray>季节数量"));
         }
         return list;

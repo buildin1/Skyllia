@@ -1,10 +1,10 @@
 package fr.euphyllia.skylliatrader.merchant;
 
+import fr.euphyllia.skyllia.api.SkylliaAPI;
 import fr.euphyllia.skylliatrader.configuration.TraderConfigLoader;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Location;
 import org.bukkit.entity.WanderingTrader;
-import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -102,28 +102,37 @@ public final class MerchantSpawner {
      * @param origin     来源，决定停留时长与商品范围
      * @param expireAt   过期时间戳（epoch millis），0 = 永不过期
      * @param preSpawn   实体加入世界之前的额外回调（可为 {@code null}），拿得到实体 UUID
-     * @return {@code World#spawn} 交回来的实体；只有世界为 {@code null} 或生成本身抛异常时
-     * 才返回 {@code null}。<b>⚠️ 非 {@code null} 不代表生成成功</b>——被其它插件取消时返回的是
-     * 一只<b>已经失效</b>的实体，调用方必须自己判 {@code isValid()}，理由见上面「返回值的真实语义」
+     * @return 真正进了世界的实体；世界为 {@code null}、刷怪蛋路径失败或抛异常时返回 {@code null}。
+     * 调用方仍应再判一次 {@code isValid()}（见 {@code MerchantService#spawnAt}）
      */
     public @Nullable WanderingTrader spawn(@NotNull Location location, @NotNull UUID islandId,
                                            @NotNull CaravanType caravan, @NotNull MerchantOrigin origin,
                                            long expireAt, @Nullable Consumer<WanderingTrader> preSpawn) {
         if (location.getWorld() == null) return null;
+        Consumer<WanderingTrader> configure = trader -> {
+            // 顺序有意为之：先登记再打标记。EntityAddToWorldEvent 是靠 PDC 标记
+            // 认出这只实体的，登记必须在标记之前完成，中间不能留下
+            // 「已经能被认出、但还没登记」的窗口。
+            if (preSpawn != null) preSpawn.accept(trader);
+            keys.mark(trader, islandId, caravan, origin, expireAt);
+            applyRuntimeSettings(trader, caravan, origin, expireAt);
+        };
         try {
-            return location.getWorld().spawn(location, WanderingTrader.class,
-                    CreatureSpawnEvent.SpawnReason.CUSTOM,
-                    trader -> {
-                        // 顺序有意为之：先登记再打标记。EntityAddToWorldEvent 是靠 PDC 标记
-                        // 认出这只实体的，登记必须在标记之前完成，中间不能留下
-                        // 「已经能被认出、但还没登记」的窗口。
-                        if (preSpawn != null) preSpawn.accept(trader);
-                        keys.mark(trader, islandId, caravan, origin, expireAt);
-                        applyRuntimeSettings(trader, caravan, origin, expireAt);
-                    });
+            // 优先走原版刷怪蛋那条 NMS 路径：tryMoveDown 落点校正 + finalizeSpawn，
+            // 事件被取消时返回 null，不会像 World#spawn 那样交回一只已 discard 的实体。
+            // 正式服「放下去原地消失」就是这条 World#spawn 路径在虚空岛上挤出碰撞、
+            // 下一 tick 掉虚空的结果。
+            WanderingTrader viaEgg = SkylliaAPI.getWorldNMS()
+                    .spawnWanderingTraderLikeEgg(location, configure);
+            if (viaEgg != null) return viaEgg;
+
+            // 不回退 World#spawn：正式服「放下去原地消失」就是那条路径在虚空岛上
+            // 挤出碰撞、下一 tick 掉虚空。刷怪蛋路径失败就当本次没生成。
+            log.warn("刷怪蛋路径在 {} 没能放下游商（岛屿 {}，商队 {}）", location, islandId, caravan);
+            return null;
         } catch (Exception e) {
-            // 生成本身抛异常（别的插件在 CreatureSpawnEvent 里炸了、位置非法……）时不能让调用方
-            // 以为生成成功了：那会导致占位被转正、凭证被扣，而岛上一个商人都没有。
+            // 生成本身抛异常时不能让调用方以为生成成功了：那会导致占位被转正，
+            // 而岛上一个商人都没有。
             log.error("在 {} 生成游商失败（岛屿 {}，商队 {}）", location, islandId, caravan, e);
             return null;
         }

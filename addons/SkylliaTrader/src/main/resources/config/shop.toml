@@ -173,6 +173,18 @@ natural-visible = true
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
 
+[[shop-item]]
+id = "frogspawn"
+material = "FROGSPAWN"
+recyclable = false   # 可再生：蝌蚪/青蛙可无限量产
+display-name = "<white>青蛙卵"
+price = 4.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 0
+natural-visible = true
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
 # ─────────────────────────────────────────────────────────────────────────
 # 交易次数轨 · 第 10 档
 # ─────────────────────────────────────────────────────────────────────────

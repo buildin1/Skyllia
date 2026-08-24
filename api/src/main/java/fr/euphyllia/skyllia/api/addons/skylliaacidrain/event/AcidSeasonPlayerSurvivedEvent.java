@@ -8,14 +8,12 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Called once per player, at the exact moment {@link AcidSeasonEndEvent} fires
- * for a world, for every player who was online in that world when the acid
- * season started and who remained online, in that same world, and alive for
- * the season's entire duration.
+ * for a world, for every player who accumulated at least half of the season's
+ * duration in that world and did not die during it.
  *
- * <p>Players who joined the world after the season started, left the world
- * (or the server) before it ended, or died — of any cause, not just acid
- * damage — at any point between the season's start and end are excluded and
- * will not receive this event.</p>
+ * <p>Players who join mid-season still count, as long as they stay long enough.
+ * Players who die — of any cause, not just acid damage — are disqualified
+ * for that season and will not receive this event.</p>
  *
  * <p>Fired by the <b>SkylliaAcidRain</b> addon. This is a notification-only
  * event.</p>

@@ -11,6 +11,7 @@ import org.bukkit.World;
 import org.bukkit.WorldCreator;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.WanderingTrader;
 import org.bukkit.util.BoundingBox;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -18,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /**
@@ -126,5 +128,30 @@ public abstract class WorldNMS {
      * @param player 进入末地门的玩家
      */
     public void adjustEndPortalSpawnPoint(@NotNull Player player) {
+    }
+
+    /**
+     * 按原版刷怪蛋的生成链路放下一个游商：{@code EntityType.spawn(..., SPAWN_ITEM_USE, tryMoveDown)}。
+     * <p>
+     * 和 {@code World#spawn} 的关键差别：
+     * </p>
+     * <ul>
+     *   <li>会做刷怪蛋那套碰撞落点校正（{@code tryMoveDown}），不会卡进方块或从方块顶面挤出去；</li>
+     *   <li>会走 {@code Mob#finalizeSpawn}；</li>
+     *   <li>事件被取消时返回 {@code null}（Paper 的 {@code World#spawn} 会把这个信息丢掉，
+     *       交回一只已经 {@code discard} 的实体）。</li>
+     * </ul>
+     * <p>
+     * {@code beforeAdd} 在实体加入世界<b>之前</b>调用，等价于刷怪蛋的 {@code PostSpawnProcessor}，
+     * 也等价于 {@code World#spawn} 的 pre-spawn 回调——PDC 标记必须在这里打。
+     * </p>
+     * <p>
+     * 默认实现返回 {@code null}，由各 NMS 版本覆盖。调用方把 {@code null} 当成生成失败。
+     * </p>
+     */
+    public @Nullable WanderingTrader spawnWanderingTraderLikeEgg(
+            @NotNull Location location,
+            @Nullable Consumer<WanderingTrader> beforeAdd) {
+        return null;
     }
 }

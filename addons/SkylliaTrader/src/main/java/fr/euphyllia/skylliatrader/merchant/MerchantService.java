@@ -8,11 +8,12 @@ import fr.euphyllia.skylliatrader.SkylliaTrader;
 import fr.euphyllia.skylliatrader.bridge.IslandLevelBridge;
 import fr.euphyllia.skylliatrader.configuration.TraderConfigLoader;
 import fr.euphyllia.skylliatrader.configuration.TraderConfigManager;
-import fr.euphyllia.skylliatrader.configuration.model.CredentialItemSpec;
 import fr.euphyllia.skylliatrader.configuration.model.MerchantOfferScope;
 import fr.euphyllia.skylliatrader.data.MerchantRecord;
+import fr.euphyllia.skylliatrader.data.TraderIslandData;
 import fr.euphyllia.skylliatrader.data.TraderDataService;
 import net.kyori.adventure.text.Component;
+import org.bukkit.entity.Entity;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
@@ -20,7 +21,6 @@ import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.WanderingTrader;
 import org.bukkit.inventory.EquipmentSlot;
-import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -28,6 +28,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Iterator;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
@@ -45,7 +47,7 @@ import java.util.function.Consumer;
  *   <li><b>之前</b>：凭证要做 CAS 占位（写数据库）；自然刷新只查一次岛屿标志 + 内存冷却，
  *       一个字节都不写库；</li>
  *   <li><b>之后</b>：凭证要把占位转正、然后才扣凭证；自然刷新只在内存里记一下「这座岛现在有一个」。</li>
- * </ul>
+ * </ul>（<b>不扣凭证</b>，凭证是放出/收回开关）
  *
  * <h2>线程模型</h2>
  * <p>
@@ -55,7 +57,7 @@ import java.util.function.Consumer;
  *   <li><b>玩家线程</b>：读手上的物品、读玩家坐标（快照下来往后传）；</li>
  *   <li><b>async 线程</b>：查岛屿、查权限、CAS 占位（全是同步阻塞 JDBC，绝不能上 region tick）；</li>
  *   <li><b>region 线程</b>：扫方块、生成实体；</li>
- *   <li>再回 <b>async</b> 把占位转正，最后回<b>玩家线程</b>扣凭证。</li>
+ *   <li>再回 <b>async</b> 把占位转正。凭证不扣，再右键同种凭证就是收回。</li>
  * </ol>
  * <p>
  * 每一次跳线程都是一次「世界可能已经变了」的机会，所以每一步都重新校验，失败就按
@@ -189,7 +191,7 @@ public final class MerchantService {
      *
      * @param player  使用凭证的玩家
      * @param caravan 凭证对应的商队
-     * @param hand    凭证所在的手（扣除时优先扣这只手上的那一叠）
+     * @param hand    凭证所在的手（识别用；召唤成功不扣凭证）
      */
     public void summonWithCredential(@NotNull Player player, @NotNull CaravanType caravan,
                                      @NotNull EquipmentSlot hand) {
@@ -245,6 +247,23 @@ public final class MerchantService {
         }
         if (!SkylliaAPI.getPermissionsManager().hasPermission(player, island, plugin.getPermissions().merchantSummon())) {
             fail(player, "§c你在这座岛上没有召唤商队的权限。");
+            return;
+        }
+
+        // ── 凭证是「开关」：已经有这种商队就改为撤离 ──────────────────────────
+        // 2026-08-24 服主反馈的两个真实问题，根子是同一个：
+        //   ① 生产上出现过「凭证游商放下去就原地消失，实体找不到、也杀不掉」，名额却被记录
+        //      占着 —— 玩家从此再也召不出这种商队，只能求管理员执行 release；
+        //   ② 凭证是一次性消耗品且挑战只能做一次，一旦卡住就是永久卡进度，全服都堵在这儿。
+        // 把凭证做成开关之后，这两条同时解开：名额被占着的时候右键 = 撤离并释放名额，
+        // 凭证<b>不消耗</b>，玩家随时能自救；想换个位置放商人也只要右键两下。
+        long nowCheck = System.currentTimeMillis();
+        TraderIslandData existing = dataService.load(island);
+        boolean occupied = existing.merchants.stream()
+                .anyMatch(r -> caravan.name().equals(r.caravan) && r.occupiesSlot(nowCheck));
+        if (occupied) {
+            summonInFlight.remove(playerId);
+            recallCaravan(player, island, caravan);
             return;
         }
 
@@ -419,7 +438,7 @@ public final class MerchantService {
     }
 
     /**
-     * 第 4 步（async）：占位转正 → 第 5 步（玩家线程）扣凭证。
+     * 第 4 步（async）：占位转正。凭证是开关，成功后不扣。
      *
      * <h3>为什么转正时要把名额判定<b>重做一遍</b></h3>
      * <p>
@@ -524,53 +543,12 @@ public final class MerchantService {
             return;
         }
 
-        // 第 5 步：回玩家线程扣凭证。规格顺序「CAS 占位 → 生成成功 → 才消耗凭证」的最后一步。
-        Runnable cancelBecauseOffline = () -> {
-            // 玩家在扣凭证之前下线了。商人已经建好并记账，凭证却没扣——
-            // 撤销整次召唤是唯一既不让玩家占便宜、也不让玩家吃亏的选择。
-            log.warn("玩家 {} 在凭证扣除前下线，已撤销本次召唤", player.getName());
-            finishPending(entityId);
-            Bukkit.getAsyncScheduler().runNow(plugin, at -> rollback(island, claimId, trader));
-            summonInFlight.remove(player.getUniqueId());
-        };
-
-        var scheduled = player.getScheduler().run(plugin, t -> {
-            try {
-                CredentialItemSpec spec = TraderConfigLoader.config.getCredentialItem(caravan);
-                if (spec == null || !consumeCredential(player, spec, hand)) {
-                    // 玩家在这几十毫秒里把凭证丢了/塞箱子了。已经记账的商人必须撤销，
-                    // 否则就是「没花凭证白得一个常驻商人」。
-                    log.warn("玩家 {} 的 {} 凭证在召唤过程中消失，已撤销本次召唤", player.getName(), caravan);
-                    finishPending(entityId);
-                    Bukkit.getAsyncScheduler().runNow(plugin, at -> rollback(island, claimId, trader));
-                    fail(player, "§c召唤已取消：凭证在操作过程中离开了你的背包。");
-                    return;
-                }
-                // 记账已落库、凭证已扣掉：这只商人从此是一条正常的正式记录，
-                // 孤儿检查再查到它也会读到 entityUuid 而放过它，登记可以摘了。
-                finishPending(entityId);
-                // setAmount 改的是服务端的 ItemStack mirror，客户端那一格不会自己刷新。
-                // 这次召唤已经跨了「玩家线程 → async → region → async → 玩家线程」四跳，
-                // 客户端很可能早就按自己的预测把那一格画回了原样，留下一个「看得见但拿不动」
-                // 的幽灵凭证。这里在玩家线程上补一次全量同步，代价只有一个背包包。
-                player.updateInventory();
-                player.sendMessage(Component.text("§a成功召唤了§f" + caravan.defaultDisplayName()
-                        + "§a！它会永久驻留在你的岛上，被杀死后可以用新的凭证重新召唤。"));
-                summonInFlight.remove(player.getUniqueId());
-            } catch (Throwable error) {
-                log.error("玩家 {} 的凭证扣除阶段出错，已撤销本次召唤", player.getName(), error);
-                finishPending(entityId);
-                Bukkit.getAsyncScheduler().runNow(plugin, at -> rollback(island, claimId, trader));
-                fail(player, "§c召唤失败：服务器内部错误，凭证没有被消耗。");
-            }
-        }, cancelBecauseOffline);
-
-        // ⚠️ EntityScheduler#run 在「实体（这里是玩家）已经不在了」的时候<b>直接返回 null，
-        // 并且不会调用 retired 回调</b>——玩家如果在上一跳线程之前就已经退出，
-        // 两个回调一个都不会跑，商人就会白送出去而凭证没扣。所以必须自己检查返回值。
-        if (scheduled == null) {
-            cancelBecauseOffline.run();
-        }
+        // 第 5 步：凭证是开关，召唤成功<b>不扣</b>。再右键同种凭证 = 撤离。
+        // 2026-08-24 服主拍板：挑战凭证不能重复领，扣掉就等于永久卡进度。
+        finishPending(entityId);
+        player.sendMessage(Component.text("§a成功召唤了§f" + caravan.defaultDisplayName()
+                + "§a！它会永久驻留在你的岛上。再右键这张凭证可以把它收回。"));
+        summonInFlight.remove(player.getUniqueId());
     }
 
     /**
@@ -647,31 +625,6 @@ public final class MerchantService {
             return false;
         }
         return true;
-    }
-
-    /**
-     * 从玩家背包里扣掉一张凭证。<b>必须在玩家线程上调用</b>。
-     * <p>
-     * 先扣使用的那只手（玩家的直觉就是「我手上这张被用掉了」），手上那叠不匹配了再扫全背包
-     * ——两次线程跳跃之间玩家完全可能把物品挪了位置。
-     * </p>
-     *
-     * @return 是否真的扣掉了一张
-     */
-    private boolean consumeCredential(Player player, CredentialItemSpec spec, EquipmentSlot hand) {
-        ItemStack inHand = player.getInventory().getItem(hand);
-        if (spec.matches(inHand)) {
-            inHand.setAmount(inHand.getAmount() - 1);
-            return true;
-        }
-        ItemStack[] contents = player.getInventory().getContents();
-        for (ItemStack item : contents) {
-            if (spec.matches(item)) {
-                item.setAmount(item.getAmount() - 1);
-                return true;
-            }
-        }
-        return false;
     }
 
     /** 统一的失败出口：发提示 + 解除 in-flight 标记。可以在任何线程上调用。 */
@@ -1071,6 +1024,101 @@ public final class MerchantService {
      * 玩家却依然被挡住，而且没有任何提示告诉他为什么。
      * </p>
      */
+    /**
+     * 「撤离」某种商队：把还活着的实体收掉、释放名额、清掉重召冷却。<b>async 线程调用</b>。
+     * <p>
+     * 这是玩家手持凭证右键、而岛上已经有同种商队时走的分支（见 {@code summonAsyncStage}），
+     * 也是「商人卡住了、找不到也杀不掉」时玩家能自救的唯一出口。<b>不消耗凭证</b>。
+     * </p>
+     * <p>
+     * 先按记录里的 entityUuid 尝试把实体收掉：实体可能在没加载的区块里、也可能早就没了
+     * （生产上出现过的「原地消失」就是这种），收不到不影响释放名额——记录一删，
+     * 万一那只实体还活着，下次区块加载时孤儿检查会把它清掉。
+     * </p>
+     */
+    public void recallCaravan(@NotNull Player player, @NotNull Island island, @NotNull CaravanType caravan) {
+        long now = System.currentTimeMillis();
+        List<UUID> entityIds = collectOccupiedEntityIds(island, caravan, now);
+        if (entityIds.isEmpty() && !existingOccupied(island, caravan, now)) {
+            player.sendMessage(Component.text("§e岛上现在没有§f" + caravan.defaultDisplayName() + "§e。"));
+            return;
+        }
+
+        ReleaseResult result = releaseSlot(island, caravan);
+        if (!result.saved()) {
+            fail(player, "§c撤离失败：数据保存出错，请稍后重试或联系管理员。");
+            return;
+        }
+
+        // 实体回收要回到实体自己的线程；找不到实体（区块没加载 / 早就没了）是正常情况，
+        // 名额已经释放了，不用把它当失败。
+        for (UUID entityId : entityIds) {
+            Entity entity = Bukkit.getEntity(entityId);
+            if (entity == null) continue;
+            entity.getScheduler().execute(plugin, entity::remove, null, 1L);
+        }
+
+        player.sendMessage(Component.text("§a已撤离§f" + caravan.defaultDisplayName()
+                + "§a，名额已释放，凭证没有被消耗。再次右键凭证即可重新召唤。"));
+    }
+
+    /**
+     * 把本岛三种常驻商队全部收回。菜单「强制撤离」用这条，避免连发三条「岛上没有 xxx」。
+     * <b>async 线程调用</b>。
+     */
+    public void recallAllCaravans(@NotNull Player player, @NotNull Island island) {
+        int recalled = 0;
+        for (CaravanType caravan : CaravanType.values()) {
+            if (recallCaravanQuiet(player, island, caravan)) recalled++;
+        }
+        if (recalled == 0) {
+            player.sendMessage(Component.text("§e岛上没有需要撤离的常驻商队。"));
+        } else {
+            player.sendMessage(Component.text("§a已撤离 §f" + recalled
+                    + " §a支常驻商队，名额已释放。再右键凭证即可重新召唤。"));
+        }
+    }
+
+    /** @return 是否真的释放了这种商队的名额 */
+    private boolean recallCaravanQuiet(Player player, Island island, CaravanType caravan) {
+        long now = System.currentTimeMillis();
+        List<UUID> entityIds = collectOccupiedEntityIds(island, caravan, now);
+        if (entityIds.isEmpty() && !existingOccupied(island, caravan, now)) return false;
+
+        ReleaseResult result = releaseSlot(island, caravan);
+        if (!result.saved()) {
+            fail(player, "§c撤离§f" + caravan.defaultDisplayName() + "§c失败：数据保存出错。");
+            return false;
+        }
+        for (UUID entityId : entityIds) {
+            Entity entity = Bukkit.getEntity(entityId);
+            if (entity == null) continue;
+            entity.getScheduler().execute(plugin, entity::remove, null, 1L);
+        }
+        return result.removed() > 0 || result.cooldownCleared() || !entityIds.isEmpty();
+    }
+
+    private boolean existingOccupied(Island island, CaravanType caravan, long now) {
+        for (MerchantRecord r : dataService.load(island).merchants) {
+            if (caravan.name().equals(r.caravan) && r.occupiesSlot(now)) return true;
+        }
+        return false;
+    }
+
+    private List<UUID> collectOccupiedEntityIds(Island island, CaravanType caravan, long now) {
+        List<UUID> entityIds = new ArrayList<>();
+        for (MerchantRecord r : dataService.load(island).merchants) {
+            if (!caravan.name().equals(r.caravan) || !r.occupiesSlot(now)) continue;
+            if (r.entityUuid == null || r.entityUuid.isBlank()) continue;
+            try {
+                entityIds.add(UUID.fromString(r.entityUuid));
+            } catch (IllegalArgumentException ignored) {
+                // 记录里的 uuid 坏了就跳过，不影响释放名额。
+            }
+        }
+        return entityIds;
+    }
+
     public ReleaseResult releaseSlot(@NotNull Island island, @NotNull CaravanType caravan) {
         return dataService.compute(island, data -> {
             int before = data.merchants.size();

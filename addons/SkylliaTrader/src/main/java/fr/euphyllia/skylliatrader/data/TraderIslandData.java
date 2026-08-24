@@ -148,6 +148,16 @@ public class TraderIslandData {
     public DailyRecycleIncome dailyRecycleIncome = new DailyRecycleIncome();
 
     /**
+     * 每种商品各自的「今日回收收入」计数器（2026-08-24：收购上限改成按单个物品计，
+     * 不再全岛所有商品共用 40 金币）。key 为规范化后的 shop.toml 商品 id。
+     * <p>
+     * 空 Map 对老岛屿正确：第一次回收某件商品时会新建窗口。旧的
+     * {@link #dailyRecycleIncome} 全岛总额不再参与判定，留着只为 Gson 兼容。
+     * </p>
+     */
+    public Map<String, DailyRecycleIncome> recycleIncomeByItem = new HashMap<>();
+
+    /**
      * 本岛实际生效的凭证槽位数：有单独记录时用记录值，{@code -1}（未初始化）时回退到默认值。
      *
      * @param defaultSlots 未被管理员单独设置过时使用的默认值。T6 起调用方应该传

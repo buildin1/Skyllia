@@ -1,7 +1,11 @@
 package fr.euphyllia.skylliatrader.data;
 
 /**
- * 一座岛屿"今日通过回收获得的货币总额"计数器（{@code TraderIslandData#dailyRecycleIncome}）。
+ * 一座岛屿「某件商品今日通过回收获得的货币总额」计数器
+ * （{@code TraderIslandData#recycleIncomeByItem} 的 value）。
+ * <p>
+ * 2026-08-24 起按<b>单个物品</b>计，不再全岛所有商品加总。
+ * 旧字段 {@code TraderIslandData#dailyRecycleIncome} 只为 Gson 兼容保留，判定不再读它。
  * <p>
  * 用途：堵住回收系统的通胀口。回收价是按商品售价的固定比例算的，而售价反映的是
  * "从游商手里买它有多稀缺"，不是"玩家自己产它有多难"——对可再生物品来说后者约等于 0。
