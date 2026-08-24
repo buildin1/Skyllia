@@ -1038,8 +1038,9 @@ public final class MerchantService {
      */
     public void recallCaravan(@NotNull Player player, @NotNull Island island, @NotNull CaravanType caravan) {
         long now = System.currentTimeMillis();
-        List<UUID> entityIds = collectOccupiedEntityIds(island, caravan, now);
-        if (entityIds.isEmpty() && !existingOccupied(island, caravan, now)) {
+
+        List<MerchantRecord> occupied = collectOccupiedRecords(island, caravan, now);
+        if (occupied.isEmpty()) {
             player.sendMessage(Component.text("§e岛上现在没有§f" + caravan.defaultDisplayName() + "§e。"));
             return;
         }
@@ -1050,13 +1051,7 @@ public final class MerchantService {
             return;
         }
 
-        // 实体回收要回到实体自己的线程；找不到实体（区块没加载 / 早就没了）是正常情况，
-        // 名额已经释放了，不用把它当失败。
-        for (UUID entityId : entityIds) {
-            Entity entity = Bukkit.getEntity(entityId);
-            if (entity == null) continue;
-            entity.getScheduler().execute(plugin, entity::remove, null, 1L);
-        }
+        removeRecordedEntities(occupied);
 
         player.sendMessage(Component.text("§a已撤离§f" + caravan.defaultDisplayName()
                 + "§a，名额已释放，凭证没有被消耗。再次右键凭证即可重新召唤。"));
@@ -1082,41 +1077,51 @@ public final class MerchantService {
     /** @return 是否真的释放了这种商队的名额 */
     private boolean recallCaravanQuiet(Player player, Island island, CaravanType caravan) {
         long now = System.currentTimeMillis();
-        List<UUID> entityIds = collectOccupiedEntityIds(island, caravan, now);
-        if (entityIds.isEmpty() && !existingOccupied(island, caravan, now)) return false;
+        List<MerchantRecord> occupied = collectOccupiedRecords(island, caravan, now);
+        if (occupied.isEmpty()) return false;
 
         ReleaseResult result = releaseSlot(island, caravan);
         if (!result.saved()) {
             fail(player, "§c撤离§f" + caravan.defaultDisplayName() + "§c失败：数据保存出错。");
             return false;
         }
-        for (UUID entityId : entityIds) {
-            Entity entity = Bukkit.getEntity(entityId);
-            if (entity == null) continue;
-            entity.getScheduler().execute(plugin, entity::remove, null, 1L);
-        }
-        return result.removed() > 0 || result.cooldownCleared() || !entityIds.isEmpty();
+        removeRecordedEntities(occupied);
+        return result.removed() > 0 || result.cooldownCleared() || !occupied.isEmpty();
     }
 
-    private boolean existingOccupied(Island island, CaravanType caravan, long now) {
+    private List<MerchantRecord> collectOccupiedRecords(Island island, CaravanType caravan, long now) {
+        List<MerchantRecord> records = new ArrayList<>();
         for (MerchantRecord r : dataService.load(island).merchants) {
-            if (caravan.name().equals(r.caravan) && r.occupiesSlot(now)) return true;
-        }
-        return false;
-    }
-
-    private List<UUID> collectOccupiedEntityIds(Island island, CaravanType caravan, long now) {
-        List<UUID> entityIds = new ArrayList<>();
-        for (MerchantRecord r : dataService.load(island).merchants) {
-            if (!caravan.name().equals(r.caravan) || !r.occupiesSlot(now)) continue;
-            if (r.entityUuid == null || r.entityUuid.isBlank()) continue;
-            try {
-                entityIds.add(UUID.fromString(r.entityUuid));
-            } catch (IllegalArgumentException ignored) {
-                // 记录里的 uuid 坏了就跳过，不影响释放名额。
+            if (caravan.name().equals(r.caravan) && r.occupiesSlot(now)) {
+                records.add(r);
             }
         }
-        return entityIds;
+        return records;
+    }
+
+    /**
+     * Folia：{@code Bukkit.getEntity} 会读区块实体表，不能在 async 上调。
+     * 按记录里的世界/坐标跳到 region 线程再查、再 remove。
+     * 区块没加载或实体早就没了是正常情况，名额已经释放，不当失败。
+     */
+    private void removeRecordedEntities(List<MerchantRecord> records) {
+        for (MerchantRecord r : records) {
+            if (r.entityUuid == null || r.entityUuid.isBlank()) continue;
+            final UUID entityId;
+            try {
+                entityId = UUID.fromString(r.entityUuid);
+            } catch (IllegalArgumentException ignored) {
+                continue;
+            }
+            World world = r.world == null || r.world.isBlank() ? null : Bukkit.getWorld(r.world);
+            if (world == null) continue;
+            int chunkX = (int) Math.floor(r.x) >> 4;
+            int chunkZ = (int) Math.floor(r.z) >> 4;
+            Bukkit.getRegionScheduler().execute(plugin, world, chunkX, chunkZ, () -> {
+                Entity entity = Bukkit.getEntity(entityId);
+                if (entity != null) entity.remove();
+            });
+        }
     }
 
     public ReleaseResult releaseSlot(@NotNull Island island, @NotNull CaravanType caravan) {
