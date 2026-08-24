@@ -7,6 +7,7 @@ import fr.euphyllia.skylliatrader.configuration.ShopConfigLoader;
 import fr.euphyllia.skylliatrader.configuration.TraderConfigLoader;
 import fr.euphyllia.skylliatrader.data.DailyRecycleIncome;
 import fr.euphyllia.skylliatrader.data.TraderDataService;
+import fr.euphyllia.skylliatrader.data.TraderIslandData;
 import fr.euphyllia.skylliatrader.configuration.model.ShopItemDefinition;
 import fr.euphyllia.skylliatrader.gui.GuiFormat;
 import net.kyori.adventure.text.Component;
@@ -104,6 +105,25 @@ public final class RecycleService {
      */
     public static double recyclePriceFor(@NotNull ShopItemDefinition item) {
         return ShopEconomics.round2(item.price() * RECYCLE_RATE);
+    }
+
+    /** 某件商品今天还剩多少回收额度（金币）。窗口过期视为满额。 */
+    public static double remainingCapFor(@NotNull TraderIslandData data, @NotNull String shopItemId) {
+        double cap = TraderConfigLoader.config.getDailyRecycleIncomeCap();
+        DailyRecycleIncome income = data.recycleIncomeByItem.get(shopItemId);
+        long now = System.currentTimeMillis();
+        if (income == null || income.windowStartAt == 0L || now - income.windowStartAt > DAY_MILLIS) {
+            return cap;
+        }
+        return Math.max(0.0, ShopEconomics.round2(cap - income.amount));
+    }
+
+    /** 在剩余额度里最多能收几件。单价为 0 时按请求数量全收。 */
+    static int maxAffordableQuantity(double remainingGold, double unitPrice, int requested) {
+        if (requested <= 0 || remainingGold <= 0) return 0;
+        if (unitPrice <= 0) return requested;
+        int max = (int) Math.floor((remainingGold + 1e-9) / unitPrice);
+        return Math.max(0, Math.min(requested, max));
     }
 
     /**
@@ -324,6 +344,7 @@ public final class RecycleService {
             return;
         }
         double cap = TraderConfigLoader.config.getDailyRecycleIncomeCap();
+        int[] acceptedQty = {0};
         Double accepted = plugin.getDataService().compute(island, data -> {
             long now = System.currentTimeMillis();
             DailyRecycleIncome income = data.recycleIncomeByItem
@@ -333,11 +354,14 @@ public final class RecycleService {
                 income.windowStartAt = now;
             }
             double remaining = Math.max(0.0, cap - income.amount);
-            if (rawPrice > remaining) {
+            int take = maxAffordableQuantity(remaining, unitPrice, quantity);
+            if (take <= 0) {
                 return TraderDataService.Mutation.readOnly(null);
             }
-            income.amount = ShopEconomics.round2(income.amount + rawPrice);
-            return TraderDataService.Mutation.commit(rawPrice, null);
+            double pay = ShopEconomics.round2(unitPrice * take);
+            acceptedQty[0] = take;
+            income.amount = ShopEconomics.round2(income.amount + pay);
+            return TraderDataService.Mutation.commit(pay, null);
         });
         if (accepted == null) {
             refundItems(player, material, quantity, "今日回收额度不足");
@@ -345,7 +369,12 @@ public final class RecycleService {
                     + " §e金币），物品已退还。换别的商品还能继续卖。");
             return;
         }
+        int leftover = quantity - acceptedQty[0];
+        if (leftover > 0) {
+            refundItems(player, material, leftover, "超出今日额度退还");
+        }
         double totalPrice = accepted;
+        quantity = acceptedQty[0];
 
         try {
             EconomyResponse response = econ.depositPlayer(player, totalPrice);

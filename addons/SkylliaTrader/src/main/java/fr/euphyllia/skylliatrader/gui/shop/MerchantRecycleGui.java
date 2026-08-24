@@ -8,6 +8,7 @@ import fr.euphyllia.skyllia.gui.SkylliaGuiHolder;
 import fr.euphyllia.skylliatrader.SkylliaTrader;
 import fr.euphyllia.skylliatrader.configuration.ShopConfigLoader;
 import fr.euphyllia.skylliatrader.configuration.model.ShopItemDefinition;
+import fr.euphyllia.skylliatrader.data.TraderIslandData;
 import fr.euphyllia.skylliatrader.gui.GuiFormat;
 import fr.euphyllia.skylliatrader.shop.RecycleMode;
 import fr.euphyllia.skylliatrader.shop.RecycleService;
@@ -72,7 +73,8 @@ public final class MerchantRecycleGui {
     }
 
     /** 一条回收条目的展示数据，纯内存快照，见类文档"已知的简化"一节。 */
-    private record RecycleEntry(String id, Material material, String displayName, double unitPrice, int owned) {
+    private record RecycleEntry(String id, Material material, String displayName, double unitPrice, int owned,
+                                double remainingCap) {
     }
 
     public static void open(@NotNull Player player) {
@@ -96,8 +98,9 @@ public final class MerchantRecycleGui {
 
                 // 背包扫描必须在玩家自己的调度器上做（见类文档线程模型），shop.toml 列表是纯内存
                 // 读取，一起放进这一跳即可，不需要为它单独再跳一次 async。
+                TraderIslandData data = plugin.getDataService().load(island);
                 player.getScheduler().run(plugin, t -> {
-                    List<RecycleEntry> entries = buildEntries(player.getInventory());
+                    List<RecycleEntry> entries = buildEntries(player.getInventory(), data);
                     render(player, entries, 0);
                 }, null);
             } catch (Throwable t) {
@@ -109,15 +112,16 @@ public final class MerchantRecycleGui {
         });
     }
 
-    private static List<RecycleEntry> buildEntries(PlayerInventory inv) {
+    private static List<RecycleEntry> buildEntries(PlayerInventory inv, TraderIslandData data) {
         List<RecycleEntry> entries = new ArrayList<>();
         for (ShopItemDefinition item : ShopConfigLoader.config.getItems()) {
             // 不可回收的商品（可再生物资，见 shop.toml 的 recyclable 字段）根本不进货架：
             // 摆出来让玩家点一下再被拒绝，只会让人以为是 bug。
             if (!item.recyclable()) continue;
             int owned = countMaterial(inv, item.material());
+            double remaining = RecycleService.remainingCapFor(data, item.id());
             entries.add(new RecycleEntry(item.id(), item.material(), item.displayName(),
-                    RecycleService.recyclePriceFor(item), owned));
+                    RecycleService.recyclePriceFor(item), owned, remaining));
         }
         return entries;
     }
@@ -200,6 +204,7 @@ public final class MerchantRecycleGui {
     private static ItemStack buildItem(RecycleEntry entry) {
         List<String> lore = new ArrayList<>();
         lore.add("<dark_gray>─────────");
+        lore.add("<gray>今日剩余额度：<white>" + GuiFormat.fmt(entry.remainingCap()) + " 金币</white></gray>");
         lore.add("<gray>回收单价：<white>" + GuiFormat.fmt(entry.unitPrice()) + " 金币</white>（原价的 40%）</gray>");
         lore.add("<gray>背包持有：<white>" + entry.owned() + "</white> 个</gray>");
 
