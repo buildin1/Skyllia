@@ -11,6 +11,17 @@ package fr.euphyllia.skylliatrader.data;
  * 和 {@link DailyOrderIncome} 对货币做的事完全对称，只是对象换成了声望。
  * </p>
  * <p>
+ * <b>2026-08-26 工单修复</b>：声望额度和货币额度<b>同时</b>用尽时，money 类型订单会被
+ * 直接拒绝并退还材料，见 {@link DailyOrderIncome} 的同一段说明。BARTER 类型不适用——
+ * 它的 give-items 配置校验保证非空，声望被截断到 0 时玩家换到的物品仍是实打实的回报。
+ * </p>
+ * <p>
+ * 上面那句"此前只靠 redeem-limit-per-island 节流……不是真正锁定产出速率"在 2026-08-26
+ * 得到了贯彻：money 订单的终身限购已经全部取消（orders.toml 改成 0），产出速率完全交给
+ * 本类的每日上限 + {@code slot-redeem-cooldown-seconds} 这两道真闸门。barter 订单例外，
+ * 它的物品产出不受任何每日上限约束，终身限购是它唯一的闸门，必须保留。
+ * </p>
+ * <p>
  * 用<b>独立的类</b>而不是复用 {@link DailyOrderIncome}：{@code reputation} 字段在
  * {@code TraderIslandData} 上是 {@code long}，声望不应该出现小数，用 {@code double} 的
  * {@link DailyOrderIncome} 会引入不必要的取整/精度问题，两个概念也不共享任何行为，

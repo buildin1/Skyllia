@@ -7,6 +7,7 @@ import fr.euphyllia.skyllia.gui.GuiPageLayout;
 import fr.euphyllia.skyllia.gui.SkylliaGuiHolder;
 import fr.euphyllia.skylliatrader.SkylliaTrader;
 import fr.euphyllia.skylliatrader.configuration.OrdersConfigLoader;
+import fr.euphyllia.skylliatrader.configuration.TraderConfigLoader;
 import fr.euphyllia.skylliatrader.configuration.model.OrderDefinition;
 import fr.euphyllia.skylliatrader.configuration.model.OrderType;
 import fr.euphyllia.skylliatrader.data.OrderSlotState;
@@ -45,11 +46,30 @@ public final class TraderOrderBoardGui {
     private static final Logger log = LoggerFactory.getLogger(TraderOrderBoardGui.class);
     private static final MiniMessage MM = MiniMessage.miniMessage();
 
+    /** 每日额度滚动窗口长度，必须和 {@code OrderBoardService#DAY_MILLIS} 保持一致。 */
+    private static final long DAY_MILLIS = 86_400_000L;
+
     private TraderOrderBoardGui() {
     }
 
     /** 一个订单槽位的展示数据，纯内存快照。{@code order == null} 表示空槽/订单已过期/订单已被下架。 */
     private record SlotEntry(int slotIndex, OrderDefinition order, int completions, long expiresAt) {
+    }
+
+    /**
+     * 本岛「今日还能通过订单拿到多少金币 / 多少声望」的快照。
+     * <p>
+     * 2026-08-26 工单修复的配套显示：结算侧现在会在「金币和声望都归零」时直接拒绝提交并
+     * 退还材料，如果界面上不把剩余额度摆出来，玩家点下去才被拒，体验上和以前"白交材料"
+     * 一样困惑。口径和 {@code MerchantRecycleGui} 显示"每种商品今日剩余"一致。
+     * </p>
+     * <p>
+     * 这里的窗口判定必须和 {@code OrderBoardService#computeSettlement} 用同一套
+     * （{@code now - windowStartAt > 24 小时} 就算新窗口），否则会出现"界面说还有额度、
+     * 点下去却被拒"的自相矛盾。<b>只读不写</b>——真正的窗口重置由结算临界区负责。
+     * </p>
+     */
+    private record DailyBudget(double moneyLeft, long reputationLeft) {
     }
 
     public static void open(@NotNull Player player) {
@@ -74,8 +94,9 @@ public final class TraderOrderBoardGui {
 
                 TraderIslandData data = plugin.getDataService().load(island);
                 List<SlotEntry> entries = buildEntries(data);
+                DailyBudget budget = buildBudget(data);
 
-                player.getScheduler().run(plugin, t -> render(player, entries, 0), null);
+                player.getScheduler().run(plugin, t -> render(player, entries, budget, 0), null);
             } catch (Throwable t) {
                 // 理由同 TraderProgressGui/MerchantShopGui：asyncScheduler 会把异常吞成一段
                 // 控制台堆栈，玩家侧「点了没反应」是最难排查的故障，必须自己兜底提示。
@@ -108,7 +129,24 @@ public final class TraderOrderBoardGui {
         return null;
     }
 
-    private static void render(Player player, List<SlotEntry> entries, int page) {
+    /** 算出本岛今日的剩余额度快照，判定口径见 {@link DailyBudget}。 */
+    private static DailyBudget buildBudget(TraderIslandData data) {
+        long now = System.currentTimeMillis();
+
+        double moneyCap = TraderConfigLoader.config.getDailyOrderIncomeCap();
+        var income = data.dailyOrderIncome;
+        double moneyUsed = (income.windowStartAt == 0L || now - income.windowStartAt > DAY_MILLIS)
+                ? 0.0 : income.amount;
+
+        long repCap = TraderConfigLoader.config.getDailyOrderReputationCap();
+        var repIncome = data.dailyOrderReputation;
+        long repUsed = (repIncome.windowStartAt == 0L || now - repIncome.windowStartAt > DAY_MILLIS)
+                ? 0L : repIncome.amount;
+
+        return new DailyBudget(Math.max(0.0, moneyCap - moneyUsed), Math.max(0L, repCap - repUsed));
+    }
+
+    private static void render(Player player, List<SlotEntry> entries, DailyBudget budget, int page) {
         int totalPages = GuiPageLayout.totalPages(entries.size());
         int clamped = GuiPageLayout.clampPage(page, totalPages);
 
@@ -123,7 +161,7 @@ public final class TraderOrderBoardGui {
         for (int i = from; i < to; i++) {
             SlotEntry entry = entries.get(i);
             int guiSlot = GuiPageLayout.contentSlot(i - from);
-            inv.setItem(guiSlot, buildItem(entry));
+            inv.setItem(guiSlot, buildItem(entry, budget));
             if (entry.order() != null) {
                 SkylliaTrader plugin = SkylliaTrader.getInstance();
                 if (plugin != null) {
@@ -139,11 +177,11 @@ public final class TraderOrderBoardGui {
 
         if (clamped > 0) {
             inv.setItem(GuiPageLayout.SLOT_PREV_PAGE, GuiItem.prevPage());
-            holder.bind(GuiPageLayout.SLOT_PREV_PAGE, e -> openPage(player, entries, clamped - 1));
+            holder.bind(GuiPageLayout.SLOT_PREV_PAGE, e -> openPage(player, entries, budget, clamped - 1));
         }
         if (clamped < totalPages - 1) {
             inv.setItem(GuiPageLayout.SLOT_NEXT_PAGE, GuiItem.nextPage());
-            holder.bind(GuiPageLayout.SLOT_NEXT_PAGE, e -> openPage(player, entries, clamped + 1));
+            holder.bind(GuiPageLayout.SLOT_NEXT_PAGE, e -> openPage(player, entries, budget, clamped + 1));
         }
 
         inv.setItem(GuiPageLayout.SLOT_HEADER, GuiItem.of(Material.PAPER, "<!italic><yellow>订单说明",
@@ -152,6 +190,12 @@ public final class TraderOrderBoardGui {
                         "<gray>材料够就直接扣除并发放奖励，不够会提示缺口</gray>",
                         "<gray>材料可以来自背包里的多组堆叠，会自动合并计算</gray>",
                         "<dark_gray>─────────",
+                        "<gray>本岛今日剩余额度</gray>",
+                        "<gray>· 金币：<white>" + GuiFormat.fmt(budget.moneyLeft()) + "</white></gray>",
+                        "<gray>· 声望：<white>" + budget.reputationLeft() + "</white></gray>",
+                        "<dark_gray>─────────",
+                        "<gray>额度按 24 小时滚动窗口恢复，不是零点重置</gray>",
+                        "<gray>额度用尽时提交会被<white>拒绝</white>，材料原样退还</gray>",
                         "<gray>声望只能通过完成订单获得，不会衰减</gray>")));
 
         inv.setItem(GuiPageLayout.SLOT_CLOSE, GuiItem.close());
@@ -161,13 +205,13 @@ public final class TraderOrderBoardGui {
     }
 
     /** 翻页：数据已经在内存里，不重新查库，只需要延迟一 tick 换界面（理由同 MerchantShopGui）。 */
-    private static void openPage(Player player, List<SlotEntry> entries, int page) {
+    private static void openPage(Player player, List<SlotEntry> entries, DailyBudget budget, int page) {
         SkylliaTrader plugin = SkylliaTrader.getInstance();
         if (plugin == null) return;
-        player.getScheduler().run(plugin, t -> render(player, entries, page), null);
+        player.getScheduler().run(plugin, t -> render(player, entries, budget, page), null);
     }
 
-    private static ItemStack buildItem(SlotEntry entry) {
+    private static ItemStack buildItem(SlotEntry entry, DailyBudget budget) {
         OrderDefinition order = entry.order();
         List<String> lore = new ArrayList<>();
         lore.add("<dark_gray>─────────");
@@ -197,8 +241,27 @@ public final class TraderOrderBoardGui {
             lore.add("<gray>距离下次换单：<white>约 " + (remainMinutes / 60) + " 小时 " + (remainMinutes % 60) + " 分钟</white></gray>");
         }
 
+        // 每日额度提示：口径必须和 OrderBoardService#computeSettlement 的判定一致，
+        // 否则会出现"界面说能交、点下去被拒"或者反过来的自相矛盾。
+        boolean noMoney = order.price() <= 0 || budget.moneyLeft() <= 0;
+        boolean noReputation = order.rewardReputation() <= 0 || budget.reputationLeft() <= 0;
+        boolean wouldBeRejected = order.type() == OrderType.MONEY && noMoney && noReputation;
+
         lore.add("<dark_gray>─────────");
-        lore.add("<yellow>点击</yellow><gray> 一键结算（材料够就自动扣除并发放奖励）</gray>");
+        if (wouldBeRejected) {
+            lore.add("<red>今日额度已用尽，现在提交会被拒绝</red>");
+            lore.add("<gray>材料<white>不会</white>被扣，也<white>不会</white>消耗完成次数</gray>");
+        } else {
+            if (order.type() == OrderType.MONEY && budget.moneyLeft() < order.price()) {
+                lore.add("<yellow>今日金币额度只剩 " + GuiFormat.fmt(budget.moneyLeft())
+                        + "，本单金币会被截断</yellow>");
+            }
+            if (order.rewardReputation() > 0 && budget.reputationLeft() < order.rewardReputation()) {
+                lore.add("<yellow>今日声望额度只剩 " + budget.reputationLeft()
+                        + "，本单声望会被截断</yellow>");
+            }
+            lore.add("<yellow>点击</yellow><gray> 一键结算（材料够就自动扣除并发放奖励）</gray>");
+        }
 
         return GuiItem.of(order.iconMaterial(), "<!italic><white>" + order.displayName(), lore);
     }

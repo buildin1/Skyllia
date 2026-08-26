@@ -8,6 +8,15 @@ package fr.euphyllia.skylliatrader.data;
  * （订单依然算完成、材料依然被扣、声望依然发），防止订单收入比打工赚得还多。
  * </p>
  * <p>
+ * <b>2026-08-26 工单修复的例外</b>：如果货币额度和 {@link DailyOrderReputation} 的声望额度
+ * <b>同时</b>都已用尽，money 类型订单不再"照样算完成"，而是在
+ * {@code OrderBoardService#computeSettlement} 里被直接拒绝——不扣材料、不记完成次数。
+ * 原来那条"照样算完成"的规则单独看没问题，和 {@code redeem-limit-per-island} 叠加之后
+ * 却会变成不可逆损失：零收益还要吃掉一次终身限购次数。同一批修复里 money 订单的终身限购
+ * 已经全部取消（orders.toml 改成 0），但拒绝逻辑仍然要保留——它挡的是"白扣材料"，
+ * 和限购次数是两回事。
+ * </p>
+ * <p>
  * 和 {@link PurchaseCounter} 同样用<b>滚动窗口</b>（不对齐自然日/时区），理由见
  * {@code ShopPurchaseLimitPeriod} 的类注释：这里固定 24 小时一个窗口，判定逻辑照抄
  * "{@code now - windowStartAt > 窗口长度} 就重置"的既有写法，不单独抽一个枚举——

@@ -332,29 +332,63 @@ public final class OrderBoardService {
                     Settlement.fail("§c这个槽位刚交付过，请等 " + waitSeconds + " 秒再试（材料已退还）。"));
         }
 
+        // ── 先「只算不落账」，把每日上限截断后的实际奖励算出来 ────────────────────
+        // 拆成「算」和「记账」两段是为了下面那道「零收益拒绝」闸门：拒绝分支返回的是
+        // readOnly（不写库），如果算的过程中已经顺手把滚动窗口重置写进了内存里的 data，
+        // 就会出现「内存里窗口已重置、库里还是旧窗口」的不一致（load 可能命中同一个对象）。
+        // 所以窗口重置和累加一律推迟到确认要 commit 之后再做。
         double moneyAwarded = 0.0;
+        boolean moneyWindowExpired = false;
         if (liveOrder.type() == OrderType.MONEY) {
             DailyOrderIncome income = data.dailyOrderIncome;
-            if (income.windowStartAt == 0L || now - income.windowStartAt > DAY_MILLIS) {
-                income.amount = 0.0;
-                income.windowStartAt = now;
-            }
+            moneyWindowExpired = income.windowStartAt == 0L || now - income.windowStartAt > DAY_MILLIS;
+            double used = moneyWindowExpired ? 0.0 : income.amount;
             double cap = TraderConfigLoader.config.getDailyOrderIncomeCap();
-            double remainingCap = Math.max(0.0, cap - income.amount);
+            double remainingCap = Math.max(0.0, cap - used);
             moneyAwarded = Math.min(liveOrder.price(), remainingCap);
-            income.amount = ShopEconomics.round2(income.amount + moneyAwarded);
         }
 
         long reputationAwarded = 0L;
+        boolean repWindowExpired = false;
         if (liveOrder.rewardReputation() > 0) {
             DailyOrderReputation repIncome = data.dailyOrderReputation;
-            if (repIncome.windowStartAt == 0L || now - repIncome.windowStartAt > DAY_MILLIS) {
+            repWindowExpired = repIncome.windowStartAt == 0L || now - repIncome.windowStartAt > DAY_MILLIS;
+            long used = repWindowExpired ? 0L : repIncome.amount;
+            long repCap = TraderConfigLoader.config.getDailyOrderReputationCap();
+            long remainingRepCap = Math.max(0L, repCap - used);
+            reputationAwarded = Math.min(liveOrder.rewardReputation(), remainingRepCap);
+        }
+
+        // ── 零收益拒绝（2026-08-26 工单修复）─────────────────────────────────────
+        // 原设计是「上限之后订单照样算完成、材料照样扣，只是不发奖励」（见 DailyOrderIncome /
+        // DailyOrderReputation 的类文档）。这条规则单独看没问题，和 redeem-limit-per-island
+        // 叠加之后却会变成不可逆的损失：玩家在额度耗尽后提交，材料被真实扣除、金币和声望都是 0、
+        // 终身限购次数却照样 -1，那一次次数就永远拿不回来了。
+        //
+        // 判定只针对 MONEY 类型：BARTER 的 give-items 配置校验保证非空
+        // （OrdersConfigManager 会丢弃 give-items 为空的 barter 订单），哪怕声望被截断到 0，
+        // 玩家换到的物品本身仍是实打实的回报，不算「白交」，不该拦。
+        if (liveOrder.type() == OrderType.MONEY && moneyAwarded <= 0.0 && reputationAwarded <= 0L) {
+            return TraderDataService.Mutation.readOnly(Settlement.fail(
+                    "§c本岛今日的订单额度已用尽（金币和声望都到达每日上限），本单未成交，材料已退还。"
+                            + "§7额度按 24 小时滚动窗口恢复，恢复后即可继续交付。"));
+        }
+
+        // ── 确认要 commit，这才真正落账 ──────────────────────────────────────────
+        if (liveOrder.type() == OrderType.MONEY) {
+            DailyOrderIncome income = data.dailyOrderIncome;
+            if (moneyWindowExpired) {
+                income.amount = 0.0;
+                income.windowStartAt = now;
+            }
+            income.amount = ShopEconomics.round2(income.amount + moneyAwarded);
+        }
+        if (liveOrder.rewardReputation() > 0) {
+            DailyOrderReputation repIncome = data.dailyOrderReputation;
+            if (repWindowExpired) {
                 repIncome.amount = 0L;
                 repIncome.windowStartAt = now;
             }
-            long repCap = TraderConfigLoader.config.getDailyOrderReputationCap();
-            long remainingRepCap = Math.max(0L, repCap - repIncome.amount);
-            reputationAwarded = Math.min(liveOrder.rewardReputation(), remainingRepCap);
             repIncome.amount += reputationAwarded;
         }
 

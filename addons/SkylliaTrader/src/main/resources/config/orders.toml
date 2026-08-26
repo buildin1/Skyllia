@@ -30,15 +30,27 @@
 # 注意这个计数器是挂在岛屿维度的，不是玩家维度——同一座岛换人来交易也不会刷新次数，
 # 这是防止"退出小队再加入"刷单的生命线，不能改成按玩家计数。
 #
-# ⚠️ 本表下面全部订单都必须给一个正数，绝不能是 0：结算是"一键结算"（点一下就扣材料发
-# 奖励，没有物品摆放交互），同一个已经打开的看板界面上对着同一个槽位反复点击没有任何
-# 冷却拦着，而槽位在被结算之后不会立刻换新订单（还是要等到 order-board.refresh-hours
-# 到期）。声望没有衰减、也没有每日/每周上限，"3 个槽位、每个 6 小时才换一次"和"每日订单
-# 货币收入上限"这两道闸门只挡住了金币，完全挡不住声望——0（不限）意味着材料管够
-# （比如圆石可以刷石机无限产出）就能对着同一个槽位无限点击，声望在几分钟内就能刷穿
-# 3000 的顶格档位（这是 2026-08-21 审查用实测点击频率量化推演出来的真实漏洞，不是
-# 理论风险）。下面每条订单给的具体数字是"终身能刷这条订单几次"的硬上限，让最坏情况
-# （玩家把某条订单能刷的次数一次性刷满）依然是一个有限、可预期的量，不再是无限。
+# ⚠️ 2026-08-26 变更：money 类型订单的终身限购全部改回 0（不限），只有 barter 订单保留。
+#
+# 原因（工单反馈 + 复查）：这个字段是 2026-08-21 审查时加的，当时的理由是"声望没有衰减、
+# 也没有每日/每周上限，只靠 3 个槽位 + 6 小时换单挡不住连点刷声望"。但同一次审查还补了
+# 另外两道闸门——order-board.daily-reputation-cap（每日声望上限）和
+# order-board.slot-redeem-cooldown-seconds（同槽位冷却）——那两道才是真正锁死产出速率的
+# 东西。DailyOrderReputation 的类文档自己写得很清楚："终身限购那次修复只是把'无限'改成
+# '一个偏宽松的有限值'，不是真正锁定产出速率"。也就是说终身限购从一开始就是冗余的第三道锁。
+#
+# 而这道冗余的锁有真实代价：每日额度用尽后继续提交，材料被扣、金币和声望都是 0，终身限购
+# 次数却照样 -1，那一次次数永远拿不回来——被 bug 烧过次数的岛屿，声望上限会真的比别的岛低。
+# 结算侧现在已经加了"零收益直接拒绝并退还材料"（见 OrderBoardService#computeSettlement），
+# 但只要终身限购还在，历史损失就补不回来，公平性问题也修不干净。改成 0 之后：
+#   · 每日声望上限 200 依旧生效 → 到 3000 顶格档位最少仍要 15 天，速率完全没变
+#   · 每日金币上限 40 依旧生效 → 订单收入依旧赚不过 PlayerTask
+#   · 被烧过次数的老岛自动痊愈，不需要写数据迁移脚本
+#
+# ⚠️ barter 订单（bone-for-emerald）必须保留正数，不能跟着改成 0：它付的是物品不是金币，
+# 注释里写明了"不受每日订单货币收入上限约束"，声望上限也管不到物品产出——终身限购是它
+# 唯一的产出闸门。取消的话，30 秒冷却下一个 6 小时窗口能刷 720 次 = 5760 个绿宝石，
+# 变成无限绿宝石生成器。要放开必须先给 barter 补一个每日兑换次数上限。
 #
 # weight：自然刷新时的抽取权重，最小 1。本表按"档位越低权重越高"设计：
 # 小额档 8-10（常见），中额档 4-6（较常见），大额档 2-4（少见），
@@ -84,7 +96,7 @@ price = 6.0
 
 reward-reputation = 5
 weight = 10
-redeem-limit-per-island = 30
+redeem-limit-per-island = 0
 required-level-min = 0
 required-reputation-min = 0
 
@@ -103,7 +115,7 @@ price = 8.0
 
 reward-reputation = 5
 weight = 9
-redeem-limit-per-island = 30
+redeem-limit-per-island = 0
 required-level-min = 0
 required-reputation-min = 0
 
@@ -121,7 +133,7 @@ price = 5.0
 
 reward-reputation = 5
 weight = 10
-redeem-limit-per-island = 30
+redeem-limit-per-island = 0
 required-level-min = 0
 required-reputation-min = 0
 
@@ -139,7 +151,7 @@ price = 7.0
 
 reward-reputation = 5
 weight = 8
-redeem-limit-per-island = 30
+redeem-limit-per-island = 0
 required-level-min = 0
 required-reputation-min = 0
 
@@ -161,7 +173,7 @@ price = 20.0
 
 reward-reputation = 15
 weight = 6
-redeem-limit-per-island = 40
+redeem-limit-per-island = 0
 required-level-min = 1
 required-reputation-min = 0
 
@@ -179,7 +191,7 @@ price = 18.0
 
 reward-reputation = 15
 weight = 6
-redeem-limit-per-island = 40
+redeem-limit-per-island = 0
 required-level-min = 1
 required-reputation-min = 0
 
@@ -197,7 +209,7 @@ price = 22.0
 
 reward-reputation = 15
 weight = 5
-redeem-limit-per-island = 40
+redeem-limit-per-island = 0
 required-level-min = 1
 required-reputation-min = 0
 
@@ -215,7 +227,7 @@ price = 15.0
 
 reward-reputation = 15
 weight = 5
-redeem-limit-per-island = 40
+redeem-limit-per-island = 0
 required-level-min = 5
 required-reputation-min = 0
 
@@ -233,7 +245,7 @@ price = 25.0
 
 reward-reputation = 15
 weight = 4
-redeem-limit-per-island = 40
+redeem-limit-per-island = 0
 required-level-min = 5
 required-reputation-min = 0
 
@@ -255,7 +267,7 @@ price = 50.0
 
 reward-reputation = 40
 weight = 4
-redeem-limit-per-island = 50
+redeem-limit-per-island = 0
 required-level-min = 10
 required-reputation-min = 0
 
@@ -273,7 +285,7 @@ price = 45.0
 
 reward-reputation = 40
 weight = 3
-redeem-limit-per-island = 50
+redeem-limit-per-island = 0
 required-level-min = 10
 required-reputation-min = 0
 
@@ -292,7 +304,7 @@ price = 65.0
 
 reward-reputation = 40
 weight = 2
-redeem-limit-per-island = 50
+redeem-limit-per-island = 0
 required-level-min = 10
 required-reputation-min = 100
 
