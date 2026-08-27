@@ -4,9 +4,12 @@ import fr.euphyllia.skyllia.api.utils.nms.BiomesImpl;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import net.minecraft.core.Holder;
+import net.minecraft.core.HolderSet;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.tags.BiomeTags;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.LevelChunkSection;
 import org.apache.logging.log4j.LogManager;
@@ -24,6 +27,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 
 public class BiomeNMS extends BiomesImpl {
 
@@ -63,31 +67,38 @@ public class BiomeNMS extends BiomesImpl {
     }
 
     /**
-     * 按维度过滤：从 LevelStem 注册表拿该维度<b>原版生成器</b>的 BiomeSource，
-     * {@code possibleBiomes()} 就是这个维度自然生成会用到的全部群系——datapack /
-     * 核心（Shiroha）往对应维度注入的自定义群系会自动被包含，不用维护硬编码清单。
-     * 不能用空岛世界自己的生成器查：那是固定群系的虚空生成器，只会给出一个群系。
+     * 按维度过滤：读群系标签 {@code minecraft:is_overworld / is_nether / is_end}。
+     * <p>
+     * 不能从 {@code LevelStem} 的 BiomeSource 取。空岛服没有原版主世界，
+     * {@code LevelStem.OVERWORLD} 就是这座空岛世界自己的虚空生成器，
+     * {@code possibleBiomes()} 只会给出配置里的那一个默认群系（平原）。
+     * 这正是图鉴里「主世界只能改成平原」的原因。
+     * </p>
+     * <p>
+     * 标签会带上 datapack / 核心往对应维度打过标的自定义群系，不用维护硬编码清单。
      * 任何一步异常都回退到完整列表，宁可少过滤也不能让图鉴开不出来。
+     * </p>
      */
     @Override
     public List<String> getBiomeNameList(World.Environment environment) {
-        ResourceKey<net.minecraft.world.level.dimension.LevelStem> stemKey = switch (environment) {
-            case NORMAL -> net.minecraft.world.level.dimension.LevelStem.OVERWORLD;
-            case NETHER -> net.minecraft.world.level.dimension.LevelStem.NETHER;
-            case THE_END -> net.minecraft.world.level.dimension.LevelStem.END;
+        TagKey<net.minecraft.world.level.biome.Biome> tag = switch (environment) {
+            case NORMAL -> BiomeTags.IS_OVERWORLD;
+            case NETHER -> BiomeTags.IS_NETHER;
+            case THE_END -> BiomeTags.IS_END;
             default -> null;
         };
-        if (stemKey == null) return getBiomeNameList();
+        if (tag == null) return getBiomeNameList();
 
         try {
-            net.minecraft.world.level.dimension.LevelStem stem = ((CraftServer) Bukkit.getServer()).getServer()
-                    .registryAccess()
-                    .lookupOrThrow(Registries.LEVEL_STEM)
-                    .getValue(stemKey);
-            if (stem == null) return getBiomeNameList();
+            Optional<HolderSet.Named<net.minecraft.world.level.biome.Biome>> holders =
+                    ((CraftServer) Bukkit.getServer()).getServer()
+                            .registryAccess()
+                            .lookupOrThrow(Registries.BIOME)
+                            .get(tag);
+            if (holders.isEmpty()) return getBiomeNameList();
 
             List<String> out = new ArrayList<>();
-            for (Holder<net.minecraft.world.level.biome.Biome> holder : stem.generator().getBiomeSource().possibleBiomes()) {
+            for (Holder<net.minecraft.world.level.biome.Biome> holder : holders.get()) {
                 holder.unwrapKey().ifPresent(key -> out.add(key.identifier().toString()));
             }
             return out.isEmpty() ? getBiomeNameList() : out;
