@@ -29,7 +29,10 @@ public class MobSpawnNMS implements MobsSpawnImpl {
                 CreatureSpawnEvent.SpawnReason.CURED,
                 CreatureSpawnEvent.SpawnReason.BREEDING,
                 CreatureSpawnEvent.SpawnReason.EGG,
-                CreatureSpawnEvent.SpawnReason.BUILD_SNOWMAN
+                CreatureSpawnEvent.SpawnReason.BUILD_SNOWMAN,
+                // 搭铁傀儡和搭雪傀儡一样是玩家主动行为，豁免刷怪开关；
+                // 刷铁机的自然生成走 VILLAGE_DEFENSE，仍受 neutral 组开关管控
+                CreatureSpawnEvent.SpawnReason.BUILD_IRONGOLEM
         ));
 
         BOSS_MOBS = Map.of(
