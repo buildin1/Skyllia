@@ -18,8 +18,8 @@ package fr.euphyllia.skylliatrader.data;
  * <p>
  * 上面那句"此前只靠 redeem-limit-per-island 节流……不是真正锁定产出速率"在 2026-08-26
  * 得到了贯彻：money 订单的终身限购已经全部取消（orders.toml 改成 0），产出速率完全交给
- * 本类的每日上限 + {@code slot-redeem-cooldown-seconds} 这两道真闸门。barter 订单例外，
- * 它的物品产出不受任何每日上限约束，终身限购是它唯一的闸门，必须保留。
+ * 本类的每日上限。同槽位冷却默认已关掉（{@code slot-redeem-cooldown-seconds = 0}）。
+ * barter 订单例外，它的物品产出不受任何每日上限约束，终身限购是它唯一的闸门，必须保留。
  * </p>
  * <p>
  * 用<b>独立的类</b>而不是复用 {@link DailyOrderIncome}：{@code reputation} 字段在

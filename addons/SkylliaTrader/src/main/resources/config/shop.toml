@@ -2166,8 +2166,8 @@ price = 10.0
 unlock-track = "REPUTATION"
 unlock-tier = 300
 natural-visible = false
-purchase-limit-period = "NONE"
-purchase-limit-count = 0
+purchase-limit-period = "DAILY"
+purchase-limit-count = 16
 
 [[shop-item]]
 id = "amethyst_shard"
@@ -2206,7 +2206,7 @@ unlock-track = "REPUTATION"
 unlock-tier = 700
 natural-visible = false
 purchase-limit-period = "DAILY"
-purchase-limit-count = 2
+purchase-limit-count = 1
 
 [[shop-item]]
 id = "echo_shard"
@@ -2217,7 +2217,7 @@ unlock-track = "REPUTATION"
 unlock-tier = 700
 natural-visible = false
 purchase-limit-period = "DAILY"
-purchase-limit-count = 2
+purchase-limit-count = 1
 
 [[shop-item]]
 id = "sculk_catalyst"
@@ -2229,7 +2229,7 @@ unlock-track = "REPUTATION"
 unlock-tier = 700
 natural-visible = false
 purchase-limit-period = "DAILY"
-purchase-limit-count = 2
+purchase-limit-count = 1
 
 [[shop-item]]
 id = "sea_lantern"
@@ -2241,7 +2241,7 @@ unlock-track = "REPUTATION"
 unlock-tier = 700
 natural-visible = false
 purchase-limit-period = "DAILY"
-purchase-limit-count = 2
+purchase-limit-count = 1
 
 [[shop-item]]
 id = "heart_of_the_sea"
@@ -2252,7 +2252,7 @@ unlock-track = "REPUTATION"
 unlock-tier = 700
 natural-visible = false
 purchase-limit-period = "DAILY"
-purchase-limit-count = 2
+purchase-limit-count = 1
 
 # ─────────────────────────────────────────────────────────────────────────
 # 商会声望轨 · 1500（商会理事）
@@ -2490,7 +2490,7 @@ unlock-track = "REPUTATION"
 unlock-tier = 1500
 natural-visible = false
 purchase-limit-period = "WEEKLY"
-purchase-limit-count = 2
+purchase-limit-count = 1
 
 [[shop-item]]
 id = "netherite_ingot"
@@ -2501,7 +2501,7 @@ unlock-track = "REPUTATION"
 unlock-tier = 1500
 natural-visible = false
 purchase-limit-period = "WEEKLY"
-purchase-limit-count = 2
+purchase-limit-count = 1
 extra-gate = "NETHERITE_INGOT_DUAL"
 
 # ─────────────────────────────────────────────────────────────────────────

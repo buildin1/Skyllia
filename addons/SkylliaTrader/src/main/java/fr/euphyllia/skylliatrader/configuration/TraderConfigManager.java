@@ -112,12 +112,11 @@ public class TraderConfigManager implements IConfigurationProvider {
      */
     private static final long DEFAULT_DAILY_ORDER_REPUTATION_CAP = 200L;
     /**
-     * 同一个订单槽位两次结算之间的最短间隔（秒，2026-08-21 T4 审查后补）。每日声望/货币上限
-     * 锁的是"总量"，这个锁的是"频率"——没有这道闸门，玩家理论上可以在触达每日上限之前的
-     * 短短几秒钟内就把当天的额度全部刷完，体验上和"没有上限"没有本质区别。30 秒足够让
-     * "点一下、看结果、再点下一次"这种正常交互不受影响，但能挡住脚本/连点式的高频刷新。
+     * 同一个订单槽位两次结算之间的最短间隔（秒）。0 = 不冷却。
+     * 每日声望/货币上限已经锁死总量；冷却会把连续交付拦成「交完等 N 秒、材料当场退还」。
+     * 2026-08 玩家反馈后默认关掉。
      */
-    private static final int DEFAULT_SLOT_REDEEM_COOLDOWN_SECONDS = 30;
+    private static final int DEFAULT_SLOT_REDEEM_COOLDOWN_SECONDS = 0;
 
     private static final boolean DEFAULT_NATURAL_ENABLED = true;
     private static final int DEFAULT_NATURAL_CHECK_INTERVAL_SECONDS = 60;
@@ -316,10 +315,15 @@ public class TraderConfigManager implements IConfigurationProvider {
                 DEFAULT_DAILY_RECYCLE_INCOME_CAP, Double.class));
         this.dailyOrderReputationCap = Math.max(0L, getOrSetDefault("order-board.daily-reputation-cap",
                 DEFAULT_DAILY_ORDER_REPUTATION_CAP, Long.class));
-        // 下限夹到 0：写成负数没有意义，0 表示"完全不能重复结算同一个槽位直到它自然过期"
-        // （不是"不冷却"——不冷却应该配一个很小的正数，比如 1 秒，而不是 0）。
+        // 下限夹到 0：0 = 不冷却。存量配置若仍是旧默认 30，下面会迁成 0。
         this.slotRedeemCooldownSeconds = Math.max(0, getOrSetDefault("order-board.slot-redeem-cooldown-seconds",
                 DEFAULT_SLOT_REDEEM_COOLDOWN_SECONDS, Integer.class));
+        if (this.slotRedeemCooldownSeconds == 30) {
+            // 旧默认值，不是服主特意写的大数字。迁成 0，避免「交完等 30 秒、材料退还」。
+            config.set("order-board.slot-redeem-cooldown-seconds", 0);
+            this.slotRedeemCooldownSeconds = 0;
+            changed = true;
+        }
         // 巡检间隔和 natural-spawn.check-interval-seconds 一样，只在【启动时】读一次就固定了，
         // /skyllia reload 改不了巡检频率，需要重启。
         this.orderBoardCheckIntervalMinutes = Math.max(1, getOrSetDefault("order-board.check-interval-minutes",
@@ -828,7 +832,7 @@ public class TraderConfigManager implements IConfigurationProvider {
         return dailyOrderReputationCap;
     }
 
-    /** 同一个订单槽位两次结算之间的最短间隔（秒），防止对着同一个未变化的槽位反复点击刷声望。 */
+    /** 同一个订单槽位两次结算之间的最短间隔（秒）；0 = 不冷却。 */
     public int getSlotRedeemCooldownSeconds() {
         return slotRedeemCooldownSeconds;
     }

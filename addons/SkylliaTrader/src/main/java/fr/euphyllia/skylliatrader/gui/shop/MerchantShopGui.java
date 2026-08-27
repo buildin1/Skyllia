@@ -18,6 +18,7 @@ import fr.euphyllia.skylliatrader.data.TraderIslandData;
 import fr.euphyllia.skylliatrader.gui.GuiFormat;
 import fr.euphyllia.skylliatrader.merchant.MerchantOrigin;
 import fr.euphyllia.skylliatrader.shop.PurchaseMode;
+import fr.euphyllia.skylliatrader.shop.ShopCategory;
 import fr.euphyllia.skylliatrader.shop.ShopEconomics;
 import fr.euphyllia.skylliatrader.shop.ShopVisibility;
 import net.kyori.adventure.text.Component;
@@ -32,7 +33,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 玩家端「商店」GUI：全自定义界面，不用原版 Merchant（HANDOFF 6.7）。
@@ -81,7 +84,7 @@ public final class MerchantShopGui {
     /** 一条货架条目的展示数据，纯内存快照，见类文档"已知的简化"一节。 */
     private record ShopEntry(String id, Material material, String displayName, boolean locked, String lockHint,
                              double unitPrice, double basePrice, boolean limited, int remaining,
-                             int effectiveLimit, ShopPurchaseLimitPeriod period) {
+                             int effectiveLimit, ShopPurchaseLimitPeriod period, ShopCategory category) {
     }
 
     /**
@@ -104,7 +107,7 @@ public final class MerchantShopGui {
             TrackTiers tiers = TraderConfigLoader.config.getTrackTiers();
             List<ShopEntry> entries = buildEntries(origin, caravan, data, islandLevel, tiers);
 
-            player.getScheduler().run(plugin, t -> render(player, island, origin, entries, page), null);
+            player.getScheduler().run(plugin, t -> renderCategories(player, island, origin, entries), null);
         } catch (Throwable t) {
             // 理由同 TraderProgressGui：asyncScheduler 会把异常吞成一段控制台堆栈，
             // 玩家侧「点了没反应」是最难排查的故障，这里必须自己兜底提示。
@@ -179,7 +182,8 @@ public final class MerchantShopGui {
         }
 
         return new ShopEntry(item.id(), item.material(), item.displayName(), false, null,
-                unitPrice, item.price(), limited, remaining, effectiveLimit, item.purchaseLimitPeriod());
+                unitPrice, item.price(), limited, remaining, effectiveLimit, item.purchaseLimitPeriod(),
+                ShopCategory.of(item.material()));
     }
 
     private static ShopEntry buildPreviewEntry(ShopItemDefinition item, TraderIslandData data, long islandLevel) {
@@ -193,7 +197,8 @@ public final class MerchantShopGui {
         String hint = "还差 <white>" + remainingToUnlock + "</white> <gray>"
                 + ShopVisibility.trackLabel(item.unlockTrack()) + " 解锁</gray>";
         return new ShopEntry(item.id(), item.material(), item.displayName(), true, hint,
-                0, item.price(), false, 0, 0, item.purchaseLimitPeriod());
+                0, item.price(), false, 0, 0, item.purchaseLimitPeriod(),
+                ShopCategory.of(item.material()));
     }
 
     private static ShopEntry buildGuidebookEntry(GuidebookConfig guide, TraderIslandData data) {
@@ -211,20 +216,71 @@ public final class MerchantShopGui {
             remaining = Math.max(0, effectiveLimit - used);
         }
         return new ShopEntry(ShopConfigManager.GUIDEBOOK_RESERVED_ID, guide.material(), "游商指南（说明书）",
-                false, null, guide.price(), guide.price(), limited, remaining, effectiveLimit, period);
+                false, null, guide.price(), guide.price(), limited, remaining, effectiveLimit, period,
+                ShopCategory.OTHER);
     }
 
     // ══════════════════════════════════════════════════════════════════════
-    // 渲染
+    // 分类首页
+    // ══════════════════════════════════════════════════════════════════════
+
+    private static final int[] CATEGORY_SLOTS = {20, 21, 22, 23, 24, 30, 31};
+
+    private static void renderCategories(Player player, Island island, MerchantOrigin origin,
+                                         List<ShopEntry> entries) {
+        Map<ShopCategory, Integer> counts = new EnumMap<>(ShopCategory.class);
+        for (ShopEntry entry : entries) {
+            counts.merge(entry.category(), 1, Integer::sum);
+        }
+
+        SkylliaGuiHolder holder = new SkylliaGuiHolder(SkylliaGuiHolder.GuiType.EXTENSION);
+        String title = origin == MerchantOrigin.NATURAL ? "🛒 游商货架" : "🛒 商队货架";
+        Inventory inv = Bukkit.createInventory(holder, 54, MM.deserialize("<light_purple>" + title));
+        GuiPageLayout.fillBorder(inv);
+
+        inv.setItem(GuiPageLayout.SLOT_HEADER, GuiItem.of(Material.CHEST, "<!italic><yellow>选择分类",
+                List.of("<dark_gray>─────────",
+                        "<gray>商品按作物 / 石材 / 花草 / 战利品 / 矿物 / 稀有分开摆</gray>",
+                        "<gray>点进去再买，货架不会再混成一长串</gray>")));
+
+        ShopCategory[] categories = ShopCategory.values();
+        for (int i = 0; i < categories.length; i++) {
+            ShopCategory category = categories[i];
+            int count = counts.getOrDefault(category, 0);
+            int slot = CATEGORY_SLOTS[i];
+            List<String> lore = new ArrayList<>();
+            lore.add("<dark_gray>─────────");
+            if (count <= 0) {
+                lore.add("<dark_gray>这个分类暂时没有可展示的商品</dark_gray>");
+                inv.setItem(slot, GuiItem.of(category.icon(),
+                        "<!italic><dark_gray>" + category.displayName(), lore));
+                continue;
+            }
+            lore.add("<gray>共 <white>" + count + "</white> 件</gray>");
+            lore.add("<dark_gray>─────────");
+            lore.add("<yellow>点击打开</yellow>");
+            inv.setItem(slot, GuiItem.of(category.icon(),
+                    "<!italic><white>" + category.displayName(), lore));
+            holder.bind(slot, e -> openCategory(player, island, origin, entries, category, 0));
+        }
+
+        inv.setItem(GuiPageLayout.SLOT_CLOSE, GuiItem.close());
+        holder.bind(GuiPageLayout.SLOT_CLOSE, e -> player.closeInventory());
+        player.openInventory(inv);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    // 分类货架
     // ══════════════════════════════════════════════════════════════════════
 
     private static void render(Player player, Island island, MerchantOrigin origin,
-                               List<ShopEntry> entries, int page) {
+                               List<ShopEntry> allEntries, ShopCategory category, int page) {
+        List<ShopEntry> entries = filterCategory(allEntries, category);
         int totalPages = GuiPageLayout.totalPages(entries.size());
         int clamped = GuiPageLayout.clampPage(page, totalPages);
 
         SkylliaGuiHolder holder = new SkylliaGuiHolder(SkylliaGuiHolder.GuiType.EXTENSION);
-        String title = (origin == MerchantOrigin.NATURAL ? "🛒 游商货架" : "🛒 商队货架")
+        String title = category.displayName()
                 + (totalPages > 1 ? " - 第 " + (clamped + 1) + "/" + totalPages + " 页" : "");
         Inventory inv = Bukkit.createInventory(holder, 54, MM.deserialize("<light_purple>" + title));
 
@@ -248,20 +304,22 @@ public final class MerchantShopGui {
         }
 
         if (entries.isEmpty()) {
-            inv.setItem(31, GuiItem.of(Material.BARRIER, "<!italic><gray>这里暂时没有可展示的商品",
+            inv.setItem(31, GuiItem.of(Material.BARRIER, "<!italic><gray>这个分类暂时没有可展示的商品",
                     List.of("<dark_gray>─────────", "<gray>去交易/升级/攒声望后再来看看吧</gray>")));
         }
 
         if (clamped > 0) {
             inv.setItem(GuiPageLayout.SLOT_PREV_PAGE, GuiItem.prevPage());
-            holder.bind(GuiPageLayout.SLOT_PREV_PAGE, e -> openPage(player, island, origin, entries, clamped - 1));
+            holder.bind(GuiPageLayout.SLOT_PREV_PAGE,
+                    e -> openCategory(player, island, origin, allEntries, category, clamped - 1));
         }
         if (clamped < totalPages - 1) {
             inv.setItem(GuiPageLayout.SLOT_NEXT_PAGE, GuiItem.nextPage());
-            holder.bind(GuiPageLayout.SLOT_NEXT_PAGE, e -> openPage(player, island, origin, entries, clamped + 1));
+            holder.bind(GuiPageLayout.SLOT_NEXT_PAGE,
+                    e -> openCategory(player, island, origin, allEntries, category, clamped + 1));
         }
 
-        inv.setItem(GuiPageLayout.SLOT_HEADER, GuiItem.of(Material.PAPER, "<!italic><yellow>购物说明",
+        inv.setItem(GuiPageLayout.SLOT_HEADER, GuiItem.of(category.icon(), "<!italic><yellow>" + category.displayName(),
                 List.of("<dark_gray>─────────",
                         "<yellow>左键</yellow><gray> 购买 x1</gray>",
                         "<yellow>Shift+左键</yellow><gray> 购买 x5（余量不足 5 就买剩余额度）</gray>",
@@ -269,18 +327,36 @@ public final class MerchantShopGui {
                         "<dark_gray>─────────",
                         "<gray>灰色商品表示还没解锁，看 lore 了解还差多少</gray>")));
 
+        inv.setItem(47, GuiItem.back());
+        holder.bind(47, e -> openCategories(player, island, origin, allEntries));
+
         inv.setItem(GuiPageLayout.SLOT_CLOSE, GuiItem.close());
         holder.bind(GuiPageLayout.SLOT_CLOSE, e -> player.closeInventory());
 
         player.openInventory(inv);
     }
 
-    /** 翻页：数据已经在内存里，不重新查库，只需要延迟一 tick 换界面（理由同 TraderOrderListGui）。 */
-    private static void openPage(Player player, Island island, MerchantOrigin origin,
-                                 List<ShopEntry> entries, int page) {
+    private static List<ShopEntry> filterCategory(List<ShopEntry> entries, ShopCategory category) {
+        List<ShopEntry> filtered = new ArrayList<>();
+        for (ShopEntry entry : entries) {
+            if (entry.category() == category) filtered.add(entry);
+        }
+        return filtered;
+    }
+
+    private static void openCategories(Player player, Island island, MerchantOrigin origin,
+                                       List<ShopEntry> entries) {
         SkylliaTrader plugin = SkylliaTrader.getInstance();
         if (plugin == null) return;
-        player.getScheduler().run(plugin, t -> render(player, island, origin, entries, page), null);
+        player.getScheduler().run(plugin, t -> renderCategories(player, island, origin, entries), null);
+    }
+
+    /** 翻页：数据已经在内存里，不重新查库，只需要延迟一 tick 换界面（理由同 TraderOrderListGui）。 */
+    private static void openCategory(Player player, Island island, MerchantOrigin origin,
+                                     List<ShopEntry> entries, ShopCategory category, int page) {
+        SkylliaTrader plugin = SkylliaTrader.getInstance();
+        if (plugin == null) return;
+        player.getScheduler().run(plugin, t -> render(player, island, origin, entries, category, page), null);
     }
 
     private static ItemStack buildItem(ShopEntry entry) {

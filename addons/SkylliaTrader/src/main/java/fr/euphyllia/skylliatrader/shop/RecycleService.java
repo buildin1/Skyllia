@@ -107,10 +107,33 @@ public final class RecycleService {
         return ShopEconomics.round2(item.price() * RECYCLE_RATE);
     }
 
+    /**
+     * 这件商品今天的回收额度（金币）。
+     * <p>
+     * 配置里的 {@code recycle.daily-income-cap-per-item} 只是保底。单价高的商品按「至少能卖几件」
+     * 再抬一档，否则会出现「回收单价 2000、每日上限 40、一件都卖不出去」。
+     * </p>
+     */
+    public static double dailyCapFor(@NotNull ShopItemDefinition item) {
+        double floor = TraderConfigLoader.config.getDailyRecycleIncomeCap();
+        double unit = recyclePriceFor(item);
+        int minPieces;
+        if (item.price() >= 200.0) {
+            minPieces = 1;
+        } else if (item.price() >= 50.0) {
+            minPieces = 2;
+        } else if (item.price() >= 8.0) {
+            minPieces = 16;
+        } else {
+            minPieces = 64;
+        }
+        return Math.max(floor, ShopEconomics.round2(unit * minPieces));
+    }
+
     /** 某件商品今天还剩多少回收额度（金币）。窗口过期视为满额。 */
-    public static double remainingCapFor(@NotNull TraderIslandData data, @NotNull String shopItemId) {
-        double cap = TraderConfigLoader.config.getDailyRecycleIncomeCap();
-        DailyRecycleIncome income = data.recycleIncomeByItem.get(shopItemId);
+    public static double remainingCapFor(@NotNull TraderIslandData data, @NotNull ShopItemDefinition item) {
+        double cap = dailyCapFor(item);
+        DailyRecycleIncome income = data.recycleIncomeByItem.get(item.id());
         long now = System.currentTimeMillis();
         if (income == null || income.windowStartAt == 0L || now - income.windowStartAt > DAY_MILLIS) {
             return cap;
@@ -343,7 +366,7 @@ public final class RecycleService {
             fail(player, "§c你还没有空岛，物品已退还。");
             return;
         }
-        double cap = TraderConfigLoader.config.getDailyRecycleIncomeCap();
+        double cap = dailyCapFor(liveItem);
         int[] acceptedQty = {0};
         Double accepted = plugin.getDataService().compute(island, data -> {
             long now = System.currentTimeMillis();
@@ -365,7 +388,7 @@ public final class RecycleService {
         });
         if (accepted == null) {
             refundItems(player, material, quantity, "今日回收额度不足");
-            fail(player, "§e今天这种商品的回收额度已经用完了（每种每日上限 §f" + GuiFormat.fmt(cap)
+            fail(player, "§e今天这种商品的回收额度已经用完了（每日上限 §f" + GuiFormat.fmt(cap)
                     + " §e金币），物品已退还。换别的商品还能继续卖。");
             return;
         }
