@@ -28,8 +28,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 玩家端「回收」GUI（HANDOFF 9.3 T5）：展示游商当前收购的全部商品（= {@code shop.toml} 的固定
- * 全目录），点击一条触发一键回收（{@link RecycleService#recycle}）。
+ * 玩家端「回收」GUI（HANDOFF 9.3 T5）：只展示 {@code shop.toml} 里 {@code recyclable = true}
+ * 的贵重物，点击一条触发一键回收（{@link RecycleService#recycle}）。
  *
  * <h2>不做"往格子里摆物品"那套交互</h2>
  * <p>
@@ -39,9 +39,8 @@ import java.util.List;
  *
  * <h2>回收和解锁进度无关</h2>
  * <p>
- * 这里展示的是 {@code shop.toml} <b>全部</b>条目，不按 {@code ShopVisibility} 的三态过滤——
+ * 这里只展示 {@code recyclable = true} 的条目，不按 {@code ShopVisibility} 的三态过滤——
  * 游商收东西不应该要求玩家先解锁购买资格，那是"买"的门槛，回收是"卖"，两码事。
- * 玩家哪怕一件商品都没解锁到，只要背包里有对应材质，一样能拿来换钱。
  * 说明书不在列表里：它不是 {@code shop.toml} 的条目（保留 id，见
  * {@code ShopConfigManager#GUIDEBOOK_RESERVED_ID}），HANDOFF 9.3 的回收范围是
  * "游商自己有在卖的商品"，说明书走的是完全独立的 {@code guidebook.*} 配置，不计入这个范围。

@@ -2,7 +2,7 @@
 # SkylliaTrader 商店商品表
 # ═══════════════════════════════════════════════════════════════════════════
 # 每一条 [[shop-item]] 都是显式配置的商品，不是靠公式批量生成——参照 orders.toml 的规矩。
-# 定价以公开百科（PlayerTask 日均产出 ~100 的新锚点）为准，改价格两边要一起改，见 HANDOFF.md 9.3。
+# 定价以 PlayerTask 日均约 1500 + 订单收购为锚点。建材压到 0.3 档，贵重物不跟收入同比放大。
 #
 # ── 字段说明 ────────────────────────────────────────────────────────────
 # id                     商品唯一标识。比较时会去掉首尾空白并转成小写，重复的 id 会被丢弃并报 error。
@@ -17,7 +17,7 @@
 # natural-visible        是否也在"自然刷新的路人商人"货架上出现。只有交易次数轨第 0 档的
 #                        商品才应该是 true——路人商人只卖基础生活池，逼玩家去挑战任务换凭证。
 # purchase-limit-period  限购周期：NONE（不限购）/ DAILY / WEEKLY / MONTHLY / LIFETIME（终身）。
-#                        全部按"滚动窗口"判定，不对齐自然日/自然周，避免时区/月份天数的复杂度。
+#                        日/周/月按每天早上 8:00（Asia/Shanghai）刷新，终身限购不重置。
 # purchase-limit-count   该周期内每岛限购的数量；purchase-limit-period = NONE 时忽略此字段。
 # extra-gate             可选。目前只有一个取值 "NETHERITE_INGOT_DUAL"，表示这条商品除了
 #                        unlock-track/unlock-tier 之外，还要求岛屿等级 ≥45（硬编码在
@@ -26,6 +26,8 @@
 # caravan                可选。专供商队：OVERWORLD / NETHER / END。写了就只出现在该种商队
 #                        （凭证游商）的货架上，留空 = 所有商队通卖。这是货架划分不是安全
 #                        边界——解锁与限购判定照常走 unlock-track 等字段。
+# recyclable             回收站是否收这件商品。建材/农场产物必须 false；只给钻石、回响碎片、
+#                        海洋之心、远古残骸、哭泣黑曜石、镀金黑石开 true。缺省按 false 处理。
 #
 # ⚠️ 钻石（id = "diamond"）的 purchase-limit-count 只是文档占位值：真实限购数字按岛屿等级
 #    动态决定（<20 级=1，20-29 级=3，≥30 级=10），运行时由代码按 Material.DIAMOND 特判覆盖，
@@ -40,8 +42,9 @@ config-version = 1
 [[shop-item]]
 id = "sand"
 material = "SAND"
+recyclable = false
 display-name = "<white>沙子"
-price = 3.0
+price = 0.3
 unlock-track = "TRADE_COUNT"
 unlock-tier = 0
 natural-visible = true
@@ -51,8 +54,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "red_sand"
 material = "RED_SAND"
+recyclable = false
 display-name = "<white>红沙"
-price = 3.0
+price = 0.3
 unlock-track = "TRADE_COUNT"
 unlock-tier = 0
 natural-visible = true
@@ -62,8 +66,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "gravel"
 material = "GRAVEL"
+recyclable = false
 display-name = "<white>砂砾"
-price = 3.0
+price = 0.3
 unlock-track = "TRADE_COUNT"
 unlock-tier = 0
 natural-visible = true
@@ -73,8 +78,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "clay_ball"
 material = "CLAY_BALL"
+recyclable = false
 display-name = "<white>黏土球"
-price = 1.0
+price = 0.3
 unlock-track = "TRADE_COUNT"
 unlock-tier = 0
 natural-visible = true
@@ -84,7 +90,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "sugar_cane"
 material = "SUGAR_CANE"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>甘蔗"
 price = 1.0
 unlock-track = "TRADE_COUNT"
@@ -96,7 +102,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "wheat_seeds"
 material = "WHEAT_SEEDS"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>小麦种子"
 price = 1.0
 unlock-track = "TRADE_COUNT"
@@ -108,7 +114,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "beetroot_seeds"
 material = "BEETROOT_SEEDS"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>甜菜种子"
 price = 1.0
 unlock-track = "TRADE_COUNT"
@@ -120,7 +126,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "pumpkin_seeds"
 material = "PUMPKIN_SEEDS"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>南瓜种子"
 price = 1.0
 unlock-track = "TRADE_COUNT"
@@ -132,7 +138,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "melon_seeds"
 material = "MELON_SEEDS"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>西瓜种子"
 price = 1.0
 unlock-track = "TRADE_COUNT"
@@ -144,7 +150,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "sweet_berries"
 material = "SWEET_BERRIES"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>甜浆果"
 price = 1.0
 unlock-track = "TRADE_COUNT"
@@ -156,7 +162,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "glow_berries"
 material = "GLOW_BERRIES"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>发光浆果"
 price = 1.0
 unlock-track = "TRADE_COUNT"
@@ -168,7 +174,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "oak_sapling"
 material = "OAK_SAPLING"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>橡木树苗"
 price = 1.0
 unlock-track = "TRADE_COUNT"
@@ -180,7 +186,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "nether_wart"
 material = "NETHER_WART"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>下界疣"
 price = 4.0
 unlock-track = "TRADE_COUNT"
@@ -192,6 +198,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "blaze_rod"
 material = "BLAZE_ROD"
+recyclable = false
 display-name = "<white>烈焰棒"
 price = 6.0
 unlock-track = "TRADE_COUNT"
@@ -203,7 +210,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "frogspawn"
 material = "FROGSPAWN"
-recyclable = false   # 可再生：蝌蚪/青蛙可无限量产
+recyclable = false
 display-name = "<white>青蛙卵"
 price = 4.0
 unlock-track = "TRADE_COUNT"
@@ -219,7 +226,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "birch_sapling"
 material = "BIRCH_SAPLING"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>白桦树苗"
 price = 20.0
 unlock-track = "TRADE_COUNT"
@@ -231,7 +238,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "spruce_sapling"
 material = "SPRUCE_SAPLING"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>云杉树苗"
 price = 20.0
 unlock-track = "TRADE_COUNT"
@@ -243,7 +250,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "jungle_sapling"
 material = "JUNGLE_SAPLING"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>丛林树苗"
 price = 20.0
 unlock-track = "TRADE_COUNT"
@@ -255,7 +262,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "acacia_sapling"
 material = "ACACIA_SAPLING"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>金合欢树苗"
 price = 20.0
 unlock-track = "TRADE_COUNT"
@@ -267,7 +274,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "dark_oak_sapling"
 material = "DARK_OAK_SAPLING"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>深色橡木树苗"
 price = 20.0
 unlock-track = "TRADE_COUNT"
@@ -279,7 +286,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "mangrove_propagule"
 material = "MANGROVE_PROPAGULE"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>红树胎生苗"
 price = 20.0
 unlock-track = "TRADE_COUNT"
@@ -291,7 +298,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "cherry_sapling"
 material = "CHERRY_SAPLING"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>樱花树苗"
 price = 20.0
 unlock-track = "TRADE_COUNT"
@@ -303,7 +310,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "pale_oak_sapling"
 material = "PALE_OAK_SAPLING"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>苍白橡木树苗"
 price = 20.0
 unlock-track = "TRADE_COUNT"
@@ -315,7 +322,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "cocoa_beans"
 material = "COCOA_BEANS"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>可可豆"
 price = 20.0
 unlock-track = "TRADE_COUNT"
@@ -327,7 +334,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "cactus"
 material = "CACTUS"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>仙人掌"
 price = 20.0
 unlock-track = "TRADE_COUNT"
@@ -339,7 +346,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "red_mushroom"
 material = "RED_MUSHROOM"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>红蘑菇"
 price = 20.0
 unlock-track = "TRADE_COUNT"
@@ -351,7 +358,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "brown_mushroom"
 material = "BROWN_MUSHROOM"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>棕蘑菇"
 price = 20.0
 unlock-track = "TRADE_COUNT"
@@ -363,7 +370,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "bamboo"
 material = "BAMBOO"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>竹子"
 price = 20.0
 unlock-track = "TRADE_COUNT"
@@ -379,7 +386,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "white_dye"
 material = "WHITE_DYE"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>白色染料"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -391,7 +398,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "orange_dye"
 material = "ORANGE_DYE"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>橙色染料"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -403,7 +410,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "magenta_dye"
 material = "MAGENTA_DYE"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>品红色染料"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -415,7 +422,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "light_blue_dye"
 material = "LIGHT_BLUE_DYE"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>淡蓝色染料"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -427,7 +434,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "yellow_dye"
 material = "YELLOW_DYE"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>黄色染料"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -439,7 +446,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "lime_dye"
 material = "LIME_DYE"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>黄绿色染料"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -451,7 +458,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "pink_dye"
 material = "PINK_DYE"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>粉红色染料"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -463,7 +470,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "gray_dye"
 material = "GRAY_DYE"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>灰色染料"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -475,7 +482,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "light_gray_dye"
 material = "LIGHT_GRAY_DYE"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>淡灰色染料"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -487,7 +494,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "cyan_dye"
 material = "CYAN_DYE"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>青色染料"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -499,7 +506,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "purple_dye"
 material = "PURPLE_DYE"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>紫色染料"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -511,7 +518,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "blue_dye"
 material = "BLUE_DYE"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>蓝色染料"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -523,7 +530,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "brown_dye"
 material = "BROWN_DYE"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>棕色染料"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -535,7 +542,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "green_dye"
 material = "GREEN_DYE"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>绿色染料"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -547,7 +554,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "red_dye"
 material = "RED_DYE"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>红色染料"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -559,7 +566,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "black_dye"
 material = "BLACK_DYE"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>黑色染料"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -571,7 +578,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "dandelion"
 material = "DANDELION"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>蒲公英"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -583,7 +590,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "poppy"
 material = "POPPY"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>虞美人"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -595,7 +602,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "blue_orchid"
 material = "BLUE_ORCHID"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>蓝色兰花"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -607,7 +614,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "allium"
 material = "ALLIUM"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>紫红球花"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -619,7 +626,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "azure_bluet"
 material = "AZURE_BLUET"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>白花车轴草"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -631,7 +638,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "red_tulip"
 material = "RED_TULIP"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>红色郁金香"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -643,7 +650,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "orange_tulip"
 material = "ORANGE_TULIP"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>橙色郁金香"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -655,7 +662,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "white_tulip"
 material = "WHITE_TULIP"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>白色郁金香"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -667,7 +674,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "pink_tulip"
 material = "PINK_TULIP"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>粉色郁金香"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -679,7 +686,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "oxeye_daisy"
 material = "OXEYE_DAISY"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>滨菊"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -691,7 +698,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "cornflower"
 material = "CORNFLOWER"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>矢车菊"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -703,7 +710,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "lily_of_the_valley"
 material = "LILY_OF_THE_VALLEY"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>铃兰"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -715,7 +722,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "sunflower"
 material = "SUNFLOWER"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>向日葵"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -727,7 +734,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "lilac"
 material = "LILAC"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>丁香花"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -739,7 +746,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "rose_bush"
 material = "ROSE_BUSH"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>玫瑰丛"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -751,7 +758,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "peony"
 material = "PEONY"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>牡丹"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -763,7 +770,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "torchflower"
 material = "TORCHFLOWER"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>火把花"
 price = 2.0
 unlock-track = "TRADE_COUNT"
@@ -779,9 +786,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "kelp"
 material = "KELP"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>海带"
-price = 3.0
+price = 0.3
 unlock-track = "TRADE_COUNT"
 unlock-tier = 50
 natural-visible = false
@@ -791,9 +798,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "seagrass"
 material = "SEAGRASS"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>海草"
-price = 3.0
+price = 0.3
 unlock-track = "TRADE_COUNT"
 unlock-tier = 50
 natural-visible = false
@@ -803,9 +810,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "sea_pickle"
 material = "SEA_PICKLE"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>海泡菜"
-price = 3.0
+price = 0.3
 unlock-track = "TRADE_COUNT"
 unlock-tier = 50
 natural-visible = false
@@ -815,8 +822,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "tube_coral"
 material = "TUBE_CORAL"
+recyclable = false
 display-name = "<white>管珊瑚"
-price = 3.0
+price = 0.3
 unlock-track = "TRADE_COUNT"
 unlock-tier = 50
 natural-visible = false
@@ -826,8 +834,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "brain_coral"
 material = "BRAIN_CORAL"
+recyclable = false
 display-name = "<white>脑纹珊瑚"
-price = 3.0
+price = 0.3
 unlock-track = "TRADE_COUNT"
 unlock-tier = 50
 natural-visible = false
@@ -837,8 +846,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "bubble_coral"
 material = "BUBBLE_CORAL"
+recyclable = false
 display-name = "<white>气泡珊瑚"
-price = 3.0
+price = 0.3
 unlock-track = "TRADE_COUNT"
 unlock-tier = 50
 natural-visible = false
@@ -848,8 +858,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "fire_coral"
 material = "FIRE_CORAL"
+recyclable = false
 display-name = "<white>火珊瑚"
-price = 3.0
+price = 0.3
 unlock-track = "TRADE_COUNT"
 unlock-tier = 50
 natural-visible = false
@@ -859,8 +870,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "horn_coral"
 material = "HORN_CORAL"
+recyclable = false
 display-name = "<white>鹿角珊瑚"
-price = 3.0
+price = 0.3
 unlock-track = "TRADE_COUNT"
 unlock-tier = 50
 natural-visible = false
@@ -872,8 +884,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "tube_coral_block"
 material = "TUBE_CORAL_BLOCK"
+recyclable = false
 display-name = "<white>管珊瑚块"
-price = 4.0
+price = 0.4
 unlock-track = "TRADE_COUNT"
 unlock-tier = 50
 natural-visible = false
@@ -883,8 +896,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "brain_coral_block"
 material = "BRAIN_CORAL_BLOCK"
+recyclable = false
 display-name = "<white>脑纹珊瑚块"
-price = 4.0
+price = 0.4
 unlock-track = "TRADE_COUNT"
 unlock-tier = 50
 natural-visible = false
@@ -894,8 +908,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "bubble_coral_block"
 material = "BUBBLE_CORAL_BLOCK"
+recyclable = false
 display-name = "<white>气泡珊瑚块"
-price = 4.0
+price = 0.4
 unlock-track = "TRADE_COUNT"
 unlock-tier = 50
 natural-visible = false
@@ -905,8 +920,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "fire_coral_block"
 material = "FIRE_CORAL_BLOCK"
+recyclable = false
 display-name = "<white>火珊瑚块"
-price = 4.0
+price = 0.4
 unlock-track = "TRADE_COUNT"
 unlock-tier = 50
 natural-visible = false
@@ -916,8 +932,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "horn_coral_block"
 material = "HORN_CORAL_BLOCK"
+recyclable = false
 display-name = "<white>鹿角珊瑚块"
-price = 4.0
+price = 0.4
 unlock-track = "TRADE_COUNT"
 unlock-tier = 50
 natural-visible = false
@@ -927,8 +944,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "tube_coral_fan"
 material = "TUBE_CORAL_FAN"
+recyclable = false
 display-name = "<white>管珊瑚扇"
-price = 3.0
+price = 0.3
 unlock-track = "TRADE_COUNT"
 unlock-tier = 50
 natural-visible = false
@@ -938,8 +956,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "brain_coral_fan"
 material = "BRAIN_CORAL_FAN"
+recyclable = false
 display-name = "<white>脑纹珊瑚扇"
-price = 3.0
+price = 0.3
 unlock-track = "TRADE_COUNT"
 unlock-tier = 50
 natural-visible = false
@@ -949,8 +968,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "bubble_coral_fan"
 material = "BUBBLE_CORAL_FAN"
+recyclable = false
 display-name = "<white>气泡珊瑚扇"
-price = 3.0
+price = 0.3
 unlock-track = "TRADE_COUNT"
 unlock-tier = 50
 natural-visible = false
@@ -960,8 +980,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "fire_coral_fan"
 material = "FIRE_CORAL_FAN"
+recyclable = false
 display-name = "<white>火珊瑚扇"
-price = 3.0
+price = 0.3
 unlock-track = "TRADE_COUNT"
 unlock-tier = 50
 natural-visible = false
@@ -971,8 +992,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "horn_coral_fan"
 material = "HORN_CORAL_FAN"
+recyclable = false
 display-name = "<white>鹿角珊瑚扇"
-price = 3.0
+price = 0.3
 unlock-track = "TRADE_COUNT"
 unlock-tier = 50
 natural-visible = false
@@ -982,9 +1004,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "ice"
 material = "ICE"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>冰"
-price = 3.0
+price = 0.3
 unlock-track = "TRADE_COUNT"
 unlock-tier = 50
 natural-visible = false
@@ -994,9 +1016,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "packed_ice"
 material = "PACKED_ICE"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>浮冰"
-price = 3.0
+price = 0.3
 unlock-track = "TRADE_COUNT"
 unlock-tier = 50
 natural-visible = false
@@ -1006,9 +1028,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "blue_ice"
 material = "BLUE_ICE"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>蓝冰"
-price = 3.0
+price = 0.5
 unlock-track = "TRADE_COUNT"
 unlock-tier = 50
 natural-visible = false
@@ -1022,7 +1044,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "lily_pad"
 material = "LILY_PAD"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>睡莲"
 price = 20.0
 unlock-track = "TRADE_COUNT"
@@ -1034,7 +1056,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "vine"
 material = "VINE"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>藤蔓"
 price = 20.0
 unlock-track = "TRADE_COUNT"
@@ -1046,7 +1068,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "azalea"
 material = "AZALEA"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>杜鹃"
 price = 20.0
 unlock-track = "TRADE_COUNT"
@@ -1058,7 +1080,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "moss_block"
 material = "MOSS_BLOCK"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>苔藓"
 price = 20.0
 unlock-track = "TRADE_COUNT"
@@ -1070,7 +1092,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "weeping_vines"
 material = "WEEPING_VINES"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>垂根"
 price = 20.0
 unlock-track = "TRADE_COUNT"
@@ -1082,7 +1104,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "glow_lichen"
 material = "GLOW_LICHEN"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>发光地衣"
 price = 20.0
 unlock-track = "TRADE_COUNT"
@@ -1094,6 +1116,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "spore_blossom"
 material = "SPORE_BLOSSOM"
+recyclable = false
 display-name = "<white>孢子花"
 price = 20.0
 unlock-track = "TRADE_COUNT"
@@ -1109,8 +1132,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "netherrack"
 material = "NETHERRACK"
+recyclable = false
 display-name = "<white>下界岩"
-price = 3.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 1
 natural-visible = false
@@ -1120,8 +1144,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "soul_sand"
 material = "SOUL_SAND"
+recyclable = false
 display-name = "<white>灵魂沙"
-price = 3.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 1
 natural-visible = false
@@ -1131,8 +1156,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "soul_soil"
 material = "SOUL_SOIL"
+recyclable = false
 display-name = "<white>灵魂土"
-price = 3.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 1
 natural-visible = false
@@ -1142,8 +1168,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "end_stone"
 material = "END_STONE"
+recyclable = false
 display-name = "<white>末地石"
-price = 3.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 1
 natural-visible = false
@@ -1157,8 +1184,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "tuff"
 material = "TUFF"
+recyclable = false
 display-name = "<white>凝灰岩"
-price = 3.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 5
 natural-visible = false
@@ -1168,8 +1196,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "calcite"
 material = "CALCITE"
+recyclable = false
 display-name = "<white>方解石"
-price = 3.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 5
 natural-visible = false
@@ -1179,8 +1208,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "granite"
 material = "GRANITE"
+recyclable = false
 display-name = "<white>花岗岩"
-price = 3.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 5
 natural-visible = false
@@ -1190,8 +1220,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "diorite"
 material = "DIORITE"
+recyclable = false
 display-name = "<white>闪长岩"
-price = 3.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 5
 natural-visible = false
@@ -1201,8 +1232,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "andesite"
 material = "ANDESITE"
+recyclable = false
 display-name = "<white>安山岩"
-price = 3.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 5
 natural-visible = false
@@ -1212,9 +1244,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "pointed_dripstone"
 material = "POINTED_DRIPSTONE"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>滴水石锥"
-price = 4.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 5
 natural-visible = false
@@ -1227,8 +1259,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "cinnabar"
 material = "CINNABAR"
+recyclable = false
 display-name = "<white>朱砂"
-price = 3.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 5
 natural-visible = false
@@ -1238,8 +1271,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "sulfur"
 material = "SULFUR"
+recyclable = false
 display-name = "<white>硫磺"
-price = 3.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 5
 natural-visible = false
@@ -1249,8 +1283,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "potent_sulfur"
 material = "POTENT_SULFUR"
+recyclable = false
 display-name = "<white>烈性硫磺"
-price = 5.0
+price = 0.5
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 5
 natural-visible = false
@@ -1259,15 +1294,16 @@ purchase-limit-count = 0
 
 # ─────────────────────────────────────────────────────────────────────────
 # 岛屿等级轨 · 5 级 · 主世界商队专供（caravan = OVERWORLD，2026-08 玩家建议）
-# 17 色陶瓦 + 16 色混凝土。都能用黏土/沙砾自合成，定价 4 只是省事费；
-# 回收 40% = 1.6 金币低于自合成成本，不构成印钞口，保持 recyclable 默认。
+# 17 色陶瓦 + 16 色混凝土。都能用黏土/沙砾自合成，定价 0.3 只是省事费；
+# 建材不进回收，量产兑现走订单收购。
 # ─────────────────────────────────────────────────────────────────────────
 
 [[shop-item]]
 id = "terracotta"
 material = "TERRACOTTA"
+recyclable = false
 display-name = "<white>陶瓦"
-price = 4.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 5
 natural-visible = false
@@ -1278,8 +1314,9 @@ caravan = "OVERWORLD"
 [[shop-item]]
 id = "white_terracotta"
 material = "WHITE_TERRACOTTA"
+recyclable = false
 display-name = "<white>白色陶瓦"
-price = 4.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 5
 natural-visible = false
@@ -1290,8 +1327,9 @@ caravan = "OVERWORLD"
 [[shop-item]]
 id = "light_gray_terracotta"
 material = "LIGHT_GRAY_TERRACOTTA"
+recyclable = false
 display-name = "<white>淡灰色陶瓦"
-price = 4.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 5
 natural-visible = false
@@ -1302,8 +1340,9 @@ caravan = "OVERWORLD"
 [[shop-item]]
 id = "gray_terracotta"
 material = "GRAY_TERRACOTTA"
+recyclable = false
 display-name = "<white>灰色陶瓦"
-price = 4.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 5
 natural-visible = false
@@ -1314,8 +1353,9 @@ caravan = "OVERWORLD"
 [[shop-item]]
 id = "black_terracotta"
 material = "BLACK_TERRACOTTA"
+recyclable = false
 display-name = "<white>黑色陶瓦"
-price = 4.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 5
 natural-visible = false
@@ -1326,8 +1366,9 @@ caravan = "OVERWORLD"
 [[shop-item]]
 id = "brown_terracotta"
 material = "BROWN_TERRACOTTA"
+recyclable = false
 display-name = "<white>棕色陶瓦"
-price = 4.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 5
 natural-visible = false
@@ -1338,8 +1379,9 @@ caravan = "OVERWORLD"
 [[shop-item]]
 id = "red_terracotta"
 material = "RED_TERRACOTTA"
+recyclable = false
 display-name = "<white>红色陶瓦"
-price = 4.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 5
 natural-visible = false
@@ -1350,8 +1392,9 @@ caravan = "OVERWORLD"
 [[shop-item]]
 id = "orange_terracotta"
 material = "ORANGE_TERRACOTTA"
+recyclable = false
 display-name = "<white>橙色陶瓦"
-price = 4.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 5
 natural-visible = false
@@ -1362,8 +1405,9 @@ caravan = "OVERWORLD"
 [[shop-item]]
 id = "yellow_terracotta"
 material = "YELLOW_TERRACOTTA"
+recyclable = false
 display-name = "<white>黄色陶瓦"
-price = 4.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 5
 natural-visible = false
@@ -1374,8 +1418,9 @@ caravan = "OVERWORLD"
 [[shop-item]]
 id = "lime_terracotta"
 material = "LIME_TERRACOTTA"
+recyclable = false
 display-name = "<white>黄绿色陶瓦"
-price = 4.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 5
 natural-visible = false
@@ -1386,8 +1431,9 @@ caravan = "OVERWORLD"
 [[shop-item]]
 id = "green_terracotta"
 material = "GREEN_TERRACOTTA"
+recyclable = false
 display-name = "<white>绿色陶瓦"
-price = 4.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 5
 natural-visible = false
@@ -1398,8 +1444,9 @@ caravan = "OVERWORLD"
 [[shop-item]]
 id = "cyan_terracotta"
 material = "CYAN_TERRACOTTA"
+recyclable = false
 display-name = "<white>青色陶瓦"
-price = 4.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 5
 natural-visible = false
@@ -1410,8 +1457,9 @@ caravan = "OVERWORLD"
 [[shop-item]]
 id = "light_blue_terracotta"
 material = "LIGHT_BLUE_TERRACOTTA"
+recyclable = false
 display-name = "<white>淡蓝色陶瓦"
-price = 4.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 5
 natural-visible = false
@@ -1422,8 +1470,9 @@ caravan = "OVERWORLD"
 [[shop-item]]
 id = "blue_terracotta"
 material = "BLUE_TERRACOTTA"
+recyclable = false
 display-name = "<white>蓝色陶瓦"
-price = 4.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 5
 natural-visible = false
@@ -1434,8 +1483,9 @@ caravan = "OVERWORLD"
 [[shop-item]]
 id = "purple_terracotta"
 material = "PURPLE_TERRACOTTA"
+recyclable = false
 display-name = "<white>紫色陶瓦"
-price = 4.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 5
 natural-visible = false
@@ -1446,8 +1496,9 @@ caravan = "OVERWORLD"
 [[shop-item]]
 id = "magenta_terracotta"
 material = "MAGENTA_TERRACOTTA"
+recyclable = false
 display-name = "<white>品红色陶瓦"
-price = 4.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 5
 natural-visible = false
@@ -1458,8 +1509,9 @@ caravan = "OVERWORLD"
 [[shop-item]]
 id = "pink_terracotta"
 material = "PINK_TERRACOTTA"
+recyclable = false
 display-name = "<white>粉红色陶瓦"
-price = 4.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 5
 natural-visible = false
@@ -1470,8 +1522,9 @@ caravan = "OVERWORLD"
 [[shop-item]]
 id = "white_concrete"
 material = "WHITE_CONCRETE"
+recyclable = false
 display-name = "<white>白色混凝土"
-price = 4.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 5
 natural-visible = false
@@ -1482,8 +1535,9 @@ caravan = "OVERWORLD"
 [[shop-item]]
 id = "light_gray_concrete"
 material = "LIGHT_GRAY_CONCRETE"
+recyclable = false
 display-name = "<white>淡灰色混凝土"
-price = 4.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 5
 natural-visible = false
@@ -1494,8 +1548,9 @@ caravan = "OVERWORLD"
 [[shop-item]]
 id = "gray_concrete"
 material = "GRAY_CONCRETE"
+recyclable = false
 display-name = "<white>灰色混凝土"
-price = 4.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 5
 natural-visible = false
@@ -1506,8 +1561,9 @@ caravan = "OVERWORLD"
 [[shop-item]]
 id = "black_concrete"
 material = "BLACK_CONCRETE"
+recyclable = false
 display-name = "<white>黑色混凝土"
-price = 4.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 5
 natural-visible = false
@@ -1518,8 +1574,9 @@ caravan = "OVERWORLD"
 [[shop-item]]
 id = "brown_concrete"
 material = "BROWN_CONCRETE"
+recyclable = false
 display-name = "<white>棕色混凝土"
-price = 4.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 5
 natural-visible = false
@@ -1530,8 +1587,9 @@ caravan = "OVERWORLD"
 [[shop-item]]
 id = "red_concrete"
 material = "RED_CONCRETE"
+recyclable = false
 display-name = "<white>红色混凝土"
-price = 4.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 5
 natural-visible = false
@@ -1542,8 +1600,9 @@ caravan = "OVERWORLD"
 [[shop-item]]
 id = "orange_concrete"
 material = "ORANGE_CONCRETE"
+recyclable = false
 display-name = "<white>橙色混凝土"
-price = 4.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 5
 natural-visible = false
@@ -1554,8 +1613,9 @@ caravan = "OVERWORLD"
 [[shop-item]]
 id = "yellow_concrete"
 material = "YELLOW_CONCRETE"
+recyclable = false
 display-name = "<white>黄色混凝土"
-price = 4.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 5
 natural-visible = false
@@ -1566,8 +1626,9 @@ caravan = "OVERWORLD"
 [[shop-item]]
 id = "lime_concrete"
 material = "LIME_CONCRETE"
+recyclable = false
 display-name = "<white>黄绿色混凝土"
-price = 4.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 5
 natural-visible = false
@@ -1578,8 +1639,9 @@ caravan = "OVERWORLD"
 [[shop-item]]
 id = "green_concrete"
 material = "GREEN_CONCRETE"
+recyclable = false
 display-name = "<white>绿色混凝土"
-price = 4.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 5
 natural-visible = false
@@ -1590,8 +1652,9 @@ caravan = "OVERWORLD"
 [[shop-item]]
 id = "cyan_concrete"
 material = "CYAN_CONCRETE"
+recyclable = false
 display-name = "<white>青色混凝土"
-price = 4.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 5
 natural-visible = false
@@ -1602,8 +1665,9 @@ caravan = "OVERWORLD"
 [[shop-item]]
 id = "light_blue_concrete"
 material = "LIGHT_BLUE_CONCRETE"
+recyclable = false
 display-name = "<white>淡蓝色混凝土"
-price = 4.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 5
 natural-visible = false
@@ -1614,8 +1678,9 @@ caravan = "OVERWORLD"
 [[shop-item]]
 id = "blue_concrete"
 material = "BLUE_CONCRETE"
+recyclable = false
 display-name = "<white>蓝色混凝土"
-price = 4.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 5
 natural-visible = false
@@ -1626,8 +1691,9 @@ caravan = "OVERWORLD"
 [[shop-item]]
 id = "purple_concrete"
 material = "PURPLE_CONCRETE"
+recyclable = false
 display-name = "<white>紫色混凝土"
-price = 4.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 5
 natural-visible = false
@@ -1638,8 +1704,9 @@ caravan = "OVERWORLD"
 [[shop-item]]
 id = "magenta_concrete"
 material = "MAGENTA_CONCRETE"
+recyclable = false
 display-name = "<white>品红色混凝土"
-price = 4.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 5
 natural-visible = false
@@ -1650,8 +1717,9 @@ caravan = "OVERWORLD"
 [[shop-item]]
 id = "pink_concrete"
 material = "PINK_CONCRETE"
+recyclable = false
 display-name = "<white>粉红色混凝土"
-price = 4.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 5
 natural-visible = false
@@ -1666,8 +1734,9 @@ caravan = "OVERWORLD"
 [[shop-item]]
 id = "basalt"
 material = "BASALT"
+recyclable = false
 display-name = "<white>玄武岩"
-price = 3.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 10
 natural-visible = false
@@ -1677,8 +1746,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "blackstone"
 material = "BLACKSTONE"
+recyclable = false
 display-name = "<white>黑石"
-price = 3.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 10
 natural-visible = false
@@ -1688,8 +1758,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "nether_bricks"
 material = "NETHER_BRICKS"
+recyclable = false
 display-name = "<white>下界砖"
-price = 3.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 10
 natural-visible = false
@@ -1699,9 +1770,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "crimson_nylium"
 material = "CRIMSON_NYLIUM"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>绯红菌岩"
-price = 3.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 10
 natural-visible = false
@@ -1711,9 +1782,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "warped_nylium"
 material = "WARPED_NYLIUM"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>诡异菌岩"
-price = 3.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 10
 natural-visible = false
@@ -1723,9 +1794,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "nether_wart_block"
 material = "NETHER_WART_BLOCK"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>下界疣块"
-price = 3.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 10
 natural-visible = false
@@ -1735,9 +1806,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "shroomlight"
 material = "SHROOMLIGHT"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>荧光菌"
-price = 3.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 10
 natural-visible = false
@@ -1752,8 +1823,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "white_glazed_terracotta"
 material = "WHITE_GLAZED_TERRACOTTA"
+recyclable = false
 display-name = "<white>白色带釉陶瓦"
-price = 6.0
+price = 0.5
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 10
 natural-visible = false
@@ -1764,8 +1836,9 @@ caravan = "OVERWORLD"
 [[shop-item]]
 id = "light_gray_glazed_terracotta"
 material = "LIGHT_GRAY_GLAZED_TERRACOTTA"
+recyclable = false
 display-name = "<white>淡灰色带釉陶瓦"
-price = 6.0
+price = 0.5
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 10
 natural-visible = false
@@ -1776,8 +1849,9 @@ caravan = "OVERWORLD"
 [[shop-item]]
 id = "gray_glazed_terracotta"
 material = "GRAY_GLAZED_TERRACOTTA"
+recyclable = false
 display-name = "<white>灰色带釉陶瓦"
-price = 6.0
+price = 0.5
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 10
 natural-visible = false
@@ -1788,8 +1862,9 @@ caravan = "OVERWORLD"
 [[shop-item]]
 id = "black_glazed_terracotta"
 material = "BLACK_GLAZED_TERRACOTTA"
+recyclable = false
 display-name = "<white>黑色带釉陶瓦"
-price = 6.0
+price = 0.5
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 10
 natural-visible = false
@@ -1800,8 +1875,9 @@ caravan = "OVERWORLD"
 [[shop-item]]
 id = "brown_glazed_terracotta"
 material = "BROWN_GLAZED_TERRACOTTA"
+recyclable = false
 display-name = "<white>棕色带釉陶瓦"
-price = 6.0
+price = 0.5
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 10
 natural-visible = false
@@ -1812,8 +1888,9 @@ caravan = "OVERWORLD"
 [[shop-item]]
 id = "red_glazed_terracotta"
 material = "RED_GLAZED_TERRACOTTA"
+recyclable = false
 display-name = "<white>红色带釉陶瓦"
-price = 6.0
+price = 0.5
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 10
 natural-visible = false
@@ -1824,8 +1901,9 @@ caravan = "OVERWORLD"
 [[shop-item]]
 id = "orange_glazed_terracotta"
 material = "ORANGE_GLAZED_TERRACOTTA"
+recyclable = false
 display-name = "<white>橙色带釉陶瓦"
-price = 6.0
+price = 0.5
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 10
 natural-visible = false
@@ -1836,8 +1914,9 @@ caravan = "OVERWORLD"
 [[shop-item]]
 id = "yellow_glazed_terracotta"
 material = "YELLOW_GLAZED_TERRACOTTA"
+recyclable = false
 display-name = "<white>黄色带釉陶瓦"
-price = 6.0
+price = 0.5
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 10
 natural-visible = false
@@ -1848,8 +1927,9 @@ caravan = "OVERWORLD"
 [[shop-item]]
 id = "lime_glazed_terracotta"
 material = "LIME_GLAZED_TERRACOTTA"
+recyclable = false
 display-name = "<white>黄绿色带釉陶瓦"
-price = 6.0
+price = 0.5
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 10
 natural-visible = false
@@ -1860,8 +1940,9 @@ caravan = "OVERWORLD"
 [[shop-item]]
 id = "green_glazed_terracotta"
 material = "GREEN_GLAZED_TERRACOTTA"
+recyclable = false
 display-name = "<white>绿色带釉陶瓦"
-price = 6.0
+price = 0.5
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 10
 natural-visible = false
@@ -1872,8 +1953,9 @@ caravan = "OVERWORLD"
 [[shop-item]]
 id = "cyan_glazed_terracotta"
 material = "CYAN_GLAZED_TERRACOTTA"
+recyclable = false
 display-name = "<white>青色带釉陶瓦"
-price = 6.0
+price = 0.5
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 10
 natural-visible = false
@@ -1884,8 +1966,9 @@ caravan = "OVERWORLD"
 [[shop-item]]
 id = "light_blue_glazed_terracotta"
 material = "LIGHT_BLUE_GLAZED_TERRACOTTA"
+recyclable = false
 display-name = "<white>淡蓝色带釉陶瓦"
-price = 6.0
+price = 0.5
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 10
 natural-visible = false
@@ -1896,8 +1979,9 @@ caravan = "OVERWORLD"
 [[shop-item]]
 id = "blue_glazed_terracotta"
 material = "BLUE_GLAZED_TERRACOTTA"
+recyclable = false
 display-name = "<white>蓝色带釉陶瓦"
-price = 6.0
+price = 0.5
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 10
 natural-visible = false
@@ -1908,8 +1992,9 @@ caravan = "OVERWORLD"
 [[shop-item]]
 id = "purple_glazed_terracotta"
 material = "PURPLE_GLAZED_TERRACOTTA"
+recyclable = false
 display-name = "<white>紫色带釉陶瓦"
-price = 6.0
+price = 0.5
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 10
 natural-visible = false
@@ -1920,8 +2005,9 @@ caravan = "OVERWORLD"
 [[shop-item]]
 id = "magenta_glazed_terracotta"
 material = "MAGENTA_GLAZED_TERRACOTTA"
+recyclable = false
 display-name = "<white>品红色带釉陶瓦"
-price = 6.0
+price = 0.5
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 10
 natural-visible = false
@@ -1932,8 +2018,9 @@ caravan = "OVERWORLD"
 [[shop-item]]
 id = "pink_glazed_terracotta"
 material = "PINK_GLAZED_TERRACOTTA"
+recyclable = false
 display-name = "<white>粉红色带釉陶瓦"
-price = 6.0
+price = 0.5
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 10
 natural-visible = false
@@ -1948,8 +2035,9 @@ caravan = "OVERWORLD"
 [[shop-item]]
 id = "quartz_block"
 material = "QUARTZ_BLOCK"
+recyclable = false
 display-name = "<white>下界石英块"
-price = 3.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 20
 natural-visible = false
@@ -1959,9 +2047,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "purpur_block"
 material = "PURPUR_BLOCK"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>紫珀块"
-price = 3.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 20
 natural-visible = false
@@ -1971,9 +2059,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "chorus_fruit"
 material = "CHORUS_FRUIT"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>紫颂果"
-price = 5.0
+price = 0.5
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 20
 natural-visible = false
@@ -1983,9 +2071,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "prismarine_shard"
 material = "PRISMARINE_SHARD"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>海晶碎片"
-price = 5.0
+price = 0.5
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 20
 natural-visible = false
@@ -1995,9 +2083,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "prismarine_crystals"
 material = "PRISMARINE_CRYSTALS"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>海晶砂粒"
-price = 5.0
+price = 0.5
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 20
 natural-visible = false
@@ -2011,9 +2099,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "resin_block"
 material = "RESIN_BLOCK"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>树脂块"
-price = 3.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 30
 natural-visible = false
@@ -2023,9 +2111,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "pale_moss_block"
 material = "PALE_MOSS_BLOCK"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>苍白苔藓"
-price = 3.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 30
 natural-visible = false
@@ -2035,8 +2123,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "creaking_heart"
 material = "CREAKING_HEART"
+recyclable = false
 display-name = "<white>嘎吱之心"
-price = 3.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 30
 natural-visible = false
@@ -2046,9 +2135,9 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "mycelium"
 material = "MYCELIUM"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>菌丝"
-price = 3.0
+price = 0.3
 unlock-track = "ISLAND_LEVEL"
 unlock-tier = 30
 natural-visible = false
@@ -2062,46 +2151,50 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "coal"
 material = "COAL"
+recyclable = false
 display-name = "<white>煤炭"
-price = 3.0
+price = 2.0
 unlock-track = "REPUTATION"
 unlock-tier = 0
 natural-visible = false
-purchase-limit-period = "DAILY"
-purchase-limit-count = 64
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
 
 [[shop-item]]
 id = "raw_iron"
 material = "RAW_IRON"
+recyclable = false
 display-name = "<white>粗铁"
-price = 3.0
+price = 8.0
 unlock-track = "REPUTATION"
 unlock-tier = 0
 natural-visible = false
-purchase-limit-period = "DAILY"
-purchase-limit-count = 64
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
 
 [[shop-item]]
 id = "raw_gold"
 material = "RAW_GOLD"
+recyclable = false
 display-name = "<white>粗金"
-price = 3.0
+price = 12.0
 unlock-track = "REPUTATION"
 unlock-tier = 0
 natural-visible = false
-purchase-limit-period = "DAILY"
-purchase-limit-count = 64
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
 
 [[shop-item]]
 id = "raw_copper"
 material = "RAW_COPPER"
+recyclable = false
 display-name = "<white>粗铜"
-price = 3.0
+price = 8.0
 unlock-track = "REPUTATION"
 unlock-tier = 0
 natural-visible = false
-purchase-limit-period = "DAILY"
-purchase-limit-count = 64
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
 
 # ─────────────────────────────────────────────────────────────────────────
 # 商会声望轨 · 100（伙计）
@@ -2110,49 +2203,50 @@ purchase-limit-count = 64
 [[shop-item]]
 id = "glowstone"
 material = "GLOWSTONE"
+recyclable = false
 display-name = "<white>荧石"
 price = 8.0
 unlock-track = "REPUTATION"
 unlock-tier = 100
 natural-visible = false
-purchase-limit-period = "DAILY"
-purchase-limit-count = 16
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
 
 [[shop-item]]
 id = "magma_cream"
 material = "MAGMA_CREAM"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>岩浆膏"
 price = 8.0
 unlock-track = "REPUTATION"
 unlock-tier = 100
 natural-visible = false
-purchase-limit-period = "DAILY"
-purchase-limit-count = 16
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
 
 [[shop-item]]
 id = "ghast_tear"
 material = "GHAST_TEAR"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>恶魂之泪"
 price = 8.0
 unlock-track = "REPUTATION"
 unlock-tier = 100
 natural-visible = false
-purchase-limit-period = "DAILY"
-purchase-limit-count = 16
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
 
 [[shop-item]]
 id = "crimson_stem"
 material = "CRIMSON_STEM"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>绯红菌柄"
 price = 8.0
 unlock-track = "REPUTATION"
 unlock-tier = 100
 natural-visible = false
-purchase-limit-period = "DAILY"
-purchase-limit-count = 16
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
 
 # ─────────────────────────────────────────────────────────────────────────
 # 商会声望轨 · 300（商人）
@@ -2161,18 +2255,19 @@ purchase-limit-count = 16
 [[shop-item]]
 id = "crying_obsidian"
 material = "CRYING_OBSIDIAN"
+recyclable = true
 display-name = "<white>哭泣的黑曜石"
-price = 10.0
+price = 20.0
 unlock-track = "REPUTATION"
 unlock-tier = 300
 natural-visible = false
-purchase-limit-period = "DAILY"
-purchase-limit-count = 16
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
 
 [[shop-item]]
 id = "amethyst_shard"
 material = "AMETHYST_SHARD"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>紫水晶碎片"
 price = 15.0
 unlock-track = "REPUTATION"
@@ -2184,6 +2279,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "diamond"
 material = "DIAMOND"
+recyclable = true
 display-name = "<white>钻石"
 price = 60.0
 unlock-track = "REPUTATION"
@@ -2199,30 +2295,31 @@ purchase-limit-count = 1
 [[shop-item]]
 id = "sponge"
 material = "SPONGE"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>海绵"
 price = 200.0
 unlock-track = "REPUTATION"
 unlock-tier = 700
 natural-visible = false
 purchase-limit-period = "DAILY"
-purchase-limit-count = 1
+purchase-limit-count = 2
 
 [[shop-item]]
 id = "echo_shard"
 material = "ECHO_SHARD"
+recyclable = true
 display-name = "<white>回响碎片"
 price = 200.0
 unlock-track = "REPUTATION"
 unlock-tier = 700
 natural-visible = false
 purchase-limit-period = "DAILY"
-purchase-limit-count = 1
+purchase-limit-count = 4
 
 [[shop-item]]
 id = "sculk_catalyst"
 material = "SCULK_CATALYST"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>幽匿催发体"
 price = 200.0
 unlock-track = "REPUTATION"
@@ -2234,18 +2331,19 @@ purchase-limit-count = 1
 [[shop-item]]
 id = "sea_lantern"
 material = "SEA_LANTERN"
-recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+recyclable = false
 display-name = "<white>海晶灯"
 price = 200.0
 unlock-track = "REPUTATION"
 unlock-tier = 700
 natural-visible = false
 purchase-limit-period = "DAILY"
-purchase-limit-count = 1
+purchase-limit-count = 4
 
 [[shop-item]]
 id = "heart_of_the_sea"
 material = "HEART_OF_THE_SEA"
+recyclable = true
 display-name = "<white>海洋之心"
 price = 400.0
 unlock-track = "REPUTATION"
@@ -2261,6 +2359,7 @@ purchase-limit-count = 1
 [[shop-item]]
 id = "gilded_blackstone"
 material = "GILDED_BLACKSTONE"
+recyclable = true
 display-name = "<white>镀金黑石"
 price = 10.0
 unlock-track = "REPUTATION"
@@ -2272,6 +2371,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "netherite_upgrade_smithing_template"
 material = "NETHERITE_UPGRADE_SMITHING_TEMPLATE"
+recyclable = false
 display-name = "<white>下界合金升级锻造模板"
 price = 500.0
 unlock-track = "REPUTATION"
@@ -2286,6 +2386,7 @@ purchase-limit-count = 1
 [[shop-item]]
 id = "sentry_armor_trim"
 material = "SENTRY_ARMOR_TRIM_SMITHING_TEMPLATE"
+recyclable = false
 display-name = "<white>锻造模板·哨兵"
 price = 200.0
 unlock-track = "REPUTATION"
@@ -2297,6 +2398,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "vex_armor_trim"
 material = "VEX_ARMOR_TRIM_SMITHING_TEMPLATE"
+recyclable = false
 display-name = "<white>锻造模板·恼鬼"
 price = 200.0
 unlock-track = "REPUTATION"
@@ -2308,6 +2410,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "wild_armor_trim"
 material = "WILD_ARMOR_TRIM_SMITHING_TEMPLATE"
+recyclable = false
 display-name = "<white>锻造模板·荒野"
 price = 200.0
 unlock-track = "REPUTATION"
@@ -2319,6 +2422,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "coast_armor_trim"
 material = "COAST_ARMOR_TRIM_SMITHING_TEMPLATE"
+recyclable = false
 display-name = "<white>锻造模板·海岸"
 price = 200.0
 unlock-track = "REPUTATION"
@@ -2330,6 +2434,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "dune_armor_trim"
 material = "DUNE_ARMOR_TRIM_SMITHING_TEMPLATE"
+recyclable = false
 display-name = "<white>锻造模板·沙丘"
 price = 200.0
 unlock-track = "REPUTATION"
@@ -2341,6 +2446,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "wayfinder_armor_trim"
 material = "WAYFINDER_ARMOR_TRIM_SMITHING_TEMPLATE"
+recyclable = false
 display-name = "<white>锻造模板·向导"
 price = 200.0
 unlock-track = "REPUTATION"
@@ -2352,6 +2458,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "raiser_armor_trim"
 material = "RAISER_ARMOR_TRIM_SMITHING_TEMPLATE"
+recyclable = false
 display-name = "<white>锻造模板·召唤"
 price = 200.0
 unlock-track = "REPUTATION"
@@ -2363,6 +2470,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "shaper_armor_trim"
 material = "SHAPER_ARMOR_TRIM_SMITHING_TEMPLATE"
+recyclable = false
 display-name = "<white>锻造模板·塑造"
 price = 200.0
 unlock-track = "REPUTATION"
@@ -2374,6 +2482,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "host_armor_trim"
 material = "HOST_ARMOR_TRIM_SMITHING_TEMPLATE"
+recyclable = false
 display-name = "<white>锻造模板·宿主"
 price = 200.0
 unlock-track = "REPUTATION"
@@ -2385,6 +2494,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "ward_armor_trim"
 material = "WARD_ARMOR_TRIM_SMITHING_TEMPLATE"
+recyclable = false
 display-name = "<white>锻造模板·监守"
 price = 200.0
 unlock-track = "REPUTATION"
@@ -2396,6 +2506,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "silence_armor_trim"
 material = "SILENCE_ARMOR_TRIM_SMITHING_TEMPLATE"
+recyclable = false
 display-name = "<white>锻造模板·肃静"
 price = 200.0
 unlock-track = "REPUTATION"
@@ -2407,6 +2518,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "tide_armor_trim"
 material = "TIDE_ARMOR_TRIM_SMITHING_TEMPLATE"
+recyclable = false
 display-name = "<white>锻造模板·潮汐"
 price = 200.0
 unlock-track = "REPUTATION"
@@ -2418,6 +2530,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "snout_armor_trim"
 material = "SNOUT_ARMOR_TRIM_SMITHING_TEMPLATE"
+recyclable = false
 display-name = "<white>锻造模板·猪鼻"
 price = 200.0
 unlock-track = "REPUTATION"
@@ -2429,6 +2542,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "rib_armor_trim"
 material = "RIB_ARMOR_TRIM_SMITHING_TEMPLATE"
+recyclable = false
 display-name = "<white>锻造模板·肋骨"
 price = 200.0
 unlock-track = "REPUTATION"
@@ -2440,6 +2554,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "eye_armor_trim"
 material = "EYE_ARMOR_TRIM_SMITHING_TEMPLATE"
+recyclable = false
 display-name = "<white>锻造模板·眼眸"
 price = 200.0
 unlock-track = "REPUTATION"
@@ -2451,6 +2566,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "spire_armor_trim"
 material = "SPIRE_ARMOR_TRIM_SMITHING_TEMPLATE"
+recyclable = false
 display-name = "<white>锻造模板·尖塔"
 price = 200.0
 unlock-track = "REPUTATION"
@@ -2462,6 +2578,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "flow_armor_trim"
 material = "FLOW_ARMOR_TRIM_SMITHING_TEMPLATE"
+recyclable = false
 display-name = "<white>锻造模板·涡流"
 price = 200.0
 unlock-track = "REPUTATION"
@@ -2473,6 +2590,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "bolt_armor_trim"
 material = "BOLT_ARMOR_TRIM_SMITHING_TEMPLATE"
+recyclable = false
 display-name = "<white>锻造模板·闪电"
 price = 200.0
 unlock-track = "REPUTATION"
@@ -2484,6 +2602,7 @@ purchase-limit-count = 0
 [[shop-item]]
 id = "ancient_debris"
 material = "ANCIENT_DEBRIS"
+recyclable = true
 display-name = "<white>远古残骸"
 price = 800.0
 unlock-track = "REPUTATION"
@@ -2495,6 +2614,7 @@ purchase-limit-count = 1
 [[shop-item]]
 id = "netherite_ingot"
 material = "NETHERITE_INGOT"
+recyclable = false
 display-name = "<white>下界合金锭"
 price = 3000.0
 unlock-track = "REPUTATION"
@@ -2511,6 +2631,7 @@ extra-gate = "NETHERITE_INGOT_DUAL"
 [[shop-item]]
 id = "budding_amethyst"
 material = "BUDDING_AMETHYST"
+recyclable = false
 display-name = "<white>紫晶母岩"
 price = 3000.0
 unlock-track = "REPUTATION"
@@ -2522,6 +2643,7 @@ purchase-limit-count = 1
 [[shop-item]]
 id = "elytra"
 material = "ELYTRA"
+recyclable = false
 display-name = "<white>鞘翅"
 price = 4000.0
 unlock-track = "REPUTATION"
@@ -2535,6 +2657,7 @@ purchase-limit-count = 1
 [[shop-item]]
 id = "nether_star"
 material = "NETHER_STAR"
+recyclable = false
 display-name = "<white>下界之星"
 price = 5000.0
 unlock-track = "REPUTATION"

@@ -43,7 +43,7 @@
 # 结算侧现在已经加了"零收益直接拒绝并退还材料"（见 OrderBoardService#computeSettlement），
 # 但只要终身限购还在，历史损失就补不回来，公平性问题也修不干净。改成 0 之后：
 #   · 每日声望上限 200 依旧生效 → 到 3000 顶格档位最少仍要 15 天，速率完全没变
-#   · 每日金币上限 80 依旧生效（盖住最大一单 65，仍低于打工日均 100）
+#   · 每日金币上限 800 依旧生效（盖住最大一单 650，仍低于打工日均 1500）
 #   · 被烧过次数的老岛自动痊愈，不需要写数据迁移脚本
 #
 # ⚠️ barter 订单（bone-for-emerald）必须保留正数，不能跟着改成 0：它付的是物品不是金币，
@@ -59,26 +59,22 @@
 # 对齐 config.toml 里 [track.island-level] / [track.reputation] 的档位设计。
 #
 # ═══════════════════════════════════════════════════════════════════════════
-# T4 定价锚点（2026-08-21 服主拍板，HANDOFF 9.3）
+# 定价锚点（2026-08-28：PlayerTask 日均约 1500 + 订单收购）
 # ═══════════════════════════════════════════════════════════════════════════
-# PlayerTask 日均货币产出锚点约 100（2026-08-21 起，原 1000 下调 10 倍）。
-# 三档订单按"材料池对齐计分表档位"分类，价格与声望锚点如下（不得偏离）：
+# 金币约 ×10、声望 ×3，每日金币上限 800（盖住金块 650）。声望日上限仍 200。
+# 沙砾收购已删：商店砂砾 0.3 不限购，再收会倒挂。
 #
-#   档位   材料池对齐         数量范围     货币范围    声望（固定）
-#   小额   T1（圆石/圆木/沙砾/常见农作物）  64-192     5-10       +5
-#   中额   T2（石砖/木板/羊毛/铜锭/面包）   32-96      15-30      +15
-#   大额   T3-T4（铁块/金块/末影珍珠/骨头） 8-32       40-80      +40
+#   档位   材料池              货币范围     声望
+#   小额   圆石/原木/小麦       50-80       +15
+#   中额   石砖/木板/羊毛/铜/面包 150-250    +40
+#   大额   铁块/金块/末影珍珠    450-650    +80
 #
-# 校验（声望/价格比值，三档应接近一致，不能出现某一档"性价比"畸高或畸低）：
-#   小额：5/6≈0.83、5/8≈0.63、5/5=1.00、5/7≈0.71
-#   中额：15/20=0.75、15/18≈0.83、15/15=1.00、15/25=0.60
-#   大额：40/50=0.80、40/45≈0.89、40/65≈0.62
-#   三档比值都落在 0.6~1.0 区间，没有出现"性价比最高的那一档"，符合不变量②的对齐要求。
+# 商店粗铁 8 / 粗金 12 / 粗铜 8，均高于对应订单折算单价，买矿交单印不了钞。
 
 config-version = 1
 
 # ═══════════════════════════════════════════════════════════════════════════
-# 小额档（对齐计分表 T1：圆石/圆木/沙砾/常见农作物，声望 +5，人人可做）
+# 小额档（圆石/原木/小麦，声望 +15，人人可做）
 # ═══════════════════════════════════════════════════════════════════════════
 
 [[order]]
@@ -87,13 +83,13 @@ enabled = true
 display-name = "<gray>圆石收购"
 type = "money"
 
-# 交 128 个圆石，商队支付 6 金币（整单总价）
+# 交 128 个圆石，商队支付 60 金币（整单总价）
 take-items = [
     { material = "COBBLESTONE", amount = 128 },
 ]
-price = 6.0
+price = 60.0
 
-reward-reputation = 5
+reward-reputation = 15
 weight = 10
 redeem-limit-per-island = 0
 required-level-min = 0
@@ -105,14 +101,14 @@ enabled = true
 display-name = "<gold>原木收购"
 type = "money"
 
-# 交 64 个橡木原木，商队支付 8 金币——初始只有橡木树苗（HANDOFF 9.1），
+# 交 64 个橡木原木，商队支付 80 金币——初始只有橡木树苗（HANDOFF 9.1），
 # 这条订单对第一天的新岛屿就是可做的，不依赖其它树种。
 take-items = [
     { material = "OAK_LOG", amount = 64 },
 ]
-price = 8.0
+price = 80.0
 
-reward-reputation = 5
+reward-reputation = 15
 weight = 9
 redeem-limit-per-island = 0
 required-level-min = 0
@@ -124,38 +120,21 @@ enabled = true
 display-name = "<yellow>小麦收购"
 type = "money"
 
-# 交 96 捆小麦，商队支付 5 金币（本表价格最低的一条，小麦是最容易量产的农作物）
+# 交 96 捆小麦，商队支付 50 金币（本表价格最低的一条，小麦是最容易量产的农作物）
 take-items = [
     { material = "WHEAT", amount = 96 },
 ]
-price = 5.0
+price = 50.0
 
-reward-reputation = 5
+reward-reputation = 15
 weight = 10
 redeem-limit-per-island = 0
 required-level-min = 0
 required-reputation-min = 0
 
-[[order]]
-id = "gravel-buy"
-enabled = true
-display-name = "<gray>沙砾收购"
-type = "money"
-
-# 交 160 个沙砾，商队支付 7 金币（整单总价）
-take-items = [
-    { material = "GRAVEL", amount = 160 },
-]
-price = 7.0
-
-reward-reputation = 5
-weight = 8
-redeem-limit-per-island = 0
-required-level-min = 0
-required-reputation-min = 0
 
 # ═══════════════════════════════════════════════════════════════════════════
-# 中额档（对齐计分表 T2：石砖/木板/羊毛/铜锭/面包，声望 +15，需要一点岛屿等级）
+# 中额档（石砖/木板/羊毛/铜锭/面包，声望 +40，需要一点岛屿等级）
 # ═══════════════════════════════════════════════════════════════════════════
 
 [[order]]
@@ -164,13 +143,13 @@ enabled = true
 display-name = "<white>石砖收购"
 type = "money"
 
-# 交 64 个石砖，商队支付 20 金币（整单总价）
+# 交 64 个石砖，商队支付 200 金币（整单总价）
 take-items = [
     { material = "STONE_BRICKS", amount = 64 },
 ]
-price = 20.0
+price = 200.0
 
-reward-reputation = 15
+reward-reputation = 40
 weight = 6
 redeem-limit-per-island = 0
 required-level-min = 1
@@ -182,13 +161,13 @@ enabled = true
 display-name = "<gold>木板收购"
 type = "money"
 
-# 交 96 块橡木板，商队支付 18 金币（整单总价）
+# 交 96 块橡木板，商队支付 180 金币（整单总价）
 take-items = [
     { material = "OAK_PLANKS", amount = 96 },
 ]
-price = 18.0
+price = 180.0
 
-reward-reputation = 15
+reward-reputation = 40
 weight = 6
 redeem-limit-per-island = 0
 required-level-min = 1
@@ -200,13 +179,13 @@ enabled = true
 display-name = "<gold>面包收购"
 type = "money"
 
-# 交 64 个面包，商队支付 22 金币（整单总价）——面包比小麦多一道合成，价格相应高一档
+# 交 64 个面包，商队支付 220 金币（整单总价）——面包比小麦多一道合成，价格相应高一档
 take-items = [
     { material = "BREAD", amount = 64 },
 ]
-price = 22.0
+price = 220.0
 
-reward-reputation = 15
+reward-reputation = 40
 weight = 5
 redeem-limit-per-island = 0
 required-level-min = 1
@@ -218,13 +197,13 @@ enabled = true
 display-name = "<white>羊毛收购"
 type = "money"
 
-# 交 32 块白色羊毛，商队支付 15 金币（整单总价）——羊毛需要养羊，比石材/木材门槛略高
+# 交 32 块白色羊毛，商队支付 150 金币（整单总价）——羊毛需要养羊，比石材/木材门槛略高
 take-items = [
     { material = "WHITE_WOOL", amount = 32 },
 ]
-price = 15.0
+price = 150.0
 
-reward-reputation = 15
+reward-reputation = 40
 weight = 5
 redeem-limit-per-island = 0
 required-level-min = 5
@@ -236,20 +215,20 @@ enabled = true
 display-name = "<gold>铜锭收购"
 type = "money"
 
-# 交 48 个铜锭，商队支付 25 金币（整单总价）——需要挖矿+冶炼，中额档里价格最高的一条
+# 交 48 个铜锭，商队支付 250 金币（整单总价）——需要挖矿+冶炼，中额档里价格最高的一条
 take-items = [
     { material = "COPPER_INGOT", amount = 48 },
 ]
-price = 25.0
+price = 250.0
 
-reward-reputation = 15
+reward-reputation = 40
 weight = 4
 redeem-limit-per-island = 0
 required-level-min = 5
 required-reputation-min = 0
 
 # ═══════════════════════════════════════════════════════════════════════════
-# 大额档（对齐计分表 T3-T4：铁块/金块/末影珍珠/骨头，声望 +40，需要岛屿等级 10）
+# 大额档（铁块/金块/末影珍珠/骨头，声望 +80，需要岛屿等级 10）
 # ═══════════════════════════════════════════════════════════════════════════
 
 [[order]]
@@ -258,13 +237,13 @@ enabled = true
 display-name = "<white>铁块收购"
 type = "money"
 
-# 交 16 个铁块，商队支付 50 金币（整单总价）
+# 交 16 个铁块，商队支付 500 金币（整单总价）
 take-items = [
     { material = "IRON_BLOCK", amount = 16 },
 ]
-price = 50.0
+price = 500.0
 
-reward-reputation = 40
+reward-reputation = 80
 weight = 4
 redeem-limit-per-island = 0
 required-level-min = 10
@@ -276,13 +255,13 @@ enabled = true
 display-name = "<light_purple>末影珍珠收购"
 type = "money"
 
-# 交 24 个末影珍珠，商队支付 45 金币（整单总价）——需要下末地刷怪塔，门槛比铁块更高
+# 交 24 个末影珍珠，商队支付 450 金币（整单总价）——需要下末地刷怪塔，门槛比铁块更高
 take-items = [
     { material = "ENDER_PEARL", amount = 24 },
 ]
-price = 45.0
+price = 450.0
 
-reward-reputation = 40
+reward-reputation = 80
 weight = 3
 redeem-limit-per-island = 0
 required-level-min = 10
@@ -294,14 +273,14 @@ enabled = true
 display-name = "<yellow>金块收购"
 type = "money"
 
-# 交 8 个金块，商队支付 65 金币（整单总价）——大额档里价格最高的 money 订单，
+# 交 8 个金块，商队支付 650 金币（整单总价）——大额档里价格最高的 money 订单，
 # 额外叠了一点入门声望门槛（说明玩家至少已经完成过几单才摸得到），不是硬性经济门槛
 take-items = [
     { material = "GOLD_BLOCK", amount = 8 },
 ]
-price = 65.0
+price = 650.0
 
-reward-reputation = 40
+reward-reputation = 80
 weight = 2
 redeem-limit-per-island = 0
 required-level-min = 10
@@ -315,7 +294,7 @@ type = "barter"
 
 # 纯物物交换，不涉及金币：交 32 根骨头，商队支付 8 个绿宝石。
 # 骨头对齐大额档材料池（刷怪场产物），但不涉及货币，不受每日订单货币收入上限约束——
-# 声望给得比同档 money 订单低（+10 而不是 +40），因为绿宝石本身也是有价值的回报。
+# 声望给得比同档 money 订单低（+10 而不是 +80），因为绿宝石本身也是有价值的回报。
 take-items = [
     { material = "BONE", amount = 32 },
 ]

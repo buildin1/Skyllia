@@ -97,9 +97,10 @@ public final class OrderBoardRefreshTask {
 
         TraderIslandData preview = dataService.load(island);
         long now = System.currentTimeMillis();
+        List<OrderDefinition> pool = OrdersConfigLoader.config.getOrders();
         boolean anyNeedsRefresh = false;
         for (OrderSlotState slot : preview.orderSlots) {
-            if (needsRefresh(slot, now)) {
+            if (needsRefresh(slot, now, pool)) {
                 anyNeedsRefresh = true;
                 break;
             }
@@ -113,8 +114,16 @@ public final class OrderBoardRefreshTask {
         }
     }
 
-    private static boolean needsRefresh(OrderSlotState slot, long now) {
-        return slot.orderId == null || (slot.expiresAt > 0 && now > slot.expiresAt);
+    private static boolean needsRefresh(OrderSlotState slot, long now, List<OrderDefinition> pool) {
+        if (slot.orderId == null || (slot.expiresAt > 0 && now > slot.expiresAt)) return true;
+        return findOrder(pool, slot.orderId) == null;
+    }
+
+    private static OrderDefinition findOrder(List<OrderDefinition> pool, String normalizedId) {
+        for (OrderDefinition order : pool) {
+            if (order.id().equals(normalizedId)) return order;
+        }
+        return null;
     }
 
     /**
@@ -129,13 +138,14 @@ public final class OrderBoardRefreshTask {
         //两条一模一样的订单——不是 HANDOFF 明令要求，但明显更符合玩家体验，成本也很低。
         Set<String> alreadyBound = new HashSet<>();
         for (OrderSlotState slot : data.orderSlots) {
-            if (slot.orderId != null && !(slot.expiresAt > 0 && now > slot.expiresAt)) {
+            if (slot.orderId != null && !(slot.expiresAt > 0 && now > slot.expiresAt)
+                    && findOrder(pool, slot.orderId) != null) {
                 alreadyBound.add(slot.orderId);
             }
         }
 
         for (OrderSlotState slot : data.orderSlots) {
-            if (!needsRefresh(slot, now)) continue;
+            if (!needsRefresh(slot, now, pool)) continue;
 
             OrderDefinition picked = pickWeighted(pool, islandLevel, data.reputation, alreadyBound);
             if (picked == null) {

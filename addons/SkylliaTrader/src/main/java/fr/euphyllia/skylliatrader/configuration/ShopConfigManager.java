@@ -126,7 +126,7 @@ public class ShopConfigManager implements IConfigurationProvider {
                 ShopPurchaseLimitPeriod.NONE,
                 0,
                 ShopExtraGate.NONE,
-                false,
+                false, // 可再生，不进回收
                 null));
         seenIds.add("frogspawn");
         log.warn("shop.toml 缺少青蛙卵，已在内存里补进主世界基础池。请在配置里加一条 id=frogspawn，否则下次手改文件后会再丢");
@@ -195,8 +195,8 @@ public class ShopConfigManager implements IConfigurationProvider {
         // 理由见 HANDOFF 5.1 的定价不变量：计分体系早就把「*_LEAVES / 作物 / 植被」判成 ×0 分，
         // 因为"树场可无限量产"；回收却是拿真金白银换这些东西，一旦放开就是一个零成本的
         // 无限印钞口（2026-08-21 服主指出：一个自动竹子农场每小时能换到设计日收入的几十倍）。
-        // 默认 true 是为了兼容存量配置，新增可量产商品时务必显式写 false。
-        boolean recyclable = table.getOrElse("recyclable", true);
+        // 缺省 false：漏写字段时不进回收。只给钻石/回响/海洋之心/残骸/哭泣黑曜石/镀金黑石显式开 true。
+        boolean recyclable = table.getOrElse("recyclable", false);
 
         // 可选：专供商队。写了就只在该种商队（凭证游商）的货架上出现，留空 = 所有商队通卖。
         String rawCaravan = table.getOrElse("caravan", (String) null);

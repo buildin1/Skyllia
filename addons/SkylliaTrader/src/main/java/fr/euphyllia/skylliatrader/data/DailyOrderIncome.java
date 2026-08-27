@@ -18,7 +18,7 @@ package fr.euphyllia.skylliatrader.data;
  * </p>
  * <p>
  * 窗口按日历日对齐，每天早上 8:00（{@code Asia/Shanghai}）整点刷新，见
- * {@code DailyWindow}。商店限购仍是滚动窗口，本类不跟它共用判定。
+ * {@code DailyWindow}。商店日/周/月限购也走同一套窗口。
  * </p>
  * <p>
  * <b>两个字段初始值都是 0</b>，对老岛屿/首次完成订单都正确：{@code amount = 0} 表示

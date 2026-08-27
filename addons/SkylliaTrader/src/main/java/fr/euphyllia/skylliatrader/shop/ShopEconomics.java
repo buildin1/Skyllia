@@ -4,6 +4,7 @@ import fr.euphyllia.skylliatrader.configuration.model.ShopItemDefinition;
 import fr.euphyllia.skylliatrader.configuration.model.ShopPurchaseLimitPeriod;
 import fr.euphyllia.skylliatrader.configuration.model.TrackTiers;
 import fr.euphyllia.skylliatrader.data.PurchaseCounter;
+import fr.euphyllia.skylliatrader.util.DailyWindow;
 import org.bukkit.Material;
 
 import java.util.List;
@@ -107,8 +108,7 @@ public final class ShopEconomics {
     public static int currentWindowCount(PurchaseCounter counter, ShopPurchaseLimitPeriod period) {
         if (counter == null) return 0;
         if (!period.resets()) return counter.count;
-        long now = System.currentTimeMillis();
-        if (counter.windowStartAt == 0L || now - counter.windowStartAt > period.windowMillis()) {
+        if (DailyWindow.expired(counter.windowStartAt, System.currentTimeMillis(), period.periodDays())) {
             return 0;
         }
         return counter.count;

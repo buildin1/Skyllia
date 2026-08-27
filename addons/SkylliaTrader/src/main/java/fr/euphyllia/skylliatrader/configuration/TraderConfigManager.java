@@ -89,17 +89,17 @@ public class TraderConfigManager implements IConfigurationProvider {
     /** 每个订单槽位独立计时，到点强制换新订单——这是订单吞吐的上限，不是"完成后立刻刷新"。 */
     private static final int DEFAULT_ORDER_REFRESH_HOURS = 6;
     /**
-     * 每岛每日通过订单获得的货币总额上限。必须盖住最大一单（金块收购 65），
-     * 取大额档上限 80；仍低于 PlayerTask 日均约 100，订单收入不会盖过打工。
+     * 每岛每日通过订单获得的货币总额上限。必须盖住最大一单（金块收购 650），
+     * 取 800；PlayerTask 日均约 1500，订单是辅助收入，不该盖过打工。
      */
-    private static final double DEFAULT_DAILY_ORDER_INCOME_CAP = 80.0;
+    private static final double DEFAULT_DAILY_ORDER_INCOME_CAP = 800.0;
     /**
      * 每种商品每日回收收入上限（金币）。回收系统通胀防线的<b>第二道</b>，第一道是 shop.toml 的
      * {@code recyclable = false}（见 {@code DailyRecycleIncome} 类文档）。
-     * 取 40 和订单上限同一个量级：两者都是"辅助收入"，不该盖过 PlayerTask 的日均 100 主线。
+     * 取 40：回收只收 6 种贵重物，按件封顶，不该盖过 PlayerTask 日均约 1500 的主线。
      * <p>
-     * 2026-08-24 起这个数字是<b>按单个物品</b>计，不是全岛所有商品加总。沙子卖满 40 金币
-     * 不影响今天还能回收烈焰棒。
+     * 2026-08-24 起这个数字是<b>按单个物品</b>计，不是全岛所有商品加总。钻石卖满 40 金币
+     * 不影响今天还能回收回响碎片。
      * </p>
      */
     private static final double DEFAULT_DAILY_RECYCLE_INCOME_CAP = 40.0;
@@ -145,7 +145,7 @@ public class TraderConfigManager implements IConfigurationProvider {
             "<b>二、四条轨道</b>\n\n商人卖什么，由四条互不替代的轨道决定：\n\n1. 交易次数\n2. 岛屿等级\n3. 商会声望\n4. 累计消费",
             "<b>1. 交易次数</b>\n开基础生活物资：树苗、染料、花草、珊瑚、苔藓……买得越多开得越全。\n\n<b>2. 岛屿等级</b>\n开建材大宗：下界岩、凝灰岩、滴水石锥、朱砂族、硫磺族……量大价低。",
             "<b>3. 商会声望</b>\n开稀有物资：钻石、远古残骸、下界之星、鞘翅。\n\n声望<b>只能</b>靠完成商队订单获得，钱和等级都换不来。\n\n<b>4. 累计消费</b>\n只给折扣和限购加成，不解锁新商品。",
-            "<b>三、限购</b>\n\n所有限购都按<b>整座岛</b>计算，不是按人头。\n\n多拉几个人进岛并不能多买钻石。\n\n<gray>输入 /is trader 可以随时查看四条轨道的当前进度。</gray>"
+            "<b>三、限购</b>\n\n所有限购都按<b>整座岛</b>计算，不是按人头。\n\n日/周/月额度每天早上 <b>8 点</b>刷新。\n\n多拉几个人进岛并不能多买钻石。\n\n<gray>输入 /is trader 可以随时查看四条轨道的当前进度。</gray>"
     );
 
     private static final List<Long> DEFAULT_TRADE_COUNT_TIERS = List.of(0L, 10L, 25L, 50L, 100L);
@@ -305,8 +305,8 @@ public class TraderConfigManager implements IConfigurationProvider {
                 DEFAULT_ORDER_REFRESH_HOURS, Integer.class));
         this.dailyOrderIncomeCap = Math.max(0.0, getOrSetDefault("order-board.daily-order-income-cap",
                 DEFAULT_DAILY_ORDER_INCOME_CAP, Double.class));
-        if (this.dailyOrderIncomeCap == 40.0) {
-            // 旧默认值。大额档最低一单就是 45，铁块 50、金块 65，写成 40 等于广告价永远兑不了现。
+        if (this.dailyOrderIncomeCap == 40.0 || this.dailyOrderIncomeCap == 80.0) {
+            // 旧默认值。大额档金块收购已到 650，写成 40/80 等于广告价永远兑不了现。
             config.set("order-board.daily-order-income-cap", DEFAULT_DAILY_ORDER_INCOME_CAP);
             this.dailyOrderIncomeCap = DEFAULT_DAILY_ORDER_INCOME_CAP;
             changed = true;

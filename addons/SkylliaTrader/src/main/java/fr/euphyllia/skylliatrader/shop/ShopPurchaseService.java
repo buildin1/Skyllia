@@ -16,6 +16,7 @@ import fr.euphyllia.skylliatrader.data.TraderDataService;
 import fr.euphyllia.skylliatrader.data.TraderIslandData;
 import fr.euphyllia.skylliatrader.gui.GuiFormat;
 import fr.euphyllia.skylliatrader.merchant.MerchantOrigin;
+import fr.euphyllia.skylliatrader.util.DailyWindow;
 import net.kyori.adventure.text.Component;
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.economy.EconomyResponse;
@@ -275,9 +276,9 @@ public final class ShopPurchaseService {
             counter = data.getOrCreatePurchaseCounter(normalizedId);
             long now = System.currentTimeMillis();
             if (period.resets()) {
-                if (counter.windowStartAt == 0L || now - counter.windowStartAt > period.windowMillis()) {
+                if (DailyWindow.expired(counter.windowStartAt, now, period.periodDays())) {
                     counter.count = 0;
-                    counter.windowStartAt = now;
+                    counter.windowStartAt = DailyWindow.currentPeriodStart(now);
                 }
             } else if (counter.windowStartAt == 0L) {
                 // LIFETIME：只是把窗口起点记一下（纯记录用途，判定不依赖它），不参与重置。

@@ -41,9 +41,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * <h2>只回收游商自己有卖的商品，不接受任意材质</h2>
  * <p>
  * 判定依据是 {@code shop.toml}（{@link ShopConfigLoader}）——该材质必须存在对应的
- * {@link ShopItemDefinition}，否则拒绝（"这件东西游商不收"）。这条规则和商品是否已解锁无关：
- * 回收不受解锁进度约束（见 {@code MerchantRecycleGui} 类文档），玩家背包里任何一件游商在卖的商品
- * 都能拿来换钱，哪怕这座岛还没解锁到能买它。
+ * {@link ShopItemDefinition}，且 {@code recyclable = true}，否则拒绝（"这件东西游商不收"）。
+ * 建材和农场产物不进回收，量产兑现走订单收购。这条规则和商品是否已解锁无关：
+ * 回收不受解锁进度约束（见 {@code MerchantRecycleGui} 类文档）。
  * </p>
  *
  * <h2>回收价：基础原价的 40%，不是折扣后的价格</h2>
