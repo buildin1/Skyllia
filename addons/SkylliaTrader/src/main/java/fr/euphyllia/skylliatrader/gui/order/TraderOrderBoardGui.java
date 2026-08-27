@@ -14,6 +14,7 @@ import fr.euphyllia.skylliatrader.data.OrderSlotState;
 import fr.euphyllia.skylliatrader.data.TraderIslandData;
 import fr.euphyllia.skylliatrader.gui.GuiFormat;
 import fr.euphyllia.skylliatrader.gui.TraderProgressGui;
+import fr.euphyllia.skylliatrader.util.DailyWindow;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
@@ -47,9 +48,6 @@ public final class TraderOrderBoardGui {
     private static final Logger log = LoggerFactory.getLogger(TraderOrderBoardGui.class);
     private static final MiniMessage MM = MiniMessage.miniMessage();
 
-    /** 每日额度滚动窗口长度，必须和 {@code OrderBoardService#DAY_MILLIS} 保持一致。 */
-    private static final long DAY_MILLIS = 86_400_000L;
-
     private TraderOrderBoardGui() {
     }
 
@@ -66,7 +64,7 @@ public final class TraderOrderBoardGui {
      * </p>
      * <p>
      * 这里的窗口判定必须和 {@code OrderBoardService#computeSettlement} 用同一套
-     * （{@code now - windowStartAt > 24 小时} 就算新窗口），否则会出现"界面说还有额度、
+     * （每天早上 8 点整点刷新，见 {@link DailyWindow}），否则会出现"界面说还有额度、
      * 点下去却被拒"的自相矛盾。<b>只读不写</b>——真正的窗口重置由结算临界区负责。
      * </p>
      */
@@ -136,13 +134,11 @@ public final class TraderOrderBoardGui {
 
         double moneyCap = TraderConfigLoader.config.getDailyOrderIncomeCap();
         var income = data.dailyOrderIncome;
-        double moneyUsed = (income.windowStartAt == 0L || now - income.windowStartAt > DAY_MILLIS)
-                ? 0.0 : income.amount;
+        double moneyUsed = DailyWindow.expired(income.windowStartAt, now) ? 0.0 : income.amount;
 
         long repCap = TraderConfigLoader.config.getDailyOrderReputationCap();
         var repIncome = data.dailyOrderReputation;
-        long repUsed = (repIncome.windowStartAt == 0L || now - repIncome.windowStartAt > DAY_MILLIS)
-                ? 0L : repIncome.amount;
+        long repUsed = DailyWindow.expired(repIncome.windowStartAt, now) ? 0L : repIncome.amount;
 
         return new DailyBudget(Math.max(0.0, moneyCap - moneyUsed), Math.max(0L, repCap - repUsed));
     }
@@ -195,7 +191,7 @@ public final class TraderOrderBoardGui {
                         "<gray>· 金币：<white>" + GuiFormat.fmt(budget.moneyLeft()) + "</white></gray>",
                         "<gray>· 声望：<white>" + budget.reputationLeft() + "</white></gray>",
                         "<dark_gray>─────────",
-                        "<gray>额度按 24 小时滚动窗口恢复，不是零点重置</gray>",
+                        "<gray>额度每天早上 8 点整点刷新</gray>",
                         "<gray>额度用尽时提交会被<white>拒绝</white>，材料原样退还</gray>",
                         "<gray>声望只能通过完成订单获得，不会衰减</gray>")));
 

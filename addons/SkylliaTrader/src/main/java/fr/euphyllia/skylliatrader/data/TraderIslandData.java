@@ -116,7 +116,7 @@ public class TraderIslandData {
     public Map<String, PurchaseCounter> shopPurchaseCounts = new HashMap<>();
 
     /**
-     * 本岛"今日通过商队订单获得的货币总额"滚动窗口计数器（T4 新增）。
+     * 本岛"今日通过商队订单获得的货币总额"计数器（T4 新增，每天早上 8 点刷新）。
      * <p>
      * <b>初始值是一份全零的新对象</b>，对老岛屿正确：反序列化后没有任何窗口记录，
      * 等价于"这座岛在 T4 上线前从没通过订单拿过钱"——第一次完成 money 类型订单时会按

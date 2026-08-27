@@ -16,6 +16,7 @@ import fr.euphyllia.skylliatrader.data.TraderDataService;
 import fr.euphyllia.skylliatrader.data.TraderIslandData;
 import fr.euphyllia.skylliatrader.gui.GuiFormat;
 import fr.euphyllia.skylliatrader.shop.ShopEconomics;
+import fr.euphyllia.skylliatrader.util.DailyWindow;
 import net.kyori.adventure.text.Component;
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.economy.EconomyResponse;
@@ -89,7 +90,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class OrderBoardService {
 
     private static final Logger log = LoggerFactory.getLogger(OrderBoardService.class);
-    private static final long DAY_MILLIS = 86_400_000L;
 
     private final SkylliaTrader plugin;
     private final TraderDataService dataService;
@@ -334,14 +334,14 @@ public final class OrderBoardService {
 
         // ── 先「只算不落账」，把每日上限截断后的实际奖励算出来 ────────────────────
         // 拆成「算」和「记账」两段是为了下面那道「零收益拒绝」闸门：拒绝分支返回的是
-        // readOnly（不写库），如果算的过程中已经顺手把滚动窗口重置写进了内存里的 data，
+        // readOnly（不写库），如果算的过程中已经顺手把窗口重置写进了内存里的 data，
         // 就会出现「内存里窗口已重置、库里还是旧窗口」的不一致（load 可能命中同一个对象）。
         // 所以窗口重置和累加一律推迟到确认要 commit 之后再做。
         double moneyAwarded = 0.0;
         boolean moneyWindowExpired = false;
         if (liveOrder.type() == OrderType.MONEY) {
             DailyOrderIncome income = data.dailyOrderIncome;
-            moneyWindowExpired = income.windowStartAt == 0L || now - income.windowStartAt > DAY_MILLIS;
+            moneyWindowExpired = DailyWindow.expired(income.windowStartAt, now);
             double used = moneyWindowExpired ? 0.0 : income.amount;
             double cap = TraderConfigLoader.config.getDailyOrderIncomeCap();
             double remainingCap = Math.max(0.0, cap - used);
@@ -352,7 +352,7 @@ public final class OrderBoardService {
         boolean repWindowExpired = false;
         if (liveOrder.rewardReputation() > 0) {
             DailyOrderReputation repIncome = data.dailyOrderReputation;
-            repWindowExpired = repIncome.windowStartAt == 0L || now - repIncome.windowStartAt > DAY_MILLIS;
+            repWindowExpired = DailyWindow.expired(repIncome.windowStartAt, now);
             long used = repWindowExpired ? 0L : repIncome.amount;
             long repCap = TraderConfigLoader.config.getDailyOrderReputationCap();
             long remainingRepCap = Math.max(0L, repCap - used);
@@ -371,7 +371,7 @@ public final class OrderBoardService {
         if (liveOrder.type() == OrderType.MONEY && moneyAwarded <= 0.0 && reputationAwarded <= 0L) {
             return TraderDataService.Mutation.readOnly(Settlement.fail(
                     "§c本岛今日的订单额度已用尽（金币和声望都到达每日上限），本单未成交，材料已退还。"
-                            + "§7额度按 24 小时滚动窗口恢复，恢复后即可继续交付。"));
+                            + "§7额度每天早上 8 点整点刷新，刷新后即可继续交付。"));
         }
 
         // ── 确认要 commit，这才真正落账 ──────────────────────────────────────────
@@ -379,7 +379,7 @@ public final class OrderBoardService {
             DailyOrderIncome income = data.dailyOrderIncome;
             if (moneyWindowExpired) {
                 income.amount = 0.0;
-                income.windowStartAt = now;
+                income.windowStartAt = DailyWindow.currentPeriodStart(now);
             }
             income.amount = ShopEconomics.round2(income.amount + moneyAwarded);
         }
@@ -387,7 +387,7 @@ public final class OrderBoardService {
             DailyOrderReputation repIncome = data.dailyOrderReputation;
             if (repWindowExpired) {
                 repIncome.amount = 0L;
-                repIncome.windowStartAt = now;
+                repIncome.windowStartAt = DailyWindow.currentPeriodStart(now);
             }
             repIncome.amount += reputationAwarded;
         }

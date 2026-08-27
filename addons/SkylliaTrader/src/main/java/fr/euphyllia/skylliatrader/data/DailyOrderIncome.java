@@ -17,16 +17,13 @@ package fr.euphyllia.skylliatrader.data;
  * 和限购次数是两回事。
  * </p>
  * <p>
- * 和 {@link PurchaseCounter} 同样用<b>滚动窗口</b>（不对齐自然日/时区），理由见
- * {@code ShopPurchaseLimitPeriod} 的类注释：这里固定 24 小时一个窗口，判定逻辑照抄
- * "{@code now - windowStartAt > 窗口长度} 就重置"的既有写法，不单独抽一个枚举——
- * 全岛只有这一个滚动窗口用途，抽象出通用枚举反而增加一层不必要的间接。
+ * 窗口按日历日对齐，每天早上 8:00（{@code Asia/Shanghai}）整点刷新，见
+ * {@code DailyWindow}。商店限购仍是滚动窗口，本类不跟它共用判定。
  * </p>
  * <p>
  * <b>两个字段初始值都是 0</b>，对老岛屿/首次完成订单都正确：{@code amount = 0} 表示
- * "这个窗口还没通过订单拿过钱"，{@code windowStartAt = 0} 会让第一次判定时
- * {@code now - windowStartAt} 必然超过 24 小时，触发一次"重置"（把 windowStartAt 设成 now），
- * 效果等价于"从现在开始一个新的 24 小时窗口"。
+ * "这个窗口还没通过订单拿过钱"，{@code windowStartAt = 0} 会让第一次判定必然触发
+ * "重置"（把 windowStartAt 设成当前业务日的 8:00）。
  * </p>
  */
 public class DailyOrderIncome {

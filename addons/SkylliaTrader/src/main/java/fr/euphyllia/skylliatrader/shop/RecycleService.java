@@ -10,6 +10,7 @@ import fr.euphyllia.skylliatrader.data.TraderDataService;
 import fr.euphyllia.skylliatrader.data.TraderIslandData;
 import fr.euphyllia.skylliatrader.configuration.model.ShopItemDefinition;
 import fr.euphyllia.skylliatrader.gui.GuiFormat;
+import fr.euphyllia.skylliatrader.util.DailyWindow;
 import net.kyori.adventure.text.Component;
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.economy.EconomyResponse;
@@ -87,9 +88,6 @@ public final class RecycleService {
     /** 回收价折算比例：基础单价（折扣前原价）的 40%，HANDOFF 9.3 已拍板，不要改成读配置。 */
     private static final double RECYCLE_RATE = 0.40;
 
-    /** 每日回收额度的滚动窗口长度，和订单那两个每日计数器保持一致。 */
-    private static final long DAY_MILLIS = 24L * 60L * 60L * 1000L;
-
     private final SkylliaTrader plugin;
 
     /** 正在走回收流程的玩家，防止连点同一个格子把同一次回收触发两次（理由同 ShopPurchaseService#inFlight）。 */
@@ -135,7 +133,7 @@ public final class RecycleService {
         double cap = dailyCapFor(item);
         DailyRecycleIncome income = data.recycleIncomeByItem.get(item.id());
         long now = System.currentTimeMillis();
-        if (income == null || income.windowStartAt == 0L || now - income.windowStartAt > DAY_MILLIS) {
+        if (income == null || DailyWindow.expired(income.windowStartAt, now)) {
             return cap;
         }
         return Math.max(0.0, ShopEconomics.round2(cap - income.amount));
@@ -372,9 +370,9 @@ public final class RecycleService {
             long now = System.currentTimeMillis();
             DailyRecycleIncome income = data.recycleIncomeByItem
                     .computeIfAbsent(normalizedId, k -> new DailyRecycleIncome());
-            if (income.windowStartAt == 0L || now - income.windowStartAt > DAY_MILLIS) {
+            if (DailyWindow.expired(income.windowStartAt, now)) {
                 income.amount = 0.0;
-                income.windowStartAt = now;
+                income.windowStartAt = DailyWindow.currentPeriodStart(now);
             }
             double remaining = Math.max(0.0, cap - income.amount);
             int take = maxAffordableQuantity(remaining, unitPrice, quantity);
@@ -389,7 +387,7 @@ public final class RecycleService {
         if (accepted == null) {
             refundItems(player, material, quantity, "今日回收额度不足");
             fail(player, "§e今天这种商品的回收额度已经用完了（每日上限 §f" + GuiFormat.fmt(cap)
-                    + " §e金币），物品已退还。换别的商品还能继续卖。");
+                    + " §e金币），物品已退还。额度每天早上 8 点刷新，换别的商品还能继续卖。");
             return;
         }
         int soldQty = acceptedQty[0];
