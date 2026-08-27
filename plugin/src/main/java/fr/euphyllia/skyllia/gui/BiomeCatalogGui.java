@@ -47,7 +47,10 @@ public final class BiomeCatalogGui {
 
     public static void open(@NotNull Player player, @NotNull World world, @NotNull Island island,
                              @NotNull List<ChunkCoordinate> chunks, int page) {
-        List<String> biomeNames = new ArrayList<>(SkylliaAPI.getBiomesImpl().getBiomeNameList());
+        // 按选区所在世界的维度过滤：主世界只列主世界群系，下界只列下界群系（2026-08 反馈：
+        // 主世界改成下界群系后会刷下界怪，跨维度改群系一律不再提供）
+        List<String> biomeNames = new ArrayList<>(
+                SkylliaAPI.getBiomesImpl().getBiomeNameList(world.getEnvironment()));
         biomeNames.sort(String::compareTo);
 
         int totalPages = GuiPageLayout.totalPages(biomeNames.size());

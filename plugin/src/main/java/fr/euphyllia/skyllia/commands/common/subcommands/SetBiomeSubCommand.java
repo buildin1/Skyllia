@@ -83,6 +83,14 @@ public class SetBiomeSubCommand implements SubCommandInterface {
             return;
         }
 
+        // 主世界只能改主世界群系、下界只能改下界群系（2026-08 反馈：跨维度改群系会刷出
+        // 对应维度的怪，一律不再允许）。GUI 图鉴那条路在 BiomeCatalogGui 里同样过滤了。
+        if (!biomesImpl.getBiomeNameList(world.getEnvironment()).contains(biomeName)) {
+            ConfigLoader.language.sendMessage(player, "island.biome.wrong-dimension", Map.of(
+                    "%s", biomeName));
+            return;
+        }
+
         try {
             Island island = SkylliaAPI.getIslandByPlayerId(player.getUniqueId());
 
@@ -161,7 +169,12 @@ public class SetBiomeSubCommand implements SubCommandInterface {
         if (args.length == 1) {
             String partial = args[0].trim().toLowerCase();
 
-            return biomeNameList.stream()
+            // 补全也按发送者所在世界的维度过滤，和执行时的校验保持一致
+            List<String> candidates = (sender instanceof Player p)
+                    ? Skyllia.getInstance().getInterneAPI().getBiomesImpl().getBiomeNameList(p.getWorld().getEnvironment())
+                    : biomeNameList;
+
+            return candidates.stream()
                     .filter(biome -> PlayerUtils.hasPermission(sender, "skyllia.island.command.biome.%s".formatted(biome)))
                     .filter(biome -> biome.toLowerCase().startsWith(partial))
                     .toList();

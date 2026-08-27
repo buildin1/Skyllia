@@ -62,6 +62,41 @@ public class BiomeNMS extends BiomesImpl {
         return list;
     }
 
+    /**
+     * 按维度过滤：从 LevelStem 注册表拿该维度<b>原版生成器</b>的 BiomeSource，
+     * {@code possibleBiomes()} 就是这个维度自然生成会用到的全部群系——datapack /
+     * 核心（Shiroha）往对应维度注入的自定义群系会自动被包含，不用维护硬编码清单。
+     * 不能用空岛世界自己的生成器查：那是固定群系的虚空生成器，只会给出一个群系。
+     * 任何一步异常都回退到完整列表，宁可少过滤也不能让图鉴开不出来。
+     */
+    @Override
+    public List<String> getBiomeNameList(World.Environment environment) {
+        ResourceKey<net.minecraft.world.level.dimension.LevelStem> stemKey = switch (environment) {
+            case NORMAL -> net.minecraft.world.level.dimension.LevelStem.OVERWORLD;
+            case NETHER -> net.minecraft.world.level.dimension.LevelStem.NETHER;
+            case THE_END -> net.minecraft.world.level.dimension.LevelStem.END;
+            default -> null;
+        };
+        if (stemKey == null) return getBiomeNameList();
+
+        try {
+            net.minecraft.world.level.dimension.LevelStem stem = ((CraftServer) Bukkit.getServer()).getServer()
+                    .registryAccess()
+                    .lookupOrThrow(Registries.LEVEL_STEM)
+                    .getValue(stemKey);
+            if (stem == null) return getBiomeNameList();
+
+            List<String> out = new ArrayList<>();
+            for (Holder<net.minecraft.world.level.biome.Biome> holder : stem.generator().getBiomeSource().possibleBiomes()) {
+                holder.unwrapKey().ifPresent(key -> out.add(key.identifier().toString()));
+            }
+            return out.isEmpty() ? getBiomeNameList() : out;
+        } catch (Exception e) {
+            log.error("按维度列出群系失败（environment={}），回退到完整列表", environment, e);
+            return getBiomeNameList();
+        }
+    }
+
     @Override
     public String getNameBiome(Biome biome) {
         NamespacedKey key = biome.getKey();
