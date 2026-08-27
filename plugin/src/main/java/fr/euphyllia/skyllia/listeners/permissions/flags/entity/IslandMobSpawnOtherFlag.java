@@ -41,12 +41,14 @@ public class IslandMobSpawnOtherFlag implements FlagModule {
             // 巨人/唤魔者这类需要岛主手动开启的稀有生物共用"默认关闭"的口径，否则新岛
             // 玩家连自己的盔甲架都放不了。
             boolean defaultValue = entry.getKey() == EntityType.ARMOR_STAND;
-            flagByType.put(entry.getKey(), registry.idOrRegister(new FlagNode(
+            FlagId specific = registry.idOrRegister(new FlagNode(
                     new NamespacedKey(owner, "island.spawn.other." + entry.getValue()),
                     "island.flag.spawn_other_" + entry.getValue() + ".name",
                     "island.flag.spawn_other_" + entry.getValue() + ".description",
                     defaultValue
-            )));
+            ));
+            registry.declareFallback(specific, ALLOW_SPAWN_ALL_OTHER);
+            flagByType.put(entry.getKey(), specific);
         }
     }
 

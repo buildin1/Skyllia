@@ -747,7 +747,8 @@ public final class MerchantService {
 
     /**
      * 查岛屿的「允许自然生成游商」标志。判定方式和核心的 {@code IslandMobSpawnPassiveFlag}
-     * 完全一致：<b>单体标志 或 {@code .all} 兜底标志</b>，任一为真即允许。
+     * 完全一致：<b>单体标志 与 {@code .all} 总开关都为真</b>才允许（核心已改「与」语义，
+     * 见 {@code ImplPermissionsManagers#hasFlag}）。
      * <p>
      * 用 {@code getIfPresent} 而不是 {@code id(...)}：核心万一改了标志名，
      * {@code id(...)} 会抛 {@code IllegalArgumentException} 把整条自然刷新链路炸掉；

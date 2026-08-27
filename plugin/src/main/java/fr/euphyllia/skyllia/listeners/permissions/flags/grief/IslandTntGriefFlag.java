@@ -34,6 +34,7 @@ public class IslandTntGriefFlag implements FlagModule {
                 "island.flag.allow_tnt_grief.name",
                 "island.flag.allow_tnt_grief.description"
         ));
+        registry.declareFallback(ALLOW_TNT_GRIEF, ALLOW_MOB_GRIEF);
     }
 
     @EventHandler(ignoreCancelled = true)

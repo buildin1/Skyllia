@@ -9,6 +9,7 @@ import fr.euphyllia.skyllia.api.permissions.FlagNode;
 import fr.euphyllia.skyllia.api.permissions.IslandFlagRegistry;
 import fr.euphyllia.skyllia.api.permissions.IslandFlags;
 import fr.euphyllia.skyllia.api.permissions.PermissionSetCodec;
+import fr.euphyllia.skyllia.database.FlagWordsNormalizer;
 import fr.euphyllia.skyllia.utils.ConfigFileWriter;
 import org.bukkit.NamespacedKey;
 import org.jetbrains.annotations.Nullable;
@@ -207,7 +208,16 @@ public class IslandFlagsConfigManager implements IConfigurationProvider {
         if (islandType != null) applyInto(flags, registry, getMap(islandType, worldName));
 
         flags.ensureUpToDate(registry);
-        return PermissionSetCodec.encodeLongs(flags.snapshotWords());
+
+        // [defaults] 沿用「或」时代的书写语义：单体 false + 总开关 true = 跟随总开关。
+        // 生产环境的 flags.toml 里单体条目多是注册时自动补的 false，判定层改「与」后
+        // 若按字面落库，新建岛屿会直接全灭——所以落库前做与存量位图同一套归一化
+        // （单体 |= 总开关，总开关 |= 任一单体），保证新老岛屿语义一致。
+        long[] normalizedWords = flags.snapshotWords();
+        FlagWordsNormalizer.Result normalized = FlagWordsNormalizer.normalize(normalizedWords, 0, registry);
+        if (normalized != null) normalizedWords = normalized.words();
+
+        return PermissionSetCodec.encodeLongs(normalizedWords);
     }
 
     public int getConfigVersion() {

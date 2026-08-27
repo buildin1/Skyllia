@@ -141,25 +141,16 @@ public class ImplPermissionsManagers implements PermissionsManagers {
      * 「即便 hostile.all = true，也能单独强制关掉幻翼」——接管层这部分逻辑没有问题。
      * </p>
      * <p>
-     * <b>岛屿自身设置这一层（走到这里说明两层全局接管都没碰过）目前是纯布尔位图，没有
-     * 「没碰过」这个状态</b>——单体标志和总开关都只有开/关两种值。2026-08-21 当晚先把这里
-     * 从「或」改成「与」（两者都开才允许），上线后立刻收到新的反馈：<b>存量岛屿在这一层
-     * 直接全灭刷怪</b>——已用 {@code SQLiteIslandPermission#loadIslandFlags} 确认根因：
-     * {@code IslandFlags.ensureUpToDate} 只是把旧岛屿反序列化出来的位图按当前注册表大小
-     * 扩容，新扩出来的位一律是 0（false），并<b>不会</b>补 {@code [defaults]} 里的默认值
-     * （那套默认值只在建岛那一刻生效，见 {@code IslandFlagsConfigManager} 的类文档）——
-     * 也就是说存量岛屿的单体标志位，凡是在这些标志被注册之后才反序列化扩容出来的，
-     * 天生就是「没碰过 = 0」，而不是「默认开」。旧的「或」逻辑下这批 0 位不会露出问题
-     * （因为总开关默认开着，或出来一直是 true），改成「与」直接把这批本来就是 0 的位
-     * 暴露成了「这种生物永远不让生成」，波及全部存量岛屿。
+     * 岛屿自身设置这一层取<b>「与」</b>：总开关和单体开关<b>都</b>开才允许——总开关是总闸，
+     * 单体开关在总闸开着时各自独立生效。这正是玩家的直觉语义（「开启爆炸 + 关闭恶魂」
+     * 应当挡住恶魂爆炸，2026-08 岩浆怪刷新与恶魂爆炸两单反馈皆因旧「或」逻辑而起）。
      * </p>
      * <p>
-     * <b>已连夜临时改回「或」止血</b>（先恢复到长期以来的已知状态，总开关不能 100% 生效
-     * 这条老毛病先留着，好过现在这样直接全灭刷怪）。真正能让「与」安全上线，需要先给存量
-     * 岛屿把单体标志位做一次迁移回填：<code>新单体位 = 旧单体位 || 旧总开关位</code>
-     * （逐岛计算一次、写回持久化），这样迁移前后每座岛的实际生效效果不变，之后总开关和
-     * 单体开关才能真正各自独立生效。这个迁移涉及遍历全部岛屿数据 + 落库，风险和工作量都
-     * 比这几行判定逻辑本身大得多，留作专门一轮去做，不在今晚仓促赶。
+     * 「与」能安全上线的前提是存量位图已完成「或→与」归一化：2026-08-21 曾直接改「与」，
+     * 因存量岛屿扩容补 0 的单体位被暴露成「永远拒绝」而全服刷怪全灭、连夜回滚。现在
+     * 归一化由 {@code FlagWordsNormalizer} 在数据库加载路径上<b>惰性</b>完成（含此后
+     * 新注册标志的自动回填），本方法拿到的位图恒为已归一化状态，不需要再兼容旧语义。
+     * 配对关系的唯一事实来源是 {@code IslandFlagRegistry#declareFallback}。
      * </p>
      */
     @Override
@@ -172,7 +163,10 @@ public class ImplPermissionsManagers implements PermissionsManagers {
 
         var flags = island.getIslandFlags(worldName);
         var registry = SkylliaAPI.getFlagRegistry();
-        return flags.has(registry, specific) || flags.has(registry, fallback);
+        // 调用方（含附属）可能用 getIfPresent 拿标志、传进来 null，按“只看另一个”兜底
+        if (specific == null) return fallback != null && flags.has(registry, fallback);
+        if (fallback == null) return flags.has(registry, specific);
+        return flags.has(registry, specific) && flags.has(registry, fallback);
     }
 
     /**

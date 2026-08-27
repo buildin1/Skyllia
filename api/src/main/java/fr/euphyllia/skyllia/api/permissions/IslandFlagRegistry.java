@@ -14,6 +14,19 @@ public final class IslandFlagRegistry {
     private final Map<NamespacedKey, FlagId> ids = new HashMap<>();
     private final List<FlagNode> byIndex = new ArrayList<>();
 
+    /**
+     * 单体标志 -> 其总开关（兜底标志）的配对关系。
+     * <p>
+     * 由各 {@code FlagModule#registerFlags} 在注册标志的同时声明，是
+     * <b>位图惰性迁移</b>（{@code FlagWordsNormalizer}）与两参
+     * {@code hasFlag(specific, fallback)} 判定共用的唯一事实来源：
+     * 迁移要靠它知道「哪一位的空缺应该从哪个总开关回填」。
+     * 漏声明的后果是存量岛屿在该单体位上被回填成 0（= 永远拒绝），
+     * 所以新增带总开关的标志时必须同步调用 {@link #declareFallback}。
+     * </p>
+     */
+    private final Map<FlagId, FlagId> fallbackBySpecific = new HashMap<>();
+
     private int version = 0;
     private int maxIndex = -1;
 
@@ -73,6 +86,37 @@ public final class IslandFlagRegistry {
             throw new IllegalStateException("No FlagNode registered for index: " + idx);
         }
         return node;
+    }
+
+    /**
+     * 声明「单体标志 specific 的总开关是 fallback」。幂等；重复声明同一配对无副作用，
+     * 同一单体声明两个不同总开关视为编程错误、直接抛异常。
+     */
+    public synchronized void declareFallback(FlagId specific, FlagId fallback) {
+        if (specific == null || fallback == null) {
+            throw new IllegalArgumentException("declareFallback: specific/fallback 不能为 null");
+        }
+        FlagId previous = fallbackBySpecific.putIfAbsent(specific, fallback);
+        if (previous != null && previous.index() != fallback.index()) {
+            throw new IllegalStateException(
+                    "标志 " + describe(specific) + " 已声明总开关 " + describe(previous)
+                            + "，不能再声明为 " + describe(fallback));
+        }
+    }
+
+    /**
+     * 当前已声明的全部「单体 -> 总开关」配对的不可变快照。
+     */
+    public synchronized Map<FlagId, FlagId> fallbackPairs() {
+        return Map.copyOf(fallbackBySpecific);
+    }
+
+    private String describe(FlagId id) {
+        try {
+            return node(id).node().toString();
+        } catch (Exception e) {
+            return "#" + id.index();
+        }
     }
 
     public synchronized List<NamespacedKey> keys() {

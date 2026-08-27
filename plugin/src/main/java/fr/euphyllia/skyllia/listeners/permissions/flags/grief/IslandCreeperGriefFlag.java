@@ -32,6 +32,7 @@ public class IslandCreeperGriefFlag implements FlagModule {
                 "island.flag.allow_creeper_grief.name",
                 "island.flag.allow_creeper_grief.description"
         ));
+        registry.declareFallback(ALLOW_CREEPER_GRIEF, ALLOW_MOB_GRIEF);
     }
 
     @EventHandler(ignoreCancelled = true)

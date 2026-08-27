@@ -58,5 +58,6 @@ public class IslandAllowEndermanGriefPermissions implements FlagModule {
                 "island.flag.allow_enderman_grief.name",
                 "island.flag.allow_enderman_grief.description"
         ));
+        registry.declareFallback(ISLAND_ALLOW_ENDERMAN_GRIEF, ISLAND_ALLOW_MOB_GRIEF);
     }
 }

@@ -34,6 +34,7 @@ public class IslandWitherGriefFlag implements FlagModule {
                 "island.flag.allow_wither_grief.name",
                 "island.flag.allow_wither_grief.description"
         ));
+        registry.declareFallback(ALLOW_WITHER_GRIEF, ALLOW_MOB_GRIEF);
     }
 
     @EventHandler(ignoreCancelled = true)

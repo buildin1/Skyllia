@@ -11,12 +11,10 @@ import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.Fireball;
-import org.bukkit.entity.Ghast;
+import org.bukkit.entity.LargeFireball;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.plugin.Plugin;
-import org.bukkit.projectiles.ProjectileSource;
 
 public class IslandGhastGriefFlag implements FlagModule {
 
@@ -35,15 +33,18 @@ public class IslandGhastGriefFlag implements FlagModule {
                 "island.flag.allow_ghast_grief.name",
                 "island.flag.allow_ghast_grief.description"
         ));
+        registry.declareFallback(ALLOW_GHAST_GRIEF, ALLOW_MOB_GRIEF);
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onExplode(final EntityExplodeEvent event) {
+        // 只认实体类型、不认 getShooter()：shooter 是按 UUID 现场解析的，恶魂在火球落地前
+        // 死亡/被卸载/跨 region 时会解析成 null，火球被玩家反弹后还会变成玩家——按 shooter
+        // 过滤会让这些爆炸完全绕过本开关（2026-08 恶魂爆炸反馈的漏网路径之一）。
+        // 用 LargeFireball 而不是 Fireball：凋灵之首（WitherSkull）和末影龙火球在 Bukkit
+        // 里也是 Fireball 的子类，各有各的开关，不能被这里重复管辖。
         final Entity entity = event.getEntity();
-        if (!(entity instanceof Fireball fireball)) return;
-
-        final ProjectileSource shooter = fireball.getShooter();
-        if (!(shooter instanceof Ghast)) return;
+        if (!(entity instanceof LargeFireball)) return;
 
         final Location location = event.getLocation();
         final World world = location.getWorld();

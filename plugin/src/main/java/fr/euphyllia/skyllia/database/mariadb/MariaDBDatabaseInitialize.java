@@ -97,6 +97,7 @@ public class MariaDBDatabaseInitialize extends DatabaseInitializeQuery {
                 island_id  CHAR(36)     NOT NULL,
                 world_name VARCHAR(255) NOT NULL,
                 words      LONGBLOB     NOT NULL,
+                words_version INT       NOT NULL DEFAULT 0,
                 PRIMARY KEY (island_id, world_name),
                 CONSTRAINT islands_flags_FK FOREIGN KEY (island_id) REFERENCES islands (island_id) ON DELETE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -293,6 +294,10 @@ public class MariaDBDatabaseInitialize extends DatabaseInitializeQuery {
         if (configVersion < 5) {
             migrateV4ToV5();
         }
+
+        // words_version = 该行位图落库时覆盖的标志数量；0 = “或”时代的旧行，
+        // 由 FlagWordsNormalizer 在加载路径上惰性迁移（见该类的类文档）。
+        exec("ALTER TABLE islands_flags ADD COLUMN IF NOT EXISTS words_version INT NOT NULL DEFAULT 0;");
 
         ensureRegionUniqueConstraint();
     }

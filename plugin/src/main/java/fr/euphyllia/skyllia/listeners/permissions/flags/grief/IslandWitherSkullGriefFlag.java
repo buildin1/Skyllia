@@ -33,6 +33,7 @@ public class IslandWitherSkullGriefFlag implements FlagModule {
                 "island.flag.allow_wither_skull_grief.name",
                 "island.flag.allow_wither_skull_grief.description"
         ));
+        registry.declareFallback(ALLOW_WITHER_SKULL_GRIEF, ALLOW_MOB_GRIEF);
     }
 
     @EventHandler(ignoreCancelled = true)

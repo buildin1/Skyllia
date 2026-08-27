@@ -94,6 +94,7 @@ public class SQLiteDatabaseInitialize extends DatabaseInitializeQuery {
                 island_id  TEXT NOT NULL,
                 world_name TEXT NOT NULL,
                 words      BLOB NOT NULL,
+                words_version INTEGER NOT NULL DEFAULT 0,
                 PRIMARY KEY (island_id, world_name),
                 FOREIGN KEY (island_id) REFERENCES islands(island_id) ON DELETE CASCADE
             );
@@ -239,6 +240,11 @@ public class SQLiteDatabaseInitialize extends DatabaseInitializeQuery {
         }
         if (!hasColumn("islands_flags", "world_name")) {
             migrateV4ToV5();
+        }
+        // words_version = 该行位图落库时覆盖的标志数量；0 = “或”时代的旧行，
+        // 由 FlagWordsNormalizer 在加载路径上惰性迁移（见该类的类文档）。
+        if (!hasColumn("islands_flags", "words_version")) {
+            exec("ALTER TABLE islands_flags ADD COLUMN words_version INTEGER NOT NULL DEFAULT 0;");
         }
         ensureRegionUniqueConstraint();
     }

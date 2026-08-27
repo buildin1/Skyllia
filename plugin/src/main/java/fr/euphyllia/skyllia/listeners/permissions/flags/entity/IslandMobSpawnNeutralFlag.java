@@ -36,11 +36,13 @@ public class IslandMobSpawnNeutralFlag implements FlagModule {
         this.flagByType = new EnumMap<>(EntityType.class);
         Map<EntityType, String> supported = SkylliaAPI.getMobsSpawnImpl().supportedNeutralMobs();
         for (Map.Entry<EntityType, String> entry : supported.entrySet()) {
-            flagByType.put(entry.getKey(), registry.idOrRegister(new FlagNode(
+            FlagId specific = registry.idOrRegister(new FlagNode(
                     new NamespacedKey(owner, "island.spawn.neutral." + entry.getValue()),
                     "island.flag.spawn_neutral_" + entry.getValue() + ".name",
                     "island.flag.spawn_neutral_" + entry.getValue() + ".description"
-            )));
+            ));
+            registry.declareFallback(specific, ALLOW_SPAWN_ALL_NEUTRAL);
+            flagByType.put(entry.getKey(), specific);
         }
     }
 
