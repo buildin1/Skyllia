@@ -88,8 +88,11 @@ public class TraderConfigManager implements IConfigurationProvider {
     private static final int DEFAULT_ORDER_SLOTS_PER_ISLAND = 3;
     /** 每个订单槽位独立计时，到点强制换新订单——这是订单吞吐的上限，不是"完成后立刻刷新"。 */
     private static final int DEFAULT_ORDER_REFRESH_HOURS = 6;
-    /** 每岛每日通过订单获得的货币总额上限，对齐 HANDOFF 9.3（日均产出约 100 的新锚点，原 400 的十分之一）。 */
-    private static final double DEFAULT_DAILY_ORDER_INCOME_CAP = 40.0;
+    /**
+     * 每岛每日通过订单获得的货币总额上限。必须盖住最大一单（金块收购 65），
+     * 取大额档上限 80；仍低于 PlayerTask 日均约 100，订单收入不会盖过打工。
+     */
+    private static final double DEFAULT_DAILY_ORDER_INCOME_CAP = 80.0;
     /**
      * 每种商品每日回收收入上限（金币）。回收系统通胀防线的<b>第二道</b>，第一道是 shop.toml 的
      * {@code recyclable = false}（见 {@code DailyRecycleIncome} 类文档）。
@@ -302,6 +305,12 @@ public class TraderConfigManager implements IConfigurationProvider {
                 DEFAULT_ORDER_REFRESH_HOURS, Integer.class));
         this.dailyOrderIncomeCap = Math.max(0.0, getOrSetDefault("order-board.daily-order-income-cap",
                 DEFAULT_DAILY_ORDER_INCOME_CAP, Double.class));
+        if (this.dailyOrderIncomeCap == 40.0) {
+            // 旧默认值。大额档最低一单就是 45，铁块 50、金块 65，写成 40 等于广告价永远兑不了现。
+            config.set("order-board.daily-order-income-cap", DEFAULT_DAILY_ORDER_INCOME_CAP);
+            this.dailyOrderIncomeCap = DEFAULT_DAILY_ORDER_INCOME_CAP;
+            changed = true;
+        }
         // 旧键 recycle.daily-income-cap 是「全岛所有商品加总」；2026-08-24 改成按单个物品计。
         // 存量配置如果还没新键，把旧值搬过去，避免 reload 时静默掉回默认 40。
         if (config.get("recycle.daily-income-cap-per-item") == null) {
