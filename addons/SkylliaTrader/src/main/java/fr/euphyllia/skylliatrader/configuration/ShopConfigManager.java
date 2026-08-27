@@ -7,6 +7,7 @@ import fr.euphyllia.skylliatrader.configuration.model.ShopExtraGate;
 import fr.euphyllia.skylliatrader.configuration.model.ShopItemDefinition;
 import fr.euphyllia.skylliatrader.configuration.model.ShopPurchaseLimitPeriod;
 import fr.euphyllia.skylliatrader.configuration.model.ShopUnlockTrack;
+import fr.euphyllia.skylliatrader.merchant.CaravanType;
 import org.bukkit.Material;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -125,7 +126,8 @@ public class ShopConfigManager implements IConfigurationProvider {
                 ShopPurchaseLimitPeriod.NONE,
                 0,
                 ShopExtraGate.NONE,
-                false));
+                false,
+                null));
         seenIds.add("frogspawn");
         log.warn("shop.toml 缺少青蛙卵，已在内存里补进主世界基础池。请在配置里加一条 id=frogspawn，否则下次手改文件后会再丢");
     }
@@ -196,8 +198,19 @@ public class ShopConfigManager implements IConfigurationProvider {
         // 默认 true 是为了兼容存量配置，新增可量产商品时务必显式写 false。
         boolean recyclable = table.getOrElse("recyclable", true);
 
+        // 可选：专供商队。写了就只在该种商队（凭证游商）的货架上出现，留空 = 所有商队通卖。
+        String rawCaravan = table.getOrElse("caravan", (String) null);
+        CaravanType caravan = null;
+        if (rawCaravan != null && !rawCaravan.isBlank()) {
+            caravan = CaravanType.parseOrNull(rawCaravan);
+            if (caravan == null) {
+                throw new IllegalArgumentException("商品 '" + normalizedId + "' 的 caravan='" + rawCaravan
+                        + "' 无法识别，可选值：OVERWORLD / NETHER / END（留空表示所有商队通卖）");
+            }
+        }
+
         return new ShopItemDefinition(normalizedId, material, displayName, price, unlockTrack, unlockTier,
-                naturalVisible, limitPeriod, limitCount, extraGate, recyclable);
+                naturalVisible, limitPeriod, limitCount, extraGate, recyclable, caravan);
     }
 
     private Material parseMaterial(String rawName, String itemId) {

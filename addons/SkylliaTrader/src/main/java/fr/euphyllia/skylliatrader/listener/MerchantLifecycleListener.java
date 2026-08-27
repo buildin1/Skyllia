@@ -339,6 +339,9 @@ public class MerchantLifecycleListener implements Listener {
         Player player = event.getPlayer();
         UUID islandId = keys.readIslandId(entity);
         MerchantOrigin origin = keys.readOrigin(entity);
+        // 商队类型也要在事件线程上从 PDC 读出来（Folia 下实体不能跨线程访问），
+        // 进 async 之前先取值捕获，绝不把 entity 带进 async 闭包。
+        CaravanType caravanType = keys.readCaravan(entity);
         if (islandId == null || origin == null) return;
 
         // 权限判定要查 island（可能读库），丢到 async 上；反正界面已经被 cancel 了，
@@ -353,9 +356,10 @@ public class MerchantLifecycleListener implements Listener {
                     return;
                 }
                 // 商品池按来源筛（自然刷新的只开交易次数轨的基础档 + 说明书，凭证游商四轨全开）
-                // 的过滤逻辑在 MerchantShopGui 内部按 origin 分支处理，这里只需要把 island/origin
-                // 传过去；已经在 async 线程上了，直接调用不用再跳一次。
-                MerchantShopGui.openFromAsync(player, island, origin, 0);
+                // 的过滤逻辑在 MerchantShopGui 内部按 origin 分支处理；商队类型决定专供商品
+                // （shop.toml 的 caravan 字段），已在事件线程读好、这里用捕获值。
+                // 已经在 async 线程上了，直接调用不用再跳一次。
+                MerchantShopGui.openFromAsync(player, island, origin, caravanType, 0);
             } catch (Throwable t) {
                 log.error("处理玩家 {} 与游商的交互时出错", player.getName(), t);
             }

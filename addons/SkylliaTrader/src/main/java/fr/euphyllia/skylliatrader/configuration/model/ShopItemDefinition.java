@@ -1,7 +1,9 @@
 package fr.euphyllia.skylliatrader.configuration.model;
 
+import fr.euphyllia.skylliatrader.merchant.CaravanType;
 import java.util.Locale;
 import org.bukkit.Material;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * {@code shop.toml} 里一条 {@code [[shop-item]]} 的解析结果。
@@ -29,6 +31,10 @@ import org.bukkit.Material;
  *                            动态决定，运行时由 {@code ShopPurchaseService} 按
  *                            {@code material == Material.DIAMOND} 特判覆盖，不读这个字段
  * @param extraGate           额外门槛标记，{@link ShopExtraGate#NONE} 表示无（单轨判定）
+ * @param caravan             专供商队：非空表示这条商品只出现在该种商队（凭证游商）的货架上，
+ *                            {@code null} 表示所有商队通卖。这是货架划分而不是安全边界——
+ *                            购买事务只认解锁轨道，条目本身也只会出现在对应商队的界面里
+ * @param recyclable          回收站是否收这件商品（可再生物必须 false，见 HANDOFF 5.1）
  */
 public record ShopItemDefinition(
         String id,
@@ -41,7 +47,8 @@ public record ShopItemDefinition(
         ShopPurchaseLimitPeriod purchaseLimitPeriod,
         int purchaseLimitCount,
         ShopExtraGate extraGate,
-        boolean recyclable
+        boolean recyclable,
+        @Nullable CaravanType caravan
 ) {
 
     public ShopItemDefinition {

@@ -87,18 +87,22 @@ public final class MerchantShopGui {
     /**
      * 打开商店。<b>假定调用者已经在 async 线程上</b>（见类文档线程模型一节）。
      *
-     * @param island 玩家所在的岛屿（调用方已经解析过，不重复查一次）
-     * @param origin 这个游商的来源，决定货架范围
+     * @param island  玩家所在的岛屿（调用方已经解析过，不重复查一次）
+     * @param origin  这个游商的来源，决定货架范围
+     * @param caravan 这个游商所属的商队，决定专供商品（{@code shop.toml} 的 caravan 字段）；
+     *                {@code null}（老实体 PDC 缺失等）时保守起见只展示通卖商品
      */
     public static void openFromAsync(@NotNull Player player, @NotNull Island island,
-                                     @NotNull MerchantOrigin origin, int page) {
+                                     @NotNull MerchantOrigin origin,
+                                     @org.jetbrains.annotations.Nullable fr.euphyllia.skylliatrader.merchant.CaravanType caravan,
+                                     int page) {
         SkylliaTrader plugin = SkylliaTrader.getInstance();
         if (plugin == null) return;
         try {
             TraderIslandData data = plugin.getDataService().load(island);
             long islandLevel = IslandLevelBridge.isAvailable() ? IslandLevelBridge.getIslandLevel(island) : 0L;
             TrackTiers tiers = TraderConfigLoader.config.getTrackTiers();
-            List<ShopEntry> entries = buildEntries(origin, data, islandLevel, tiers);
+            List<ShopEntry> entries = buildEntries(origin, caravan, data, islandLevel, tiers);
 
             player.getScheduler().run(plugin, t -> render(player, island, origin, entries, page), null);
         } catch (Throwable t) {
@@ -113,14 +117,16 @@ public final class MerchantShopGui {
     // 构建货架条目
     // ══════════════════════════════════════════════════════════════════════
 
-    private static List<ShopEntry> buildEntries(MerchantOrigin origin, TraderIslandData data,
+    private static List<ShopEntry> buildEntries(MerchantOrigin origin,
+                                                 fr.euphyllia.skylliatrader.merchant.CaravanType caravan,
+                                                 TraderIslandData data,
                                                  long islandLevel, TrackTiers tiers) {
         List<ShopEntry> entries = new ArrayList<>();
 
         if (origin == MerchantOrigin.NATURAL) {
             // 路人商人：固定基础池，没有锁定预告这回事。
             for (ShopItemDefinition item : ShopConfigLoader.config.getItems()) {
-                if (item.naturalVisible()) {
+                if (item.naturalVisible() && matchesCaravan(item, caravan)) {
                     entries.add(buildUnlockedEntry(item, data, tiers, islandLevel));
                 }
             }
@@ -133,6 +139,7 @@ public final class MerchantShopGui {
 
         // 凭证游商：四轨全开，按三态展示（已解锁/预告下一档/隐藏）。
         for (ShopItemDefinition item : ShopConfigLoader.config.getItems()) {
+            if (!matchesCaravan(item, caravan)) continue; // 专供其他商队的商品，这个货架不摆
             ShopVisibility.State state = ShopVisibility.classify(item, data, islandLevel, tiers);
             switch (state) {
                 case UNLOCKED -> entries.add(buildUnlockedEntry(item, data, tiers, islandLevel));
@@ -143,6 +150,15 @@ public final class MerchantShopGui {
         // 说明书只在路人商人货架上出现（MerchantOfferScope.credential().guidebook() == false），
         // 凭证游商不额外卖——它是新手引导道具，凭证游商的玩家早就不需要这本书了。
         return entries;
+    }
+
+    /**
+     * 商品是否该出现在这个商队的货架上：没写 caravan 的通卖；写了的只在同种商队出现。
+     * 游商实体 PDC 里读不出商队（老实体/异常数据）时保守处理，只给通卖商品。
+     */
+    private static boolean matchesCaravan(ShopItemDefinition item,
+                                          fr.euphyllia.skylliatrader.merchant.CaravanType caravan) {
+        return item.caravan() == null || item.caravan() == caravan;
     }
 
     private static ShopEntry buildUnlockedEntry(ShopItemDefinition item, TraderIslandData data,

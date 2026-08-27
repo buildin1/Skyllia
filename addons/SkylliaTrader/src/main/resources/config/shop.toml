@@ -23,6 +23,9 @@
 #                        unlock-track/unlock-tier 之外，还要求岛屿等级 ≥45（硬编码在
 #                        ShopPurchaseService 里，见 HANDOFF.md 9.3 的 T6 双轨门槛）。
 #                        其余商品不填这个字段（单轨判定）。
+# caravan                可选。专供商队：OVERWORLD / NETHER / END。写了就只出现在该种商队
+#                        （凭证游商）的货架上，留空 = 所有商队通卖。这是货架划分不是安全
+#                        边界——解锁与限购判定照常走 unlock-track 等字段。
 #
 # ⚠️ 钻石（id = "diamond"）的 purchase-limit-count 只是文档占位值：真实限购数字按岛屿等级
 #    动态决定（<20 级=1，20-29 级=3，≥30 级=10），运行时由代码按 Material.DIAMOND 特判覆盖，
@@ -131,6 +134,30 @@ id = "melon_seeds"
 material = "MELON_SEEDS"
 recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
 display-name = "<white>西瓜种子"
+price = 1.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 0
+natural-visible = true
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "sweet_berries"
+material = "SWEET_BERRIES"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+display-name = "<white>甜浆果"
+price = 1.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 0
+natural-visible = true
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "glow_berries"
+material = "GLOW_BERRIES"
+recyclable = false   # 可再生：农场可无限量产，回收会变成印钞口（HANDOFF 5.1）
+display-name = "<white>发光浆果"
 price = 1.0
 unlock-track = "TRADE_COUNT"
 unlock-tier = 0
@@ -840,6 +867,118 @@ natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
 
+# 珊瑚块/珊瑚扇：和珊瑚同档（2026-08 玩家建议——建筑用途，珊瑚不可再生、无回收风险）
+
+[[shop-item]]
+id = "tube_coral_block"
+material = "TUBE_CORAL_BLOCK"
+display-name = "<white>管珊瑚块"
+price = 4.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 50
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "brain_coral_block"
+material = "BRAIN_CORAL_BLOCK"
+display-name = "<white>脑纹珊瑚块"
+price = 4.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 50
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "bubble_coral_block"
+material = "BUBBLE_CORAL_BLOCK"
+display-name = "<white>气泡珊瑚块"
+price = 4.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 50
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "fire_coral_block"
+material = "FIRE_CORAL_BLOCK"
+display-name = "<white>火珊瑚块"
+price = 4.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 50
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "horn_coral_block"
+material = "HORN_CORAL_BLOCK"
+display-name = "<white>鹿角珊瑚块"
+price = 4.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 50
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "tube_coral_fan"
+material = "TUBE_CORAL_FAN"
+display-name = "<white>管珊瑚扇"
+price = 3.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 50
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "brain_coral_fan"
+material = "BRAIN_CORAL_FAN"
+display-name = "<white>脑纹珊瑚扇"
+price = 3.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 50
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "bubble_coral_fan"
+material = "BUBBLE_CORAL_FAN"
+display-name = "<white>气泡珊瑚扇"
+price = 3.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 50
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "fire_coral_fan"
+material = "FIRE_CORAL_FAN"
+display-name = "<white>火珊瑚扇"
+price = 3.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 50
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "horn_coral_fan"
+material = "HORN_CORAL_FAN"
+display-name = "<white>鹿角珊瑚扇"
+price = 3.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 50
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
 [[shop-item]]
 id = "ice"
 material = "ICE"
@@ -1082,6 +1221,444 @@ natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
 
+# 朱砂/硫磺（26.x 新建材）：原在 15 级档，2026-08 玩家建议按安山岩口径归入建筑基础档（5 级），
+# 并补上烈性硫磺——它也是硫磺系建材，只是带爆炸特性所以定价略高。
+
+[[shop-item]]
+id = "cinnabar"
+material = "CINNABAR"
+display-name = "<white>朱砂"
+price = 3.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 5
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "sulfur"
+material = "SULFUR"
+display-name = "<white>硫磺"
+price = 3.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 5
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "potent_sulfur"
+material = "POTENT_SULFUR"
+display-name = "<white>烈性硫磺"
+price = 5.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 5
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+# ─────────────────────────────────────────────────────────────────────────
+# 岛屿等级轨 · 5 级 · 主世界商队专供（caravan = OVERWORLD，2026-08 玩家建议）
+# 17 色陶瓦 + 16 色混凝土。都能用黏土/沙砾自合成，定价 4 只是省事费；
+# 回收 40% = 1.6 金币低于自合成成本，不构成印钞口，保持 recyclable 默认。
+# ─────────────────────────────────────────────────────────────────────────
+
+[[shop-item]]
+id = "terracotta"
+material = "TERRACOTTA"
+display-name = "<white>陶瓦"
+price = 4.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 5
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
+
+[[shop-item]]
+id = "white_terracotta"
+material = "WHITE_TERRACOTTA"
+display-name = "<white>白色陶瓦"
+price = 4.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 5
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
+
+[[shop-item]]
+id = "light_gray_terracotta"
+material = "LIGHT_GRAY_TERRACOTTA"
+display-name = "<white>淡灰色陶瓦"
+price = 4.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 5
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
+
+[[shop-item]]
+id = "gray_terracotta"
+material = "GRAY_TERRACOTTA"
+display-name = "<white>灰色陶瓦"
+price = 4.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 5
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
+
+[[shop-item]]
+id = "black_terracotta"
+material = "BLACK_TERRACOTTA"
+display-name = "<white>黑色陶瓦"
+price = 4.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 5
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
+
+[[shop-item]]
+id = "brown_terracotta"
+material = "BROWN_TERRACOTTA"
+display-name = "<white>棕色陶瓦"
+price = 4.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 5
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
+
+[[shop-item]]
+id = "red_terracotta"
+material = "RED_TERRACOTTA"
+display-name = "<white>红色陶瓦"
+price = 4.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 5
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
+
+[[shop-item]]
+id = "orange_terracotta"
+material = "ORANGE_TERRACOTTA"
+display-name = "<white>橙色陶瓦"
+price = 4.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 5
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
+
+[[shop-item]]
+id = "yellow_terracotta"
+material = "YELLOW_TERRACOTTA"
+display-name = "<white>黄色陶瓦"
+price = 4.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 5
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
+
+[[shop-item]]
+id = "lime_terracotta"
+material = "LIME_TERRACOTTA"
+display-name = "<white>黄绿色陶瓦"
+price = 4.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 5
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
+
+[[shop-item]]
+id = "green_terracotta"
+material = "GREEN_TERRACOTTA"
+display-name = "<white>绿色陶瓦"
+price = 4.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 5
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
+
+[[shop-item]]
+id = "cyan_terracotta"
+material = "CYAN_TERRACOTTA"
+display-name = "<white>青色陶瓦"
+price = 4.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 5
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
+
+[[shop-item]]
+id = "light_blue_terracotta"
+material = "LIGHT_BLUE_TERRACOTTA"
+display-name = "<white>淡蓝色陶瓦"
+price = 4.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 5
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
+
+[[shop-item]]
+id = "blue_terracotta"
+material = "BLUE_TERRACOTTA"
+display-name = "<white>蓝色陶瓦"
+price = 4.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 5
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
+
+[[shop-item]]
+id = "purple_terracotta"
+material = "PURPLE_TERRACOTTA"
+display-name = "<white>紫色陶瓦"
+price = 4.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 5
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
+
+[[shop-item]]
+id = "magenta_terracotta"
+material = "MAGENTA_TERRACOTTA"
+display-name = "<white>品红色陶瓦"
+price = 4.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 5
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
+
+[[shop-item]]
+id = "pink_terracotta"
+material = "PINK_TERRACOTTA"
+display-name = "<white>粉红色陶瓦"
+price = 4.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 5
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
+
+[[shop-item]]
+id = "white_concrete"
+material = "WHITE_CONCRETE"
+display-name = "<white>白色混凝土"
+price = 4.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 5
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
+
+[[shop-item]]
+id = "light_gray_concrete"
+material = "LIGHT_GRAY_CONCRETE"
+display-name = "<white>淡灰色混凝土"
+price = 4.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 5
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
+
+[[shop-item]]
+id = "gray_concrete"
+material = "GRAY_CONCRETE"
+display-name = "<white>灰色混凝土"
+price = 4.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 5
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
+
+[[shop-item]]
+id = "black_concrete"
+material = "BLACK_CONCRETE"
+display-name = "<white>黑色混凝土"
+price = 4.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 5
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
+
+[[shop-item]]
+id = "brown_concrete"
+material = "BROWN_CONCRETE"
+display-name = "<white>棕色混凝土"
+price = 4.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 5
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
+
+[[shop-item]]
+id = "red_concrete"
+material = "RED_CONCRETE"
+display-name = "<white>红色混凝土"
+price = 4.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 5
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
+
+[[shop-item]]
+id = "orange_concrete"
+material = "ORANGE_CONCRETE"
+display-name = "<white>橙色混凝土"
+price = 4.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 5
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
+
+[[shop-item]]
+id = "yellow_concrete"
+material = "YELLOW_CONCRETE"
+display-name = "<white>黄色混凝土"
+price = 4.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 5
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
+
+[[shop-item]]
+id = "lime_concrete"
+material = "LIME_CONCRETE"
+display-name = "<white>黄绿色混凝土"
+price = 4.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 5
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
+
+[[shop-item]]
+id = "green_concrete"
+material = "GREEN_CONCRETE"
+display-name = "<white>绿色混凝土"
+price = 4.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 5
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
+
+[[shop-item]]
+id = "cyan_concrete"
+material = "CYAN_CONCRETE"
+display-name = "<white>青色混凝土"
+price = 4.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 5
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
+
+[[shop-item]]
+id = "light_blue_concrete"
+material = "LIGHT_BLUE_CONCRETE"
+display-name = "<white>淡蓝色混凝土"
+price = 4.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 5
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
+
+[[shop-item]]
+id = "blue_concrete"
+material = "BLUE_CONCRETE"
+display-name = "<white>蓝色混凝土"
+price = 4.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 5
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
+
+[[shop-item]]
+id = "purple_concrete"
+material = "PURPLE_CONCRETE"
+display-name = "<white>紫色混凝土"
+price = 4.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 5
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
+
+[[shop-item]]
+id = "magenta_concrete"
+material = "MAGENTA_CONCRETE"
+display-name = "<white>品红色混凝土"
+price = 4.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 5
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
+
+[[shop-item]]
+id = "pink_concrete"
+material = "PINK_CONCRETE"
+display-name = "<white>粉红色混凝土"
+price = 4.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 5
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
+
 # ─────────────────────────────────────────────────────────────────────────
 # 岛屿等级轨 · 10 级
 # ─────────────────────────────────────────────────────────────────────────
@@ -1168,30 +1745,201 @@ purchase-limit-period = "NONE"
 purchase-limit-count = 0
 
 # ─────────────────────────────────────────────────────────────────────────
-# 岛屿等级轨 · 15 级（26.x 新建材，主推）
+# 岛屿等级轨 · 10 级 · 主世界商队专供（caravan = OVERWORLD，2026-08 玩家建议）
+# 16 色带釉陶瓦：比染色陶瓦多一道烧炼工序，档位和定价都略高一档。
 # ─────────────────────────────────────────────────────────────────────────
 
 [[shop-item]]
-id = "cinnabar"
-material = "CINNABAR"
-display-name = "<white>朱砂"
-price = 3.0
+id = "white_glazed_terracotta"
+material = "WHITE_GLAZED_TERRACOTTA"
+display-name = "<white>白色带釉陶瓦"
+price = 6.0
 unlock-track = "ISLAND_LEVEL"
-unlock-tier = 15
+unlock-tier = 10
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
-id = "sulfur"
-material = "SULFUR"
-display-name = "<white>硫磺"
-price = 3.0
+id = "light_gray_glazed_terracotta"
+material = "LIGHT_GRAY_GLAZED_TERRACOTTA"
+display-name = "<white>淡灰色带釉陶瓦"
+price = 6.0
 unlock-track = "ISLAND_LEVEL"
-unlock-tier = 15
+unlock-tier = 10
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
+
+[[shop-item]]
+id = "gray_glazed_terracotta"
+material = "GRAY_GLAZED_TERRACOTTA"
+display-name = "<white>灰色带釉陶瓦"
+price = 6.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 10
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
+
+[[shop-item]]
+id = "black_glazed_terracotta"
+material = "BLACK_GLAZED_TERRACOTTA"
+display-name = "<white>黑色带釉陶瓦"
+price = 6.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 10
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
+
+[[shop-item]]
+id = "brown_glazed_terracotta"
+material = "BROWN_GLAZED_TERRACOTTA"
+display-name = "<white>棕色带釉陶瓦"
+price = 6.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 10
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
+
+[[shop-item]]
+id = "red_glazed_terracotta"
+material = "RED_GLAZED_TERRACOTTA"
+display-name = "<white>红色带釉陶瓦"
+price = 6.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 10
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
+
+[[shop-item]]
+id = "orange_glazed_terracotta"
+material = "ORANGE_GLAZED_TERRACOTTA"
+display-name = "<white>橙色带釉陶瓦"
+price = 6.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 10
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
+
+[[shop-item]]
+id = "yellow_glazed_terracotta"
+material = "YELLOW_GLAZED_TERRACOTTA"
+display-name = "<white>黄色带釉陶瓦"
+price = 6.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 10
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
+
+[[shop-item]]
+id = "lime_glazed_terracotta"
+material = "LIME_GLAZED_TERRACOTTA"
+display-name = "<white>黄绿色带釉陶瓦"
+price = 6.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 10
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
+
+[[shop-item]]
+id = "green_glazed_terracotta"
+material = "GREEN_GLAZED_TERRACOTTA"
+display-name = "<white>绿色带釉陶瓦"
+price = 6.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 10
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
+
+[[shop-item]]
+id = "cyan_glazed_terracotta"
+material = "CYAN_GLAZED_TERRACOTTA"
+display-name = "<white>青色带釉陶瓦"
+price = 6.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 10
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
+
+[[shop-item]]
+id = "light_blue_glazed_terracotta"
+material = "LIGHT_BLUE_GLAZED_TERRACOTTA"
+display-name = "<white>淡蓝色带釉陶瓦"
+price = 6.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 10
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
+
+[[shop-item]]
+id = "blue_glazed_terracotta"
+material = "BLUE_GLAZED_TERRACOTTA"
+display-name = "<white>蓝色带釉陶瓦"
+price = 6.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 10
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
+
+[[shop-item]]
+id = "purple_glazed_terracotta"
+material = "PURPLE_GLAZED_TERRACOTTA"
+display-name = "<white>紫色带釉陶瓦"
+price = 6.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 10
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
+
+[[shop-item]]
+id = "magenta_glazed_terracotta"
+material = "MAGENTA_GLAZED_TERRACOTTA"
+display-name = "<white>品红色带釉陶瓦"
+price = 6.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 10
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
+
+[[shop-item]]
+id = "pink_glazed_terracotta"
+material = "PINK_GLAZED_TERRACOTTA"
+display-name = "<white>粉红色带釉陶瓦"
+price = 6.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 10
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 # ─────────────────────────────────────────────────────────────────────────
 # 岛屿等级轨 · 20 级
@@ -1531,6 +2279,207 @@ unlock-tier = 1500
 natural-visible = false
 purchase-limit-period = "LIFETIME"
 purchase-limit-count = 1
+
+# 盔甲纹饰锻造模板（18 种）：和下界合金升级模板同在声望 1500 档（2026-08 玩家建议）。
+# 纯装饰用途、无属性收益，定价压低（200）且不限购——玩家攒声望不容易，别再用价格卡装饰品。
+
+[[shop-item]]
+id = "sentry_armor_trim"
+material = "SENTRY_ARMOR_TRIM_SMITHING_TEMPLATE"
+display-name = "<white>锻造模板·哨兵"
+price = 200.0
+unlock-track = "REPUTATION"
+unlock-tier = 1500
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "vex_armor_trim"
+material = "VEX_ARMOR_TRIM_SMITHING_TEMPLATE"
+display-name = "<white>锻造模板·恼鬼"
+price = 200.0
+unlock-track = "REPUTATION"
+unlock-tier = 1500
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "wild_armor_trim"
+material = "WILD_ARMOR_TRIM_SMITHING_TEMPLATE"
+display-name = "<white>锻造模板·荒野"
+price = 200.0
+unlock-track = "REPUTATION"
+unlock-tier = 1500
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "coast_armor_trim"
+material = "COAST_ARMOR_TRIM_SMITHING_TEMPLATE"
+display-name = "<white>锻造模板·海岸"
+price = 200.0
+unlock-track = "REPUTATION"
+unlock-tier = 1500
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "dune_armor_trim"
+material = "DUNE_ARMOR_TRIM_SMITHING_TEMPLATE"
+display-name = "<white>锻造模板·沙丘"
+price = 200.0
+unlock-track = "REPUTATION"
+unlock-tier = 1500
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "wayfinder_armor_trim"
+material = "WAYFINDER_ARMOR_TRIM_SMITHING_TEMPLATE"
+display-name = "<white>锻造模板·向导"
+price = 200.0
+unlock-track = "REPUTATION"
+unlock-tier = 1500
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "raiser_armor_trim"
+material = "RAISER_ARMOR_TRIM_SMITHING_TEMPLATE"
+display-name = "<white>锻造模板·召唤"
+price = 200.0
+unlock-track = "REPUTATION"
+unlock-tier = 1500
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "shaper_armor_trim"
+material = "SHAPER_ARMOR_TRIM_SMITHING_TEMPLATE"
+display-name = "<white>锻造模板·塑造"
+price = 200.0
+unlock-track = "REPUTATION"
+unlock-tier = 1500
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "host_armor_trim"
+material = "HOST_ARMOR_TRIM_SMITHING_TEMPLATE"
+display-name = "<white>锻造模板·宿主"
+price = 200.0
+unlock-track = "REPUTATION"
+unlock-tier = 1500
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "ward_armor_trim"
+material = "WARD_ARMOR_TRIM_SMITHING_TEMPLATE"
+display-name = "<white>锻造模板·监守"
+price = 200.0
+unlock-track = "REPUTATION"
+unlock-tier = 1500
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "silence_armor_trim"
+material = "SILENCE_ARMOR_TRIM_SMITHING_TEMPLATE"
+display-name = "<white>锻造模板·肃静"
+price = 200.0
+unlock-track = "REPUTATION"
+unlock-tier = 1500
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "tide_armor_trim"
+material = "TIDE_ARMOR_TRIM_SMITHING_TEMPLATE"
+display-name = "<white>锻造模板·潮汐"
+price = 200.0
+unlock-track = "REPUTATION"
+unlock-tier = 1500
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "snout_armor_trim"
+material = "SNOUT_ARMOR_TRIM_SMITHING_TEMPLATE"
+display-name = "<white>锻造模板·猪鼻"
+price = 200.0
+unlock-track = "REPUTATION"
+unlock-tier = 1500
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "rib_armor_trim"
+material = "RIB_ARMOR_TRIM_SMITHING_TEMPLATE"
+display-name = "<white>锻造模板·肋骨"
+price = 200.0
+unlock-track = "REPUTATION"
+unlock-tier = 1500
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "eye_armor_trim"
+material = "EYE_ARMOR_TRIM_SMITHING_TEMPLATE"
+display-name = "<white>锻造模板·眼眸"
+price = 200.0
+unlock-track = "REPUTATION"
+unlock-tier = 1500
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "spire_armor_trim"
+material = "SPIRE_ARMOR_TRIM_SMITHING_TEMPLATE"
+display-name = "<white>锻造模板·尖塔"
+price = 200.0
+unlock-track = "REPUTATION"
+unlock-tier = 1500
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "flow_armor_trim"
+material = "FLOW_ARMOR_TRIM_SMITHING_TEMPLATE"
+display-name = "<white>锻造模板·涡流"
+price = 200.0
+unlock-track = "REPUTATION"
+unlock-tier = 1500
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+
+[[shop-item]]
+id = "bolt_armor_trim"
+material = "BOLT_ARMOR_TRIM_SMITHING_TEMPLATE"
+display-name = "<white>锻造模板·闪电"
+price = 200.0
+unlock-track = "REPUTATION"
+unlock-tier = 1500
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
 
 [[shop-item]]
 id = "ancient_debris"
