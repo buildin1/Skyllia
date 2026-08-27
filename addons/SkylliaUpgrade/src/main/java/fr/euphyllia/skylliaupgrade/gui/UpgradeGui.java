@@ -81,7 +81,11 @@ public final class UpgradeGui {
         inv.setItem(13, GuiItem.of(Material.KNOWLEDGE_BOOK,
                 "<!italic><aqua>📊 计分表",
                 List.of("<dark_gray>─────────", "<gray>查看逐材料计分明细</gray>")));
-        holder.bind(13, e -> ScoreDetailGui.open(player));
+        // 从这里进计分表要能原路返回（2026-08 玩家反馈：子菜单没有返回上一层）
+        holder.bind(13, e -> ScoreDetailGui.open(player, 0, () -> open(player)));
+
+        inv.setItem(21, GuiItem.back());
+        holder.bind(21, e -> fr.euphyllia.skyllia.gui.ExtensionGui.open(player, 0));
 
         inv.setItem(22, GuiItem.close());
         holder.bind(22, e -> player.closeInventory());

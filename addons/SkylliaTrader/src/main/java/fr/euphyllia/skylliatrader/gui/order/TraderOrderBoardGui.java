@@ -13,6 +13,7 @@ import fr.euphyllia.skylliatrader.configuration.model.OrderType;
 import fr.euphyllia.skylliatrader.data.OrderSlotState;
 import fr.euphyllia.skylliatrader.data.TraderIslandData;
 import fr.euphyllia.skylliatrader.gui.GuiFormat;
+import fr.euphyllia.skylliatrader.gui.TraderProgressGui;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
@@ -197,6 +198,11 @@ public final class TraderOrderBoardGui {
                         "<gray>额度按 24 小时滚动窗口恢复，不是零点重置</gray>",
                         "<gray>额度用尽时提交会被<white>拒绝</white>，材料原样退还</gray>",
                         "<gray>声望只能通过完成订单获得，不会衰减</gray>")));
+
+        // 返回游商进度指南——它是这个看板在菜单树里的上一层；用命令直接打开看板的玩家
+        // 点返回也会落到进度指南，作为游商功能的枢纽页这是合理的去处
+        inv.setItem(47, GuiItem.back());
+        holder.bind(47, e -> TraderProgressGui.open(player));
 
         inv.setItem(GuiPageLayout.SLOT_CLOSE, GuiItem.close());
         holder.bind(GuiPageLayout.SLOT_CLOSE, e -> player.closeInventory());

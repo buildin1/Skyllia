@@ -145,6 +145,15 @@ public class ChallengeLevelGui {
             // 展示型图标，无交互（与原实现一致）
         }
 
+        // 返回挑战主界面（底部中央；等级图标的位置是配置自定义的，被占用就不放，
+        // 绝不覆盖配置摆好的图标）
+        int backSlot = (gs.rows - 1) * 9 + 4;
+        if (gui.getItem(backSlot) == null) {
+            gui.setItem(backSlot, fr.euphyllia.skyllia.gui.GuiItem.back());
+            holder.bind(backSlot, e ->
+                    Bukkit.getAsyncScheduler().runNow(plugin, task -> plugin.getChallengeManager().openGui(player)));
+        }
+
         player.getScheduler().run(plugin, task -> player.openInventory(gui), null);
     }
 

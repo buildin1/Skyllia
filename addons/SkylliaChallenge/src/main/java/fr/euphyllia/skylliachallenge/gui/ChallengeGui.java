@@ -488,8 +488,11 @@ public class ChallengeGui {
             gui.setItem(slot(NAV_ROW, COL_NEXT), emptyPane());
         }
 
-        // ── 空白槽（列2和列8）──
-        gui.setItem(slot(NAV_ROW, 2), emptyPane());
+        // ── 列2：返回主菜单第 2 页（2026-08 玩家反馈：子菜单没有返回上一层，
+        //    想换个功能得整个退出重开）；列8 保持空白 ──
+        int backSlot = slot(NAV_ROW, 2);
+        gui.setItem(backSlot, fr.euphyllia.skyllia.gui.GuiItem.back());
+        holder.bind(backSlot, e -> fr.euphyllia.skyllia.gui.ExtensionGui.open(player, 0));
         gui.setItem(slot(NAV_ROW, 8), emptyPane());
 
         int highestUnlockedLevel = 1;

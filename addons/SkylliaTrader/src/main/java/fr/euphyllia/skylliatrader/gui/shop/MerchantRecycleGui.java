@@ -188,6 +188,10 @@ public final class MerchantRecycleGui {
                         "<yellow>Shift+左键</yellow><gray> 回收 x5（不足 5 个就卖背包里实际的数量）</gray>",
                         "<yellow>右键</yellow><gray> 回收背包里这个材质的全部数量</gray>")));
 
+        // 返回游商进度指南（它是回收站在菜单树里的上一层，命令直开的玩家也落到这个枢纽页）
+        inv.setItem(47, GuiItem.back());
+        holder.bind(47, e -> fr.euphyllia.skylliatrader.gui.TraderProgressGui.open(player));
+
         inv.setItem(GuiPageLayout.SLOT_CLOSE, GuiItem.close());
         holder.bind(GuiPageLayout.SLOT_CLOSE, e -> player.closeInventory());
 

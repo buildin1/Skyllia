@@ -39,6 +39,16 @@ public final class ScoreDetailGui {
     }
 
     public static void open(@NotNull Player player, int page) {
+        open(player, page, null);
+    }
+
+    /**
+     * @param backAction 「返回」按钮的动作；{@code null} 表示没有上一层（命令直接打开时），
+     *                   不显示返回按钮。分页、重新扫描都会把它原样带下去，保证回程不丢。
+     *                   用回调而不是直接引用上一层 GUI：调用方是 SkylliaUpgrade，依赖方向
+     *                   是 Upgrade → IslandValue，这里反向 import 会成环。
+     */
+    public static void open(@NotNull Player player, int page, @org.jetbrains.annotations.Nullable Runnable backAction) {
         Island island = SkylliaAPI.getIslandByPlayerId(player.getUniqueId());
         if (island == null) {
             player.sendMessage(Component.text("§c你还没有空岛。"));
@@ -94,11 +104,11 @@ public final class ScoreDetailGui {
 
         if (clamped > 0) {
             inv.setItem(45, GuiItem.prevPage());
-            holder.bind(45, e -> open(player, clamped - 1));
+            holder.bind(45, e -> open(player, clamped - 1, backAction));
         }
         if (clamped < totalPages - 1) {
             inv.setItem(53, GuiItem.nextPage());
-            holder.bind(53, e -> open(player, clamped + 1));
+            holder.bind(53, e -> open(player, clamped + 1, backAction));
         }
 
         if (!scanning) {
@@ -110,8 +120,13 @@ public final class ScoreDetailGui {
                 if (started) {
                     player.sendMessage(Component.text("§a正在扫描你的空岛..."));
                 }
-                open(player, clamped);
+                open(player, clamped, backAction);
             });
+        }
+
+        if (backAction != null) {
+            inv.setItem(47, GuiItem.back());
+            holder.bind(47, e -> backAction.run());
         }
 
         inv.setItem(49, GuiItem.close());

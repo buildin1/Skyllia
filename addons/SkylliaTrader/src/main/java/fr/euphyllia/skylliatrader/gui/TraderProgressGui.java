@@ -171,6 +171,10 @@ public final class TraderProgressGui {
             });
         });
 
+        // 返回主菜单第 2 页（2026-08 玩家反馈：子菜单没有返回上一层）
+        inv.setItem(48, GuiItem.back());
+        holder.bind(48, e -> fr.euphyllia.skyllia.gui.ExtensionGui.open(player, 0));
+
         inv.setItem(49, GuiItem.close());
         holder.bind(49, e -> player.closeInventory());
 
