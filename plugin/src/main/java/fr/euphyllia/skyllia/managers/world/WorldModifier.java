@@ -122,8 +122,10 @@ public class WorldModifier {
         CompletableFuture<Boolean> future = new CompletableFuture<>();
         world.getChunkAtAsync(chunkX, chunkZ).thenAccept(ignored -> {
                     try {
-                        SkylliaAPI.getBiomesImpl().setBiome(world, chunkX, chunkZ, biome);
-                        future.complete(true);
+                        // setBiome 自吞异常、以返回值报告失败——必须检查，否则改失败的区块
+                        // 会被静默当成成功（2026-08 反馈：改成蘑菇岛后部分区块仍刷史莱姆，
+                        // 玩家全程没收到任何失败提示）
+                        future.complete(SkylliaAPI.getBiomesImpl().setBiome(world, chunkX, chunkZ, biome));
                     } catch (Exception e) {
                         future.complete(false);
                     }
@@ -152,7 +154,11 @@ public class WorldModifier {
             biomeScheduler.schedule(() -> {
                 world.getChunkAtAsync(cX, cZ).thenAccept(ignored -> {
                     try {
-                        SkylliaAPI.getBiomesImpl().setBiome(world, cX, cZ, biome);
+                        // setBiome 自吞异常、以返回值报告失败——不检查会把改失败的区块静默当成成功
+                        if (!SkylliaAPI.getBiomesImpl().setBiome(world, cX, cZ, biome)) {
+                            log.warn("整岛改群系：区块 ({}, {}) 修改失败（世界 {}）", cX, cZ, world.getName());
+                            failed.set(true);
+                        }
                     } catch (Exception e) {
                         failed.set(true);
                     } finally {
@@ -200,7 +206,11 @@ public class WorldModifier {
             biomeScheduler.schedule(() -> {
                 world.getChunkAtAsync(cX, cZ).thenAccept(ignored -> {
                     try {
-                        SkylliaAPI.getBiomesImpl().setBiome(world, cX, cZ, biome);
+                        // setBiome 自吞异常、以返回值报告失败——不检查会把改失败的区块静默当成成功
+                        if (!SkylliaAPI.getBiomesImpl().setBiome(world, cX, cZ, biome)) {
+                            log.warn("选区改群系：区块 ({}, {}) 修改失败（世界 {}）", cX, cZ, world.getName());
+                            failed.set(true);
+                        }
                     } catch (Exception e) {
                         failed.set(true);
                     } finally {
