@@ -87,6 +87,12 @@ public class WorldNMS extends fr.euphyllia.skyllia.api.utils.nms.WorldNMS {
 
     private static final Logger log = LoggerFactory.getLogger(WorldNMS.class);
 
+    /**
+     * 维度映射前原版三个维度 key 各自对应的世界（原本没有这个维度的记 null），关服前靠它还原。
+     * 见 {@link #restorePortalDimensions()}。
+     */
+    private volatile java.util.Map<ResourceKey<Level>, ServerLevel> levelsBeforeRemap;
+
     @Override
     public WorldFeedback.FeedbackWorld createWorld(WorldCreator creator) {
         return createWorldInternal(creator, null, null);
@@ -467,6 +473,15 @@ public class WorldNMS extends fr.euphyllia.skyllia.api.utils.nms.WorldNMS {
 
             log.info("[Skyllia-维度映射] levels map class={}, size={}", oldLevels.getClass().getName(), oldLevels.size());
 
+            // 只在第一次映射时记下原版维度，重复调用不能把已经映射过的空岛世界当成"原版"存进去。
+            if (levelsBeforeRemap == null) {
+                java.util.Map<ResourceKey<Level>, ServerLevel> snapshot = new java.util.HashMap<>();
+                snapshot.put(Level.OVERWORLD, oldLevels.get(Level.OVERWORLD));
+                snapshot.put(Level.NETHER, oldLevels.get(Level.NETHER));
+                snapshot.put(Level.END, oldLevels.get(Level.END));
+                levelsBeforeRemap = snapshot;
+            }
+
             // 创建可变副本（避免 UnmodifiableMap）
             java.util.Map<ResourceKey<Level>, ServerLevel> newLevels = new java.util.HashMap<>(oldLevels);
 
@@ -557,6 +572,34 @@ public class WorldNMS extends fr.euphyllia.skyllia.api.utils.nms.WorldNMS {
 
         } catch (Exception e) {
             log.error("[Skyllia-维度映射] 失败", e);
+        }
+    }
+
+    @Override
+    public void restorePortalDimensions() {
+        java.util.Map<ResourceKey<Level>, ServerLevel> snapshot = levelsBeforeRemap;
+        if (snapshot == null) return;
+        try {
+            MinecraftServer server = getServer();
+            java.lang.reflect.Field levelsField = MinecraftServer.class.getDeclaredField("levels");
+            levelsField.setAccessible(true);
+            @SuppressWarnings("unchecked")
+            java.util.Map<ResourceKey<Level>, ServerLevel> current =
+                    (java.util.Map<ResourceKey<Level>, ServerLevel>) levelsField.get(server);
+
+            java.util.Map<ResourceKey<Level>, ServerLevel> restored = new java.util.LinkedHashMap<>(current);
+            for (java.util.Map.Entry<ResourceKey<Level>, ServerLevel> entry : snapshot.entrySet()) {
+                if (entry.getValue() == null) {
+                    restored.remove(entry.getKey()); // 原本就没有这个维度（比如关了下界），映射加进来的要删掉
+                } else {
+                    restored.put(entry.getKey(), entry.getValue());
+                }
+            }
+            levelsField.set(server, java.util.Collections.unmodifiableMap(restored));
+            levelsBeforeRemap = null;
+            log.info("[Skyllia-维度映射] 已还原原版维度，关服时每个世界只保存一次（levels size={}）", restored.size());
+        } catch (Exception e) {
+            log.error("[Skyllia-维度映射] 还原失败，关服可能卡在重复保存世界", e);
         }
     }
 

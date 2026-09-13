@@ -120,6 +120,17 @@ public abstract class WorldNMS {
     }
 
     /**
+     * 撤销 {@link #remapPortalDimensions}：把原版三个维度的 key 放回原来的世界。
+     * <p>
+     * 必须在关服前（插件 onDisable）调用。映射会让同一个空岛世界在 {@code MinecraftServer.levels}
+     * 里挂在两个 key 下，关服线程按 levels 逐个停区块系统、存盘，同一个世界会被存两次，
+     * 第二次时它的 I/O 线程已经停了，关服永远卡住。
+     * </p>
+     */
+    public void restorePortalDimensions() {
+    }
+
+    /**
      * 玩家进入末地门时调用，修改 {@code ServerLevel.END_SPAWN_POINT}
      * 为玩家当前坐标，使后续异步末地门路径使用 1:1 坐标传送。
      * <p>

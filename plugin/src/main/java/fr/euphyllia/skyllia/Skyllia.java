@@ -189,6 +189,12 @@ public class Skyllia extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        // 维度映射让同一个空岛世界在服务端世界表里挂了两次，不还原的话关服会卡在第二次保存世界。
+        // 插件 onDisable 在关服线程停区块系统、存世界之前执行，这里还原来得及。
+        if (this.interneAPI != null && this.interneAPI.getWorldNMS() != null) {
+            this.interneAPI.getWorldNMS().restorePortalDimensions();
+        }
+
         context.shutdown();
         if (bStatsMetrics != null) {
             bStatsMetrics.shutdown();
