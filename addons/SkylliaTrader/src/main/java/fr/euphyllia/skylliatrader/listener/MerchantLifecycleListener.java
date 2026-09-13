@@ -355,8 +355,8 @@ public class MerchantLifecycleListener implements Listener {
                     player.sendMessage(Component.text("§c你在这座岛上没有和游商交易的权限。"));
                     return;
                 }
-                // 商品池按来源筛（自然刷新的只开交易次数轨的基础档 + 说明书，凭证游商四轨全开）
-                // 的过滤逻辑在 MerchantShopGui 内部按 origin 分支处理；商队类型决定专供商品
+                // 商品池按来源筛（自然刷新的只开 natural-visible 基础池 + 说明书，凭证游商四轨全开）
+                // 的过滤逻辑在 MerchantShopGui / ShopSession 里；商队类型决定凭证游商的专供商品
                 // （shop.toml 的 caravan 字段），已在事件线程读好、这里用捕获值。
                 // 已经在 async 线程上了，直接调用不用再跳一次。
                 MerchantShopGui.openFromAsync(player, island, origin, caravanType, 0);

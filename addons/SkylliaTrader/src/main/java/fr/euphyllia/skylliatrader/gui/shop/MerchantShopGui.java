@@ -10,16 +10,19 @@ import fr.euphyllia.skylliatrader.configuration.ShopConfigLoader;
 import fr.euphyllia.skylliatrader.configuration.ShopConfigManager;
 import fr.euphyllia.skylliatrader.configuration.TraderConfigLoader;
 import fr.euphyllia.skylliatrader.configuration.model.GuidebookConfig;
+import fr.euphyllia.skylliatrader.configuration.model.ShopExtraGate;
 import fr.euphyllia.skylliatrader.configuration.model.ShopItemDefinition;
 import fr.euphyllia.skylliatrader.configuration.model.ShopPurchaseLimitPeriod;
 import fr.euphyllia.skylliatrader.configuration.model.TrackTiers;
 import fr.euphyllia.skylliatrader.data.PurchaseCounter;
 import fr.euphyllia.skylliatrader.data.TraderIslandData;
 import fr.euphyllia.skylliatrader.gui.GuiFormat;
+import fr.euphyllia.skylliatrader.merchant.CaravanType;
 import fr.euphyllia.skylliatrader.merchant.MerchantOrigin;
 import fr.euphyllia.skylliatrader.shop.PurchaseMode;
 import fr.euphyllia.skylliatrader.shop.ShopCategory;
 import fr.euphyllia.skylliatrader.shop.ShopEconomics;
+import fr.euphyllia.skylliatrader.shop.ShopSession;
 import fr.euphyllia.skylliatrader.shop.ShopVisibility;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -29,6 +32,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,13 +48,15 @@ import java.util.Map;
  * {@code shop.toml} 的固定配置，价格是配置里的一口价（乘以消费折扣）。
  * </p>
  *
- * <h2>两种来源展示不同的货架</h2>
+ * <h2>不同来源展示不同的货架</h2>
  * <ul>
  *   <li>{@link MerchantOrigin#NATURAL} —— 只展示 {@code natural-visible = true} 的商品
  *       + 说明书，全部正常可点，没有"锁定预告"这回事（路人商人本来就是固定的基础生活池）；</li>
- *   <li>{@link MerchantOrigin#CREDENTIAL} —— 按 {@link ShopVisibility#classify} 三态展示：
- *       已解锁的正常摆出来，紧邻下一档的灰显+lore 提示还差多少，更远的档位直接不出现
- *       （避免一次性甩一整面墙的锁头吓退新人，见 HANDOFF 6.7 的教学价值设计）。</li>
+ *   <li>{@link MerchantOrigin#CREDENTIAL} —— 只摆通卖 + 本商队专供的商品（见 {@link ShopSession#shelves}），
+ *       按 {@link ShopVisibility#classify} 三态展示：已解锁的正常摆出来，紧邻下一档的灰显+lore
+ *       提示还差多少，更远的档位直接不出现（避免一次性甩一整面墙的锁头吓退新人，见 HANDOFF 6.7）；</li>
+ *   <li>管理员测试凭证（{@link ShopSession#adminTest()}）—— 同一个货架范围，但全部商品按已解锁、
+ *       不限购展示，lore 里附上正式环境的解锁条件和限购，方便核对配置。</li>
  * </ul>
  *
  * <h2>已知的简化：GUI 内数据是打开时的快照</h2>
@@ -81,10 +87,15 @@ public final class MerchantShopGui {
     private MerchantShopGui() {
     }
 
-    /** 一条货架条目的展示数据，纯内存快照，见类文档"已知的简化"一节。 */
+    /**
+     * 一条货架条目的展示数据，纯内存快照，见类文档"已知的简化"一节。
+     *
+     * @param adminNotes 测试模式下附在 lore 里的正式环境条件（MiniMessage），普通货架为空
+     */
     private record ShopEntry(String id, Material material, String displayName, boolean locked, String lockHint,
                              double unitPrice, double basePrice, boolean limited, int remaining,
-                             int effectiveLimit, ShopPurchaseLimitPeriod period, ShopCategory category) {
+                             int effectiveLimit, ShopPurchaseLimitPeriod period, ShopCategory category,
+                             List<String> adminNotes) {
     }
 
     /**
@@ -96,8 +107,7 @@ public final class MerchantShopGui {
      *                {@code null}（老实体 PDC 缺失等）时保守起见只展示通卖商品
      */
     public static void openFromAsync(@NotNull Player player, @NotNull Island island,
-                                     @NotNull MerchantOrigin origin,
-                                     @org.jetbrains.annotations.Nullable fr.euphyllia.skylliatrader.merchant.CaravanType caravan,
+                                     @NotNull MerchantOrigin origin, @Nullable CaravanType caravan,
                                      int page) {
         SkylliaTrader plugin = SkylliaTrader.getInstance();
         if (plugin == null) return;
@@ -105,9 +115,10 @@ public final class MerchantShopGui {
             TraderIslandData data = plugin.getDataService().load(island);
             long islandLevel = IslandLevelBridge.isAvailable() ? IslandLevelBridge.getIslandLevel(island) : 0L;
             TrackTiers tiers = TraderConfigLoader.config.getTrackTiers();
-            List<ShopEntry> entries = buildEntries(origin, caravan, data, islandLevel, tiers);
+            ShopSession session = ShopSession.merchant(origin, caravan);
+            List<ShopEntry> entries = buildEntries(session, data, islandLevel, tiers);
 
-            player.getScheduler().run(plugin, t -> renderCategories(player, island, origin, entries), null);
+            player.getScheduler().run(plugin, t -> renderCategories(player, session, entries), null);
         } catch (Throwable t) {
             // 理由同 TraderProgressGui：asyncScheduler 会把异常吞成一段控制台堆栈，
             // 玩家侧「点了没反应」是最难排查的故障，这里必须自己兜底提示。
@@ -116,20 +127,29 @@ public final class MerchantShopGui {
         }
     }
 
+    /**
+     * 管理员测试凭证打开货架：不读岛屿数据、不看岛屿等级，任何线程都可以调用
+     * （只读不可变的配置快照，界面在玩家线程上建）。调用方负责先判管理员权限。
+     */
+    public static void openAdminTest(@NotNull Player player, @NotNull ShopSession session) {
+        SkylliaTrader plugin = SkylliaTrader.getInstance();
+        if (plugin == null) return;
+        List<ShopEntry> entries = buildAdminTestEntries(session);
+        player.getScheduler().run(plugin, t -> renderCategories(player, session, entries), null);
+    }
+
     // ══════════════════════════════════════════════════════════════════════
     // 构建货架条目
     // ══════════════════════════════════════════════════════════════════════
 
-    private static List<ShopEntry> buildEntries(MerchantOrigin origin,
-                                                 fr.euphyllia.skylliatrader.merchant.CaravanType caravan,
-                                                 TraderIslandData data,
-                                                 long islandLevel, TrackTiers tiers) {
+    private static List<ShopEntry> buildEntries(ShopSession session, TraderIslandData data,
+                                                long islandLevel, TrackTiers tiers) {
         List<ShopEntry> entries = new ArrayList<>();
 
-        if (origin == MerchantOrigin.NATURAL) {
+        if (session.origin() == MerchantOrigin.NATURAL) {
             // 路人商人：固定基础池，没有锁定预告这回事。
             for (ShopItemDefinition item : ShopConfigLoader.config.getItems()) {
-                if (item.naturalVisible() && matchesCaravan(item, caravan)) {
+                if (session.shelves(item)) {
                     entries.add(buildUnlockedEntry(item, data, tiers, islandLevel));
                 }
             }
@@ -142,7 +162,7 @@ public final class MerchantShopGui {
 
         // 凭证游商：四轨全开，按三态展示（已解锁/预告下一档/隐藏）。
         for (ShopItemDefinition item : ShopConfigLoader.config.getItems()) {
-            if (!matchesCaravan(item, caravan)) continue; // 专供其他商队的商品，这个货架不摆
+            if (!session.shelves(item)) continue; // 专供其他商队的商品，这个货架不摆
             ShopVisibility.State state = ShopVisibility.classify(item, data, islandLevel, tiers);
             switch (state) {
                 case UNLOCKED -> entries.add(buildUnlockedEntry(item, data, tiers, islandLevel));
@@ -155,17 +175,49 @@ public final class MerchantShopGui {
         return entries;
     }
 
-    /**
-     * 商品是否该出现在这个商队的货架上：没写 caravan 的通卖；写了的只在同种商队出现。
-     * 游商实体 PDC 里读不出商队（老实体/异常数据）时保守处理，只给通卖商品。
-     */
-    private static boolean matchesCaravan(ShopItemDefinition item,
-                                          fr.euphyllia.skylliatrader.merchant.CaravanType caravan) {
-        return item.caravan() == null || item.caravan() == caravan;
+    /** 测试货架：同样的货架范围，全部按原价、已解锁、不限购摆出来。 */
+    private static List<ShopEntry> buildAdminTestEntries(ShopSession session) {
+        List<ShopEntry> entries = new ArrayList<>();
+        for (ShopItemDefinition item : ShopConfigLoader.config.getItems()) {
+            if (!session.shelves(item)) continue;
+            entries.add(new ShopEntry(item.id(), item.material(), item.displayName(), false, null,
+                    item.price(), item.price(), false, 0, 0, ShopPurchaseLimitPeriod.NONE,
+                    ShopCategory.of(item.material()), describeRealGate(item)));
+        }
+        if (session.origin() == MerchantOrigin.NATURAL) {
+            GuidebookConfig guide = TraderConfigLoader.config.getGuidebook();
+            if (guide != null) {
+                String status = guide.enabled()
+                        ? "正式限购：" + (guide.purchaseLimit() > 0 ? "终身 " + guide.purchaseLimit() : "不限购")
+                        : "正式环境：说明书当前未开放（guidebook.enabled = false）";
+                entries.add(new ShopEntry(ShopConfigManager.GUIDEBOOK_RESERVED_ID, guide.material(),
+                        "游商指南（说明书）", false, null, guide.price(), guide.price(), false, 0, 0,
+                        ShopPurchaseLimitPeriod.NONE, ShopCategory.OTHER, List.of(status)));
+            }
+        }
+        return entries;
+    }
+
+    /** 测试模式 lore：正式环境里这件商品的解锁条件和限购。只用 MiniMessage 能安全吃下的纯文本。 */
+    private static List<String> describeRealGate(ShopItemDefinition item) {
+        List<String> notes = new ArrayList<>();
+        String unlock = "正式解锁：" + ShopVisibility.trackLabel(item.unlockTrack()) + " ≥ " + item.unlockTier();
+        if (item.extraGate() == ShopExtraGate.NETHERITE_INGOT_DUAL) {
+            unlock += " 且岛屿等级 ≥ " + ShopVisibility.NETHERITE_MIN_ISLAND_LEVEL;
+        }
+        notes.add(unlock);
+        if (item.purchaseLimitPeriod().limited()) {
+            String count = item.material() == Material.DIAMOND
+                    ? "按岛屿等级动态" : String.valueOf(item.purchaseLimitCount());
+            notes.add("正式限购：" + periodLabel(item.purchaseLimitPeriod()) + " " + count);
+        } else {
+            notes.add("正式限购：不限购");
+        }
+        return notes;
     }
 
     private static ShopEntry buildUnlockedEntry(ShopItemDefinition item, TraderIslandData data,
-                                                 TrackTiers tiers, long islandLevel) {
+                                                TrackTiers tiers, long islandLevel) {
         double discount = ShopEconomics.discountRate(data.totalSpent, tiers.spending());
         double unitPrice = ShopEconomics.discountedUnitPrice(item.price(), discount);
 
@@ -183,7 +235,7 @@ public final class MerchantShopGui {
 
         return new ShopEntry(item.id(), item.material(), item.displayName(), false, null,
                 unitPrice, item.price(), limited, remaining, effectiveLimit, item.purchaseLimitPeriod(),
-                ShopCategory.of(item.material()));
+                ShopCategory.of(item.material()), List.of());
     }
 
     private static ShopEntry buildPreviewEntry(ShopItemDefinition item, TraderIslandData data, long islandLevel) {
@@ -198,7 +250,7 @@ public final class MerchantShopGui {
                 + ShopVisibility.trackLabel(item.unlockTrack()) + " 解锁</gray>";
         return new ShopEntry(item.id(), item.material(), item.displayName(), true, hint,
                 0, item.price(), false, 0, 0, item.purchaseLimitPeriod(),
-                ShopCategory.of(item.material()));
+                ShopCategory.of(item.material()), List.of());
     }
 
     private static ShopEntry buildGuidebookEntry(GuidebookConfig guide, TraderIslandData data) {
@@ -217,7 +269,7 @@ public final class MerchantShopGui {
         }
         return new ShopEntry(ShopConfigManager.GUIDEBOOK_RESERVED_ID, guide.material(), "游商指南（说明书）",
                 false, null, guide.price(), guide.price(), limited, remaining, effectiveLimit, period,
-                ShopCategory.OTHER);
+                ShopCategory.OTHER, List.of());
     }
 
     // ══════════════════════════════════════════════════════════════════════
@@ -226,22 +278,30 @@ public final class MerchantShopGui {
 
     private static final int[] CATEGORY_SLOTS = {20, 21, 22, 23, 24, 30, 31};
 
-    private static void renderCategories(Player player, Island island, MerchantOrigin origin,
-                                         List<ShopEntry> entries) {
+    private static String shelfTitle(ShopSession session) {
+        if (session.adminTest()) return "🧪 测试货架 · " + session.shelfLabel();
+        return session.origin() == MerchantOrigin.NATURAL ? "🛒 游商货架" : "🛒 " + session.shelfLabel() + "货架";
+    }
+
+    private static void renderCategories(Player player, ShopSession session, List<ShopEntry> entries) {
         Map<ShopCategory, Integer> counts = new EnumMap<>(ShopCategory.class);
         for (ShopEntry entry : entries) {
             counts.merge(entry.category(), 1, Integer::sum);
         }
 
         SkylliaGuiHolder holder = new SkylliaGuiHolder(SkylliaGuiHolder.GuiType.EXTENSION);
-        String title = origin == MerchantOrigin.NATURAL ? "🛒 游商货架" : "🛒 商队货架";
-        Inventory inv = Bukkit.createInventory(holder, 54, MM.deserialize("<light_purple>" + title));
+        Inventory inv = Bukkit.createInventory(holder, 54, MM.deserialize("<light_purple>" + shelfTitle(session)));
         GuiPageLayout.fillBorder(inv);
 
-        inv.setItem(GuiPageLayout.SLOT_HEADER, GuiItem.of(Material.CHEST, "<!italic><yellow>选择分类",
-                List.of("<dark_gray>─────────",
-                        "<gray>商品按作物 / 石材 / 花草 / 战利品 / 矿物 / 稀有分开摆</gray>",
-                        "<gray>点进去再买，货架不会再混成一长串</gray>")));
+        List<String> headerLore = new ArrayList<>(List.of("<dark_gray>─────────",
+                "<gray>商品按作物 / 石材 / 花草 / 战利品 / 矿物 / 稀有分开摆</gray>",
+                "<gray>点进去再买，货架不会再混成一长串</gray>"));
+        if (session.adminTest()) {
+            headerLore.add("<dark_gray>─────────");
+            headerLore.add("<gold>测试模式：无视全部解锁条件与限购</gold>");
+            headerLore.add("<gray>按原价扣金币，不写入任何岛屿数据</gray>");
+        }
+        inv.setItem(GuiPageLayout.SLOT_HEADER, GuiItem.of(Material.CHEST, "<!italic><yellow>选择分类", headerLore));
 
         ShopCategory[] categories = ShopCategory.values();
         for (int i = 0; i < categories.length; i++) {
@@ -261,7 +321,7 @@ public final class MerchantShopGui {
             lore.add("<yellow>点击打开</yellow>");
             inv.setItem(slot, GuiItem.of(category.icon(),
                     "<!italic><white>" + category.displayName(), lore));
-            holder.bind(slot, e -> openCategory(player, island, origin, entries, category, 0));
+            holder.bind(slot, e -> openCategory(player, session, entries, category, 0));
         }
 
         inv.setItem(GuiPageLayout.SLOT_CLOSE, GuiItem.close());
@@ -273,14 +333,14 @@ public final class MerchantShopGui {
     // 分类货架
     // ══════════════════════════════════════════════════════════════════════
 
-    private static void render(Player player, Island island, MerchantOrigin origin,
+    private static void render(Player player, ShopSession session,
                                List<ShopEntry> allEntries, ShopCategory category, int page) {
         List<ShopEntry> entries = filterCategory(allEntries, category);
         int totalPages = GuiPageLayout.totalPages(entries.size());
         int clamped = GuiPageLayout.clampPage(page, totalPages);
 
         SkylliaGuiHolder holder = new SkylliaGuiHolder(SkylliaGuiHolder.GuiType.EXTENSION);
-        String title = category.displayName()
+        String title = (session.adminTest() ? "🧪 " : "") + category.displayName()
                 + (totalPages > 1 ? " - 第 " + (clamped + 1) + "/" + totalPages + " 页" : "");
         Inventory inv = Bukkit.createInventory(holder, 54, MM.deserialize("<light_purple>" + title));
 
@@ -298,7 +358,7 @@ public final class MerchantShopGui {
                             : (event.isShiftClick() ? PurchaseMode.QUINTUPLE : PurchaseMode.SINGLE);
                     SkylliaTrader plugin = SkylliaTrader.getInstance();
                     if (plugin == null) return;
-                    plugin.getShopPurchaseService().purchase(player, origin, entry.id(), mode);
+                    plugin.getShopPurchaseService().purchase(player, session, entry.id(), mode);
                 });
             }
         }
@@ -311,12 +371,12 @@ public final class MerchantShopGui {
         if (clamped > 0) {
             inv.setItem(GuiPageLayout.SLOT_PREV_PAGE, GuiItem.prevPage());
             holder.bind(GuiPageLayout.SLOT_PREV_PAGE,
-                    e -> openCategory(player, island, origin, allEntries, category, clamped - 1));
+                    e -> openCategory(player, session, allEntries, category, clamped - 1));
         }
         if (clamped < totalPages - 1) {
             inv.setItem(GuiPageLayout.SLOT_NEXT_PAGE, GuiItem.nextPage());
             holder.bind(GuiPageLayout.SLOT_NEXT_PAGE,
-                    e -> openCategory(player, island, origin, allEntries, category, clamped + 1));
+                    e -> openCategory(player, session, allEntries, category, clamped + 1));
         }
 
         inv.setItem(GuiPageLayout.SLOT_HEADER, GuiItem.of(category.icon(), "<!italic><yellow>" + category.displayName(),
@@ -328,7 +388,7 @@ public final class MerchantShopGui {
                         "<gray>灰色商品表示还没解锁，看 lore 了解还差多少</gray>")));
 
         inv.setItem(47, GuiItem.back());
-        holder.bind(47, e -> openCategories(player, island, origin, allEntries));
+        holder.bind(47, e -> openCategories(player, session, allEntries));
 
         inv.setItem(GuiPageLayout.SLOT_CLOSE, GuiItem.close());
         holder.bind(GuiPageLayout.SLOT_CLOSE, e -> player.closeInventory());
@@ -344,19 +404,18 @@ public final class MerchantShopGui {
         return filtered;
     }
 
-    private static void openCategories(Player player, Island island, MerchantOrigin origin,
-                                       List<ShopEntry> entries) {
+    private static void openCategories(Player player, ShopSession session, List<ShopEntry> entries) {
         SkylliaTrader plugin = SkylliaTrader.getInstance();
         if (plugin == null) return;
-        player.getScheduler().run(plugin, t -> renderCategories(player, island, origin, entries), null);
+        player.getScheduler().run(plugin, t -> renderCategories(player, session, entries), null);
     }
 
     /** 翻页：数据已经在内存里，不重新查库，只需要延迟一 tick 换界面（理由同 TraderOrderListGui）。 */
-    private static void openCategory(Player player, Island island, MerchantOrigin origin,
+    private static void openCategory(Player player, ShopSession session,
                                      List<ShopEntry> entries, ShopCategory category, int page) {
         SkylliaTrader plugin = SkylliaTrader.getInstance();
         if (plugin == null) return;
-        player.getScheduler().run(plugin, t -> render(player, island, origin, entries, category, page), null);
+        player.getScheduler().run(plugin, t -> render(player, session, entries, category, page), null);
     }
 
     private static ItemStack buildItem(ShopEntry entry) {
@@ -377,7 +436,12 @@ public final class MerchantShopGui {
             lore.add("<gray>单价：<white>" + GuiFormat.fmt(entry.unitPrice()) + " 金币</white></gray>");
         }
 
-        if (entry.limited()) {
+        if (!entry.adminNotes().isEmpty()) {
+            lore.add("<gold>测试模式：不限购、不计入岛屿数据</gold>");
+            for (String note : entry.adminNotes()) {
+                lore.add("<dark_gray>" + note + "</dark_gray>");
+            }
+        } else if (entry.limited()) {
             int used = Math.max(0, entry.effectiveLimit() - entry.remaining());
             lore.add("<gray>限购（" + periodLabel(entry.period()) + "）：<white>" + used + "/" + entry.effectiveLimit()
                     + "</white></gray>");

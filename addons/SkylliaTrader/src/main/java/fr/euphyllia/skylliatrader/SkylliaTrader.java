@@ -8,8 +8,10 @@ import fr.euphyllia.skylliatrader.commands.TraderCommand;
 import fr.euphyllia.skylliatrader.configuration.OrdersConfigLoader;
 import fr.euphyllia.skylliatrader.configuration.ShopConfigLoader;
 import fr.euphyllia.skylliatrader.configuration.TraderConfigLoader;
+import fr.euphyllia.skylliatrader.credential.AdminTestPass;
 import fr.euphyllia.skylliatrader.data.TraderDataService;
 import fr.euphyllia.skylliatrader.gui.TraderProgressGui;
+import fr.euphyllia.skylliatrader.listener.AdminTestPassListener;
 import fr.euphyllia.skylliatrader.listener.CredentialUseListener;
 import fr.euphyllia.skylliatrader.listener.MerchantLifecycleListener;
 import fr.euphyllia.skylliatrader.listener.PlayerLocationTracker;
@@ -63,6 +65,7 @@ public final class SkylliaTrader extends JavaPlugin {
     private ShopPurchaseService shopPurchaseService;
     private OrderBoardService orderBoardService;
     private RecycleService recycleService;
+    private AdminTestPass adminTestPass;
 
     public static SkylliaTrader getInstance() {
         return instance;
@@ -101,6 +104,9 @@ public final class SkylliaTrader extends JavaPlugin {
         getServer().getPluginManager().registerEvents(
                 new MerchantLifecycleListener(this, merchantKeys, merchantSpawner, merchantService), this);
         getServer().getPluginManager().registerEvents(new CredentialUseListener(merchantService), this);
+
+        this.adminTestPass = new AdminTestPass(this);
+        getServer().getPluginManager().registerEvents(new AdminTestPassListener(adminTestPass), this);
 
         // 玩家位置缓存：自然刷新用它判「成员是不是真的站在自己岛上」，
         // 避免为一座没人的岛把 spawn 区块拉起来。必须在巡检任务启动之前注册好。
@@ -172,6 +178,11 @@ public final class SkylliaTrader extends JavaPlugin {
     /** 回收事务：扣物品 + 发钱，见 {@link RecycleService} 类文档。 */
     public RecycleService getRecycleService() {
         return recycleService;
+    }
+
+    /** 管理员游商测试凭证：造物品 / 识别物品。 */
+    public AdminTestPass getAdminTestPass() {
+        return adminTestPass;
     }
 
     /** 本插件注册的岛屿角色权限点；T2 的游商交互监听器判权限时用。 */

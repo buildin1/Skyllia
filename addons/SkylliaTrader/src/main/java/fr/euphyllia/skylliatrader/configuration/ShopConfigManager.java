@@ -7,6 +7,7 @@ import fr.euphyllia.skylliatrader.configuration.model.ShopExtraGate;
 import fr.euphyllia.skylliatrader.configuration.model.ShopItemDefinition;
 import fr.euphyllia.skylliatrader.configuration.model.ShopPurchaseLimitPeriod;
 import fr.euphyllia.skylliatrader.configuration.model.ShopUnlockTrack;
+import fr.euphyllia.skylliatrader.merchant.CaravanAssignment;
 import fr.euphyllia.skylliatrader.merchant.CaravanType;
 import org.bukkit.Material;
 import org.slf4j.Logger;
@@ -37,6 +38,9 @@ public class ShopConfigManager implements IConfigurationProvider {
     /** {@code shop.toml} 里不允许出现的保留 id：说明书由 {@code GuidebookConfig} 单独管理，
      * 购买事务用这个字符串当限购计数的 key，商品表里如果也写了同名 id 会造成计数器撞车。 */
     public static final String GUIDEBOOK_RESERVED_ID = "guidebook";
+
+    /** {@code caravan} 字段写这个值表示三种商队通卖。 */
+    private static final String CARAVAN_ALL = "ALL";
 
     private final CommentedFileConfig config;
     private volatile List<ShopItemDefinition> items = List.of();
@@ -127,7 +131,7 @@ public class ShopConfigManager implements IConfigurationProvider {
                 0,
                 ShopExtraGate.NONE,
                 false, // 可再生，不进回收
-                null));
+                CaravanType.OVERWORLD));
         seenIds.add("frogspawn");
         log.warn("shop.toml 缺少青蛙卵，已在内存里补进主世界基础池。请在配置里加一条 id=frogspawn，否则下次手改文件后会再丢");
     }
@@ -198,14 +202,20 @@ public class ShopConfigManager implements IConfigurationProvider {
         // 缺省 false：漏写字段时不进回收。只给钻石/回响/海洋之心/残骸/哭泣黑曜石/镀金黑石显式开 true。
         boolean recyclable = table.getOrElse("recyclable", false);
 
-        // 可选：专供商队。写了就只在该种商队（凭证游商）的货架上出现，留空 = 所有商队通卖。
+        // 专供商队：OVERWORLD / NETHER / END 只在该种商队（凭证游商）的货架上出现；ALL = 三家通卖；
+        // 留空按材质推断（见 CaravanAssignment）。以前留空 = 通卖，而线上 shop.toml 绝大多数商品
+        // 都没写这个字段，结果三种商队卖的东西一模一样。
         String rawCaravan = table.getOrElse("caravan", (String) null);
-        CaravanType caravan = null;
-        if (rawCaravan != null && !rawCaravan.isBlank()) {
+        CaravanType caravan;
+        if (rawCaravan == null || rawCaravan.isBlank()) {
+            caravan = CaravanAssignment.infer(material);
+        } else if (CARAVAN_ALL.equalsIgnoreCase(rawCaravan.trim())) {
+            caravan = null;
+        } else {
             caravan = CaravanType.parseOrNull(rawCaravan);
             if (caravan == null) {
                 throw new IllegalArgumentException("商品 '" + normalizedId + "' 的 caravan='" + rawCaravan
-                        + "' 无法识别，可选值：OVERWORLD / NETHER / END（留空表示所有商队通卖）");
+                        + "' 无法识别，可选值：OVERWORLD / NETHER / END / ALL（留空按材质自动归属）");
             }
         }
 

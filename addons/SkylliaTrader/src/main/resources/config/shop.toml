@@ -23,9 +23,10 @@
 #                        unlock-track/unlock-tier 之外，还要求岛屿等级 ≥45（硬编码在
 #                        ShopPurchaseService 里，见 HANDOFF.md 9.3 的 T6 双轨门槛）。
 #                        其余商品不填这个字段（单轨判定）。
-# caravan                可选。专供商队：OVERWORLD / NETHER / END。写了就只出现在该种商队
-#                        （凭证游商）的货架上，留空 = 所有商队通卖。这是货架划分不是安全
-#                        边界——解锁与限购判定照常走 unlock-track 等字段。
+# caravan                专供商队：OVERWORLD / NETHER / END / ALL。凭证游商只摆本商队的商品，
+#                        ALL = 三种商队通卖；不写这个字段时按材质自动归属（下界材料→NETHER，
+#                        末地材料→END，其余→OVERWORLD）。购买时同样校验，别家商队买不到。
+#                        路人游商（自然刷新）不看这个字段，只看 natural-visible。
 # recyclable             回收站是否收这件商品。建材/农场产物必须 false；只给钻石、回响碎片、
 #                        海洋之心、远古残骸、哭泣黑曜石、镀金黑石开 true。缺省按 false 处理。
 #
@@ -50,6 +51,7 @@ unlock-tier = 0
 natural-visible = true
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "red_sand"
@@ -62,6 +64,7 @@ unlock-tier = 0
 natural-visible = true
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "gravel"
@@ -74,6 +77,7 @@ unlock-tier = 0
 natural-visible = true
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "clay_ball"
@@ -86,6 +90,7 @@ unlock-tier = 0
 natural-visible = true
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "sugar_cane"
@@ -98,6 +103,7 @@ unlock-tier = 0
 natural-visible = true
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "wheat_seeds"
@@ -110,6 +116,7 @@ unlock-tier = 0
 natural-visible = true
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "beetroot_seeds"
@@ -122,6 +129,7 @@ unlock-tier = 0
 natural-visible = true
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "pumpkin_seeds"
@@ -134,6 +142,7 @@ unlock-tier = 0
 natural-visible = true
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "melon_seeds"
@@ -146,6 +155,7 @@ unlock-tier = 0
 natural-visible = true
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "sweet_berries"
@@ -158,6 +168,7 @@ unlock-tier = 0
 natural-visible = true
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "glow_berries"
@@ -170,6 +181,7 @@ unlock-tier = 0
 natural-visible = true
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "oak_sapling"
@@ -182,6 +194,7 @@ unlock-tier = 0
 natural-visible = true
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "nether_wart"
@@ -194,6 +207,7 @@ unlock-tier = 0
 natural-visible = true
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "NETHER"
 
 [[shop-item]]
 id = "blaze_rod"
@@ -206,6 +220,7 @@ unlock-tier = 0
 natural-visible = true
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "NETHER"
 
 [[shop-item]]
 id = "frogspawn"
@@ -218,6 +233,7 @@ unlock-tier = 0
 natural-visible = true
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 # ─────────────────────────────────────────────────────────────────────────
 # 交易次数轨 · 第 10 档
@@ -234,6 +250,7 @@ unlock-tier = 10
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "spruce_sapling"
@@ -246,6 +263,7 @@ unlock-tier = 10
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "jungle_sapling"
@@ -258,6 +276,7 @@ unlock-tier = 10
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "acacia_sapling"
@@ -270,6 +289,7 @@ unlock-tier = 10
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "dark_oak_sapling"
@@ -282,6 +302,7 @@ unlock-tier = 10
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "mangrove_propagule"
@@ -294,6 +315,7 @@ unlock-tier = 10
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "cherry_sapling"
@@ -306,6 +328,7 @@ unlock-tier = 10
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "pale_oak_sapling"
@@ -318,6 +341,7 @@ unlock-tier = 10
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "cocoa_beans"
@@ -330,6 +354,7 @@ unlock-tier = 10
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "cactus"
@@ -342,6 +367,7 @@ unlock-tier = 10
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "red_mushroom"
@@ -354,6 +380,7 @@ unlock-tier = 10
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "brown_mushroom"
@@ -366,6 +393,7 @@ unlock-tier = 10
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "bamboo"
@@ -378,6 +406,7 @@ unlock-tier = 10
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 # ─────────────────────────────────────────────────────────────────────────
 # 交易次数轨 · 第 25 档（16 色染料 + 花卉）
@@ -394,6 +423,7 @@ unlock-tier = 25
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "orange_dye"
@@ -406,6 +436,7 @@ unlock-tier = 25
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "magenta_dye"
@@ -418,6 +449,7 @@ unlock-tier = 25
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "light_blue_dye"
@@ -430,6 +462,7 @@ unlock-tier = 25
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "yellow_dye"
@@ -442,6 +475,7 @@ unlock-tier = 25
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "lime_dye"
@@ -454,6 +488,7 @@ unlock-tier = 25
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "pink_dye"
@@ -466,6 +501,7 @@ unlock-tier = 25
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "gray_dye"
@@ -478,6 +514,7 @@ unlock-tier = 25
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "light_gray_dye"
@@ -490,6 +527,7 @@ unlock-tier = 25
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "cyan_dye"
@@ -502,6 +540,7 @@ unlock-tier = 25
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "purple_dye"
@@ -514,6 +553,7 @@ unlock-tier = 25
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "blue_dye"
@@ -526,6 +566,7 @@ unlock-tier = 25
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "brown_dye"
@@ -538,6 +579,7 @@ unlock-tier = 25
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "green_dye"
@@ -550,6 +592,7 @@ unlock-tier = 25
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "red_dye"
@@ -562,6 +605,7 @@ unlock-tier = 25
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "black_dye"
@@ -574,6 +618,7 @@ unlock-tier = 25
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "dandelion"
@@ -586,6 +631,7 @@ unlock-tier = 25
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "poppy"
@@ -598,6 +644,7 @@ unlock-tier = 25
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "blue_orchid"
@@ -610,6 +657,7 @@ unlock-tier = 25
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "allium"
@@ -622,6 +670,7 @@ unlock-tier = 25
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "azure_bluet"
@@ -634,6 +683,7 @@ unlock-tier = 25
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "red_tulip"
@@ -646,6 +696,7 @@ unlock-tier = 25
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "orange_tulip"
@@ -658,6 +709,7 @@ unlock-tier = 25
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "white_tulip"
@@ -670,6 +722,7 @@ unlock-tier = 25
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "pink_tulip"
@@ -682,6 +735,7 @@ unlock-tier = 25
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "oxeye_daisy"
@@ -694,6 +748,7 @@ unlock-tier = 25
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "cornflower"
@@ -706,6 +761,7 @@ unlock-tier = 25
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "lily_of_the_valley"
@@ -718,6 +774,7 @@ unlock-tier = 25
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "sunflower"
@@ -730,6 +787,7 @@ unlock-tier = 25
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "lilac"
@@ -742,6 +800,7 @@ unlock-tier = 25
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "rose_bush"
@@ -754,6 +813,7 @@ unlock-tier = 25
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "peony"
@@ -766,6 +826,7 @@ unlock-tier = 25
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "torchflower"
@@ -778,6 +839,21 @@ unlock-tier = 25
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
+
+# 蜘蛛网：虚空岛没有废弃矿井/蜘蛛网生成。拿到后可用盘丝药水自繁殖，所以放中档、低价、不限购。
+[[shop-item]]
+id = "cobweb"
+material = "COBWEB"
+recyclable = false
+display-name = "<white>蜘蛛网"
+price = 2.0
+unlock-track = "TRADE_COUNT"
+unlock-tier = 25
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 # ─────────────────────────────────────────────────────────────────────────
 # 交易次数轨 · 第 50 档（海洋系）
@@ -794,6 +870,7 @@ unlock-tier = 50
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "seagrass"
@@ -806,6 +883,7 @@ unlock-tier = 50
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "sea_pickle"
@@ -818,6 +896,7 @@ unlock-tier = 50
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "tube_coral"
@@ -830,6 +909,7 @@ unlock-tier = 50
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "brain_coral"
@@ -842,6 +922,7 @@ unlock-tier = 50
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "bubble_coral"
@@ -854,6 +935,7 @@ unlock-tier = 50
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "fire_coral"
@@ -866,6 +948,7 @@ unlock-tier = 50
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "horn_coral"
@@ -878,6 +961,7 @@ unlock-tier = 50
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 # 珊瑚块/珊瑚扇：和珊瑚同档（2026-08 玩家建议——建筑用途，珊瑚不可再生、无回收风险）
 
@@ -892,6 +976,7 @@ unlock-tier = 50
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "brain_coral_block"
@@ -904,6 +989,7 @@ unlock-tier = 50
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "bubble_coral_block"
@@ -916,6 +1002,7 @@ unlock-tier = 50
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "fire_coral_block"
@@ -928,6 +1015,7 @@ unlock-tier = 50
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "horn_coral_block"
@@ -940,6 +1028,7 @@ unlock-tier = 50
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "tube_coral_fan"
@@ -952,6 +1041,7 @@ unlock-tier = 50
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "brain_coral_fan"
@@ -964,6 +1054,7 @@ unlock-tier = 50
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "bubble_coral_fan"
@@ -976,6 +1067,7 @@ unlock-tier = 50
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "fire_coral_fan"
@@ -988,6 +1080,7 @@ unlock-tier = 50
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "horn_coral_fan"
@@ -1000,6 +1093,7 @@ unlock-tier = 50
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "ice"
@@ -1012,6 +1106,7 @@ unlock-tier = 50
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "packed_ice"
@@ -1024,6 +1119,7 @@ unlock-tier = 50
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "blue_ice"
@@ -1036,6 +1132,7 @@ unlock-tier = 50
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 # ─────────────────────────────────────────────────────────────────────────
 # 交易次数轨 · 第 100 档
@@ -1052,6 +1149,7 @@ unlock-tier = 100
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "vine"
@@ -1064,6 +1162,7 @@ unlock-tier = 100
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "azalea"
@@ -1076,6 +1175,7 @@ unlock-tier = 100
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "moss_block"
@@ -1088,6 +1188,7 @@ unlock-tier = 100
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "weeping_vines"
@@ -1100,6 +1201,7 @@ unlock-tier = 100
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "NETHER"
 
 [[shop-item]]
 id = "glow_lichen"
@@ -1112,6 +1214,7 @@ unlock-tier = 100
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "spore_blossom"
@@ -1124,6 +1227,7 @@ unlock-tier = 100
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 # ─────────────────────────────────────────────────────────────────────────
 # 岛屿等级轨 · 1 级
@@ -1140,6 +1244,7 @@ unlock-tier = 1
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "NETHER"
 
 [[shop-item]]
 id = "soul_sand"
@@ -1152,6 +1257,7 @@ unlock-tier = 1
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "NETHER"
 
 [[shop-item]]
 id = "soul_soil"
@@ -1164,6 +1270,7 @@ unlock-tier = 1
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "NETHER"
 
 [[shop-item]]
 id = "end_stone"
@@ -1176,6 +1283,7 @@ unlock-tier = 1
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "END"
 
 # ─────────────────────────────────────────────────────────────────────────
 # 岛屿等级轨 · 5 级
@@ -1192,6 +1300,7 @@ unlock-tier = 5
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "calcite"
@@ -1204,6 +1313,7 @@ unlock-tier = 5
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "granite"
@@ -1216,6 +1326,7 @@ unlock-tier = 5
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "diorite"
@@ -1228,6 +1339,7 @@ unlock-tier = 5
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "andesite"
@@ -1240,6 +1352,7 @@ unlock-tier = 5
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "pointed_dripstone"
@@ -1252,6 +1365,7 @@ unlock-tier = 5
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 # 朱砂/硫磺（26.x 新建材）：原在 15 级档，2026-08 玩家建议按安山岩口径归入建筑基础档（5 级），
 # 并补上烈性硫磺——它也是硫磺系建材，只是带爆炸特性所以定价略高。
@@ -1267,6 +1381,7 @@ unlock-tier = 5
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "sulfur"
@@ -1279,6 +1394,7 @@ unlock-tier = 5
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "potent_sulfur"
@@ -1291,6 +1407,7 @@ unlock-tier = 5
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 # ─────────────────────────────────────────────────────────────────────────
 # 岛屿等级轨 · 5 级 · 主世界商队专供（caravan = OVERWORLD，2026-08 玩家建议）
@@ -1742,6 +1859,7 @@ unlock-tier = 10
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "NETHER"
 
 [[shop-item]]
 id = "blackstone"
@@ -1754,6 +1872,7 @@ unlock-tier = 10
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "NETHER"
 
 [[shop-item]]
 id = "nether_bricks"
@@ -1766,6 +1885,7 @@ unlock-tier = 10
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "NETHER"
 
 [[shop-item]]
 id = "crimson_nylium"
@@ -1778,6 +1898,7 @@ unlock-tier = 10
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "NETHER"
 
 [[shop-item]]
 id = "warped_nylium"
@@ -1790,6 +1911,7 @@ unlock-tier = 10
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "NETHER"
 
 [[shop-item]]
 id = "nether_wart_block"
@@ -1802,6 +1924,7 @@ unlock-tier = 10
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "NETHER"
 
 [[shop-item]]
 id = "shroomlight"
@@ -1814,6 +1937,7 @@ unlock-tier = 10
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "NETHER"
 
 # ─────────────────────────────────────────────────────────────────────────
 # 岛屿等级轨 · 10 级 · 主世界商队专供（caravan = OVERWORLD，2026-08 玩家建议）
@@ -2043,6 +2167,7 @@ unlock-tier = 20
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "NETHER"
 
 [[shop-item]]
 id = "purpur_block"
@@ -2055,6 +2180,7 @@ unlock-tier = 20
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "END"
 
 [[shop-item]]
 id = "chorus_fruit"
@@ -2067,6 +2193,8 @@ unlock-tier = 20
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+# 三家通卖：挑战 credential_end 要 1024 个紫颂果才能换末地凭证，只放末地商队就是死锁。
+caravan = "ALL"
 
 [[shop-item]]
 id = "prismarine_shard"
@@ -2079,6 +2207,7 @@ unlock-tier = 20
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "prismarine_crystals"
@@ -2091,6 +2220,23 @@ unlock-tier = 20
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
+
+# 海晶灯 = 4 碎片 + 5 砂粒，合成成本 4.5。原料已是 0.5 不限购建材，
+# 成品不能再卖 200 / 日限 4（等于没限购还贵 40 倍）。按建材处理：
+# 价 5（略高于合成，走商店图省事；岛屿分 40/5=8，低于石英块 8/0.3，刷不了分）。
+[[shop-item]]
+id = "sea_lantern"
+material = "SEA_LANTERN"
+recyclable = false
+display-name = "<white>海晶灯"
+price = 5.0
+unlock-track = "ISLAND_LEVEL"
+unlock-tier = 20
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 # ─────────────────────────────────────────────────────────────────────────
 # 岛屿等级轨 · 30 级
@@ -2107,6 +2253,7 @@ unlock-tier = 30
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "pale_moss_block"
@@ -2119,6 +2266,7 @@ unlock-tier = 30
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "creaking_heart"
@@ -2131,6 +2279,7 @@ unlock-tier = 30
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "mycelium"
@@ -2143,6 +2292,7 @@ unlock-tier = 30
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 # ─────────────────────────────────────────────────────────────────────────
 # 商会声望轨 · 0（学徒）
@@ -2159,6 +2309,7 @@ unlock-tier = 0
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "raw_iron"
@@ -2171,6 +2322,7 @@ unlock-tier = 0
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "raw_gold"
@@ -2183,6 +2335,7 @@ unlock-tier = 0
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "raw_copper"
@@ -2195,6 +2348,7 @@ unlock-tier = 0
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 # ─────────────────────────────────────────────────────────────────────────
 # 商会声望轨 · 100（伙计）
@@ -2211,6 +2365,8 @@ unlock-tier = 100
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+# 三家通卖：领地拓展令挑战要交，只放下界商队会卡住中期进度。
+caravan = "ALL"
 
 [[shop-item]]
 id = "magma_cream"
@@ -2223,6 +2379,8 @@ unlock-tier = 100
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+# 三家通卖：领地拓展令挑战要交，只放下界商队会卡住中期进度。
+caravan = "ALL"
 
 [[shop-item]]
 id = "ghast_tear"
@@ -2235,6 +2393,7 @@ unlock-tier = 100
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "NETHER"
 
 [[shop-item]]
 id = "crimson_stem"
@@ -2247,6 +2406,38 @@ unlock-tier = 100
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+# 三家通卖：领地拓展令挑战要交，只放下界商队会卡住中期进度。
+caravan = "ALL"
+
+# 旋风棒：旋风只在试炼密室刷怪笼生成，虚空岛拿不到。风弹 / 重锤的原料，放主世界商队声望 100，
+# 顺带补上主世界商队这一档没有商品的空档。
+[[shop-item]]
+id = "breeze_rod"
+material = "BREEZE_ROD"
+recyclable = false
+display-name = "<white>旋风棒"
+price = 15.0
+unlock-track = "REPUTATION"
+unlock-tier = 100
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
+
+# 兔子腿：跳跃药水原料。兔子只在沙漠/雪原/针叶林等群系刷，虚空岛默认拿不到；
+# 和岩浆膏、恶魂之泪同为酿造材料，放声望 100、同价 8。
+[[shop-item]]
+id = "rabbit_foot"
+material = "RABBIT_FOOT"
+recyclable = false
+display-name = "<white>兔子腿"
+price = 8.0
+unlock-track = "REPUTATION"
+unlock-tier = 100
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 # ─────────────────────────────────────────────────────────────────────────
 # 商会声望轨 · 300（商人）
@@ -2263,6 +2454,8 @@ unlock-tier = 300
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+# 三家通卖：领地拓展令挑战要交，只放下界商队会卡住中期进度。
+caravan = "ALL"
 
 [[shop-item]]
 id = "amethyst_shard"
@@ -2275,6 +2468,7 @@ unlock-tier = 300
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "diamond"
@@ -2287,6 +2481,21 @@ unlock-tier = 300
 natural-visible = false
 purchase-limit-period = "DAILY"
 purchase-limit-count = 1
+caravan = "OVERWORLD"
+
+# 龙息：虚空末地没有末影龙，拿不到。滞留药水的原料，放末地商队声望 300。
+[[shop-item]]
+id = "dragon_breath"
+material = "DRAGON_BREATH"
+recyclable = false
+display-name = "<white>龙息"
+price = 30.0
+unlock-track = "REPUTATION"
+unlock-tier = 300
+natural-visible = false
+purchase-limit-period = "NONE"
+purchase-limit-count = 0
+caravan = "END"
 
 # ─────────────────────────────────────────────────────────────────────────
 # 商会声望轨 · 700（大商人）
@@ -2303,6 +2512,7 @@ unlock-tier = 700
 natural-visible = false
 purchase-limit-period = "DAILY"
 purchase-limit-count = 2
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "echo_shard"
@@ -2315,6 +2525,7 @@ unlock-tier = 700
 natural-visible = false
 purchase-limit-period = "DAILY"
 purchase-limit-count = 4
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "sculk_catalyst"
@@ -2327,18 +2538,7 @@ unlock-tier = 700
 natural-visible = false
 purchase-limit-period = "DAILY"
 purchase-limit-count = 1
-
-[[shop-item]]
-id = "sea_lantern"
-material = "SEA_LANTERN"
-recyclable = false
-display-name = "<white>海晶灯"
-price = 200.0
-unlock-track = "REPUTATION"
-unlock-tier = 700
-natural-visible = false
-purchase-limit-period = "DAILY"
-purchase-limit-count = 4
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "heart_of_the_sea"
@@ -2351,6 +2551,7 @@ unlock-tier = 700
 natural-visible = false
 purchase-limit-period = "DAILY"
 purchase-limit-count = 1
+caravan = "OVERWORLD"
 
 # ─────────────────────────────────────────────────────────────────────────
 # 商会声望轨 · 1500（商会理事）
@@ -2367,6 +2568,8 @@ unlock-tier = 1500
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+# 三家通卖：领地拓展令挑战要交，只放下界商队会卡住中期进度。
+caravan = "ALL"
 
 [[shop-item]]
 id = "netherite_upgrade_smithing_template"
@@ -2379,6 +2582,8 @@ unlock-tier = 1500
 natural-visible = false
 purchase-limit-period = "LIFETIME"
 purchase-limit-count = 1
+# 三家通卖：领地拓展令挑战要交，只放下界商队会卡住中期进度。
+caravan = "ALL"
 
 # 盔甲纹饰锻造模板（18 种）：和下界合金升级模板同在声望 1500 档（2026-08 玩家建议）。
 # 纯装饰用途、无属性收益，定价压低（200）且不限购——玩家攒声望不容易，别再用价格卡装饰品。
@@ -2394,6 +2599,7 @@ unlock-tier = 1500
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "vex_armor_trim"
@@ -2406,6 +2612,7 @@ unlock-tier = 1500
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "wild_armor_trim"
@@ -2418,6 +2625,7 @@ unlock-tier = 1500
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "coast_armor_trim"
@@ -2430,6 +2638,7 @@ unlock-tier = 1500
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "dune_armor_trim"
@@ -2442,6 +2651,7 @@ unlock-tier = 1500
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "wayfinder_armor_trim"
@@ -2454,6 +2664,7 @@ unlock-tier = 1500
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "raiser_armor_trim"
@@ -2466,6 +2677,7 @@ unlock-tier = 1500
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "shaper_armor_trim"
@@ -2478,6 +2690,7 @@ unlock-tier = 1500
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "host_armor_trim"
@@ -2490,6 +2703,7 @@ unlock-tier = 1500
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "ward_armor_trim"
@@ -2502,6 +2716,7 @@ unlock-tier = 1500
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "silence_armor_trim"
@@ -2514,6 +2729,7 @@ unlock-tier = 1500
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "tide_armor_trim"
@@ -2526,6 +2742,7 @@ unlock-tier = 1500
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "snout_armor_trim"
@@ -2538,6 +2755,7 @@ unlock-tier = 1500
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "NETHER"
 
 [[shop-item]]
 id = "rib_armor_trim"
@@ -2550,6 +2768,7 @@ unlock-tier = 1500
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "NETHER"
 
 [[shop-item]]
 id = "eye_armor_trim"
@@ -2562,6 +2781,7 @@ unlock-tier = 1500
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "spire_armor_trim"
@@ -2574,6 +2794,7 @@ unlock-tier = 1500
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "END"
 
 [[shop-item]]
 id = "flow_armor_trim"
@@ -2586,6 +2807,7 @@ unlock-tier = 1500
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "bolt_armor_trim"
@@ -2598,6 +2820,7 @@ unlock-tier = 1500
 natural-visible = false
 purchase-limit-period = "NONE"
 purchase-limit-count = 0
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "ancient_debris"
@@ -2610,6 +2833,8 @@ unlock-tier = 1500
 natural-visible = false
 purchase-limit-period = "WEEKLY"
 purchase-limit-count = 1
+# 三家通卖：领地拓展令挑战要交，只放下界商队会卡住中期进度。
+caravan = "ALL"
 
 [[shop-item]]
 id = "netherite_ingot"
@@ -2623,6 +2848,8 @@ natural-visible = false
 purchase-limit-period = "WEEKLY"
 purchase-limit-count = 1
 extra-gate = "NETHERITE_INGOT_DUAL"
+# 三家通卖：领地拓展令挑战要交，只放下界商队会卡住中期进度。
+caravan = "ALL"
 
 # ─────────────────────────────────────────────────────────────────────────
 # 商会声望轨 · 3000（贵宾）
@@ -2639,6 +2866,7 @@ unlock-tier = 3000
 natural-visible = false
 purchase-limit-period = "MONTHLY"
 purchase-limit-count = 1
+caravan = "OVERWORLD"
 
 [[shop-item]]
 id = "elytra"
@@ -2653,6 +2881,7 @@ natural-visible = false
 # 与同档另外两件不一致，已对齐（2026-08-21 审查发现并修正）。
 purchase-limit-period = "MONTHLY"
 purchase-limit-count = 1
+caravan = "END"
 
 [[shop-item]]
 id = "nether_star"
@@ -2665,3 +2894,5 @@ unlock-tier = 3000
 natural-visible = false
 purchase-limit-period = "MONTHLY"
 purchase-limit-count = 1
+# 三家通卖：领地拓展令挑战要交，只放下界商队会卡住中期进度。
+caravan = "ALL"

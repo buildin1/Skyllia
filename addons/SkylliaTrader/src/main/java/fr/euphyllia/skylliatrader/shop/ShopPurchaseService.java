@@ -11,6 +11,7 @@ import fr.euphyllia.skylliatrader.configuration.model.GuidebookConfig;
 import fr.euphyllia.skylliatrader.configuration.model.ShopItemDefinition;
 import fr.euphyllia.skylliatrader.configuration.model.ShopPurchaseLimitPeriod;
 import fr.euphyllia.skylliatrader.configuration.model.TrackTiers;
+import fr.euphyllia.skylliatrader.credential.AdminTestPass;
 import fr.euphyllia.skylliatrader.data.PurchaseCounter;
 import fr.euphyllia.skylliatrader.data.TraderDataService;
 import fr.euphyllia.skylliatrader.data.TraderIslandData;
@@ -111,11 +112,11 @@ public final class ShopPurchaseService {
      * （只读事件参数，不做阻塞操作，随后立刻转 async）。
      *
      * @param player     购买的玩家
-     * @param origin     这个游商的来源（决定这件商品是否真的在它的售卖范围内，防御性校验）
+     * @param session    这个货架是谁的（来源 + 商队 + 是否测试凭证），决定这件商品是否真的在它的售卖范围内
      * @param shopItemId 商品 id（{@link ShopConfigManager#GUIDEBOOK_RESERVED_ID} 表示说明书）
      * @param mode       点击语义
      */
-    public void purchase(@NotNull Player player, @NotNull MerchantOrigin origin,
+    public void purchase(@NotNull Player player, @NotNull ShopSession session,
                          @NotNull String shopItemId, @NotNull PurchaseMode mode) {
         UUID playerId = player.getUniqueId();
         if (inFlight.putIfAbsent(playerId, Boolean.TRUE) != null) {
@@ -125,7 +126,7 @@ public final class ShopPurchaseService {
 
         Bukkit.getAsyncScheduler().runNow(plugin, task -> {
             try {
-                purchaseAsyncStage(player, origin, shopItemId, mode);
+                purchaseAsyncStage(player, session, shopItemId, mode);
             } catch (Throwable t) {
                 // asyncScheduler 会把异常吞成一段控制台堆栈，玩家侧「点了没反应」——
                 // 这里必须自己兜底提示，理由同 TraderProgressGui / MerchantService。
@@ -140,8 +141,9 @@ public final class ShopPurchaseService {
     // 第 1 步（async）：解析商品 + 校验解锁资格 + 校验限购余量 + 计算折扣价 + 预留
     // ══════════════════════════════════════════════════════════════════════
 
-    private void purchaseAsyncStage(Player player, MerchantOrigin origin, String shopItemId, PurchaseMode mode) {
+    private void purchaseAsyncStage(Player player, ShopSession session, String shopItemId, PurchaseMode mode) {
         UUID playerId = player.getUniqueId();
+        MerchantOrigin origin = session.origin();
 
         // Vault 是否可用要最先查——这是和岛屿状态无关的全局前提，先查完可以避免白做一次预留+回滚。
         RegisteredServiceProvider<Economy> rsp = plugin.getServer().getServicesManager().getRegistration(Economy.class);
@@ -150,6 +152,11 @@ public final class ShopPurchaseService {
             return;
         }
         Economy econ = rsp.getProvider();
+
+        if (session.adminTest()) {
+            adminTestPurchase(player, session, shopItemId, mode, econ);
+            return;
+        }
 
         Island island = SkylliaAPI.getIslandByPlayerId(playerId);
         if (island == null) {
@@ -190,7 +197,9 @@ public final class ShopPurchaseService {
                 fail(player, "§c这件商品不存在，可能是配置刚刚被重新加载，请重新打开商店。");
                 return;
             }
-            if (origin == MerchantOrigin.NATURAL && !item.naturalVisible()) {
+            if (!session.shelves(item)) {
+                // 路人游商只卖 natural-visible；凭证游商只卖通卖 + 本商队专供。GUI 不会摆出别家的货，
+                // 这里防的是 reload 改了 caravan 之后旧界面还开着之类的情况。
                 fail(player, "§c这位商人不卖这件商品。");
                 return;
             }
@@ -218,6 +227,58 @@ public final class ShopPurchaseService {
         // 独立的回滚+退款逻辑（见该方法），混在一起容易出现同一次预留被回滚两次的账目错位。
         if (chargeStage(player, island, normalizedId, displayName, reservation, econ)) {
             deliver(player, island, normalizedId, displayName, material, reservation, econ);
+        }
+    }
+
+    /**
+     * 管理员测试凭证的购买：跳过解锁、限购、商队范围以外的一切条件，<b>不碰岛屿数据</b>
+     * （不预留限购、不计交易次数和消费额），按原价扣款后发货。
+     * <p>
+     * 管理员可以没有岛，所以 island 传 {@code null} 给 {@link #chargeStage} / {@link #deliver}：
+     * 失败分支里的回滚在 island 为 null 时直接跳过，只做退款。
+     * </p>
+     */
+    private void adminTestPurchase(Player player, ShopSession session, String shopItemId,
+                                   PurchaseMode mode, Economy econ) {
+        // GUI 打开时判过一次，这里再判：界面开着的期间权限可能被收回。
+        if (!player.hasPermission(AdminTestPass.PERMISSION)) {
+            fail(player, "§c游商测试凭证仅限管理员使用。");
+            return;
+        }
+
+        String normalizedId = ShopItemDefinition.normalizeId(shopItemId);
+        boolean isGuidebook = ShopConfigManager.GUIDEBOOK_RESERVED_ID.equals(normalizedId);
+        String displayName;
+        Material material;
+        double price;
+        if (isGuidebook) {
+            GuidebookConfig guideConfig = TraderConfigLoader.config.getGuidebook();
+            if (guideConfig == null) {
+                fail(player, "§c说明书配置尚未加载。");
+                return;
+            }
+            material = guideConfig.material();
+            displayName = "说明书";
+            price = guideConfig.price();
+        } else {
+            ShopItemDefinition item = ShopConfigLoader.config.findById(normalizedId);
+            if (item == null) {
+                fail(player, "§c这件商品不存在，可能是配置刚刚被重新加载，请重新打开商店。");
+                return;
+            }
+            material = item.material();
+            displayName = item.displayName();
+            price = item.price();
+        }
+
+        int quantity = resolveQuantity(mode, material, null);
+        Reservation reservation = Reservation.ok(quantity, price, price,
+                ShopEconomics.round2(price * quantity), isGuidebook);
+        log.info("管理员 {} 用游商测试凭证（{}）购买 '{}' x{}",
+                player.getName(), session.shelfLabel(), normalizedId, quantity);
+
+        if (chargeStage(player, null, normalizedId, displayName, reservation, econ)) {
+            deliver(player, null, normalizedId, displayName, material, reservation, econ);
         }
     }
 
@@ -428,8 +489,12 @@ public final class ShopPurchaseService {
     // 回滚
     // ══════════════════════════════════════════════════════════════════════
 
-    /** 只回滚预留（限购计数 / 交易次数 / 消费额），不退款——用于「预留成功但还没真正扣到钱」的失败分支。 */
+    /**
+     * 只回滚预留（限购计数 / 交易次数 / 消费额），不退款——用于「预留成功但还没真正扣到钱」的失败分支。
+     * island 为 {@code null} 表示测试凭证购买，本来就没有预留，直接跳过。
+     */
     private void rollbackReservationOnly(Island island, String normalizedId, Reservation reservation) {
+        if (island == null) return;
         boolean ok = dataService.mutate(island, data -> undoReservation(data, normalizedId, reservation));
         if (!ok) {
             log.error("岛屿 {} 的购买预留回滚写库失败（商品 '{}'，数量 {}），限购计数可能不准确，"
@@ -443,7 +508,7 @@ public final class ShopPurchaseService {
         EconomyResponse refund = econ.depositPlayer(player, reservation.totalPrice());
         if (refund == null || !refund.transactionSuccess()) {
             log.error("岛屿 {} 玩家 {} 购买商品 '{}'（{}）退款失败！金额 {}，需要管理员手动补偿：{}",
-                    island.getId(), player.getName(), normalizedId, reasonForLog,
+                    island != null ? island.getId() : "（测试凭证）", player.getName(), normalizedId, reasonForLog,
                     reservation.totalPrice(), refund == null ? "经济插件未返回结果" : refund.errorMessage);
         }
         rollbackReservationOnly(island, normalizedId, reservation);

@@ -8,12 +8,14 @@ import fr.euphyllia.skylliatrader.configuration.TraderConfigLoader;
 import fr.euphyllia.skylliatrader.configuration.model.CredentialItemSpec;
 import fr.euphyllia.skylliatrader.configuration.model.GuidebookConfig;
 import fr.euphyllia.skylliatrader.configuration.model.TrackTiers;
+import fr.euphyllia.skylliatrader.credential.AdminTestPass;
 import fr.euphyllia.skylliatrader.credential.CredentialItems;
 import fr.euphyllia.skylliatrader.data.MerchantRecord;
 import fr.euphyllia.skylliatrader.gui.admin.TraderAdminMainGui;
 import fr.euphyllia.skylliatrader.merchant.CaravanType;
 import fr.euphyllia.skylliatrader.merchant.MerchantService;
 import fr.euphyllia.skylliatrader.shop.GuidebookItem;
+import fr.euphyllia.skylliatrader.shop.ShopSession;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
@@ -74,8 +76,27 @@ public class TraderAdminCommand implements SubCommandInterface {
             case "release" -> handleRelease(sender, args);
             case "credential" -> handleCredential(sender, args);
             case "guidebook" -> handleGuidebook(sender);
+            case "testpass" -> handleTestPass(sender, args);
             default -> sendUsage(sender);
         }
+    }
+
+    /**
+     * {@code /skylliadmin trader testpass <overworld|nether|end|natural>}：拿一张游商测试凭证。
+     * 右键直接打开对应货架，无视岛屿等级等一切解锁条件，见 {@link AdminTestPass}。
+     */
+    private void handleTestPass(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(Component.text("§c该子命令只能由玩家执行（要把物品发到背包里）。"));
+            return;
+        }
+        ShopSession session = args.length >= 2 ? AdminTestPass.parseTarget(args[1]) : null;
+        if (session == null) {
+            sender.sendMessage(Component.text("§c用法：/skylliadmin trader testpass <overworld|nether|end|natural>"));
+            return;
+        }
+        ItemStack item = SkylliaTrader.getInstance().getAdminTestPass().build(session);
+        giveItem(player, item, "游商测试凭证（" + session.shelfLabel() + "）");
     }
 
     /** {@code /skylliadmin trader merchants <玩家>}：列出该玩家所在岛屿登记的常驻商人。 */
@@ -299,20 +320,21 @@ public class TraderAdminCommand implements SubCommandInterface {
     }
 
     private void sendUsage(CommandSender sender) {
-        sender.sendMessage(Component.text("§d用法：§f/skylliadmin trader <gui|tiers|merchants|release|credential|guidebook>"));
+        sender.sendMessage(Component.text("§d用法：§f/skylliadmin trader <gui|tiers|merchants|release|credential|guidebook|testpass>"));
         sender.sendMessage(Component.text("§7  gui                       打开游商管理 GUI"));
         sender.sendMessage(Component.text("§7  tiers                     查看四轨当前档位配置"));
         sender.sendMessage(Component.text("§7  merchants <玩家>          查看该岛登记的常驻商人"));
         sender.sendMessage(Component.text("§7  release <玩家> <商队>     强制释放一种商队的名额"));
         sender.sendMessage(Component.text("§7  credential <商队> [数量]  拿一张凭证样品（正式发放走挑战任务奖励）"));
         sender.sendMessage(Component.text("§7  guidebook                 拿一本说明书样品，用来校对文案"));
+        sender.sendMessage(Component.text("§7  testpass <商队|natural>   拿一张游商测试凭证，右键无视一切条件打开货架"));
     }
 
     @Override
     public @NotNull List<String> onTabComplete(@NotNull Plugin plugin, @NotNull CommandSender sender, @NotNull String[] args) {
         if (args.length == 1) {
             String partial = args[0].toLowerCase();
-            return Stream.of("gui", "tiers", "merchants", "release", "credential", "guidebook")
+            return Stream.of("gui", "tiers", "merchants", "release", "credential", "guidebook", "testpass")
                     .filter(s -> s.startsWith(partial))
                     .collect(Collectors.toList());
         }
@@ -327,6 +349,11 @@ public class TraderAdminCommand implements SubCommandInterface {
             }
             if (sub.equals("credential")) {
                 return caravanNames(partial);
+            }
+            if (sub.equals("testpass")) {
+                return AdminTestPass.targetNames().stream()
+                        .filter(name -> name.startsWith(partial))
+                        .collect(Collectors.toList());
             }
         }
         if (args.length == 3 && args[0].equalsIgnoreCase("release")) {
