@@ -52,6 +52,7 @@ public class SkylliaCommand implements SkylliaCommandInterface {
         registry.registerSubCommand(new LeaveSubCommand(), "leave");
         registry.registerSubCommand(new PermissionSubCommand(), "permission");
         registry.registerSubCommand(new FlagSubCommand(), "flag", "gamerule");
+        registry.registerSubCommand(new FlySubCommand(), "fly");
         registry.registerSubCommand(new PromoteSubCommand(), "promote");
         registry.registerSubCommand(new TPSSubCommand(), "tps", "lag", "mspt");
         registry.registerSubCommand(new TransferSubCommand(), "transfer");

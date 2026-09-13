@@ -9,9 +9,11 @@ import fr.euphyllia.skyllia.api.skyblock.Island;
 import fr.euphyllia.skyllia.configuration.ConfigLoader;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
+import org.bukkit.block.Container;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.inventory.InventoryDragEvent;
+import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.plugin.Plugin;
 
 public class InventoryModifyDragPermissions implements PermissionModule {
@@ -21,6 +23,11 @@ public class InventoryModifyDragPermissions implements PermissionModule {
     @EventHandler(ignoreCancelled = true)
     public void onDrag(final InventoryDragEvent event) {
         if (!(event.getWhoClicked() instanceof Player player)) return;
+
+        // 和 InventoryModifyClickPermissions 保持一致：只管物理容器界面。
+        // 不加这层过滤的话，访客在别人岛上拖动随身附魔台、插件 GUI 甚至自己背包里的物品都会被取消。
+        InventoryHolder holder = event.getView().getTopInventory().getHolder();
+        if (!(holder instanceof Container)) return;
 
         final Location location = player.getLocation();
         if (!SkylliaAPI.isWorldSkyblock(location.getWorld())) return;

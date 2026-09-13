@@ -93,6 +93,8 @@ public class ListenersRegistrar {
         registerEvent(pluginManager, new ObsidianFormHologramListener(plugin));
         registerEvent(pluginManager, new LightningVillagerTransformListener());
         registerEvent(pluginManager, new PlayerRegionChangeListener());
+        registerEvent(pluginManager, new fr.euphyllia.skyllia.listeners.bukkitevents.player.IslandFlightListener());
+        registerEvent(pluginManager, new fr.euphyllia.skyllia.listeners.bukkitevents.player.PortableEnchantingCompatListener());
         registerEvent(pluginManager, new FrostWalkerListener());
         registerEvent(pluginManager, new ProjectileBlockBreakListener());
         registerEvent(pluginManager, new OreDropPreventionListener());
